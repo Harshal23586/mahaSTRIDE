@@ -141,35 +141,45 @@ DATA_FILE = "progress_data.json"
 def load_data():
     """Load progress data from JSON file"""
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as f:
-            return json.load(f)
+        try:
+            with open(DATA_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return create_initial_data()
     else:
-        # Initialize empty data
-        data = {}
-        for uni_code in UNIVERSITIES.keys():
-            data[uni_code] = {}
-            for day in range(1, 51):
-                data[uni_code][str(day)] = {
-                    "status": "pending",
-                    "remarks": "",
-                    "updated_at": None
-                }
-        return data
+        return create_initial_data()
+
+def create_initial_data():
+    """Create initial data structure"""
+    data = {}
+    for uni_code in UNIVERSITIES.keys():
+        data[uni_code] = {}
+        for day in range(1, 51):
+            data[uni_code][str(day)] = {
+                "status": "pending",
+                "remarks": "",
+                "updated_at": None
+            }
+    return data
 
 def save_data(data):
     """Save progress data to JSON file"""
-    with open(DATA_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
+    try:
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except:
+        return False
 
 def update_task_status(university_code, day, status, remarks=""):
     """Update task status"""
     data = load_data()
     if university_code in data and str(day) in data[university_code]:
         data[university_code][str(day)]["status"] = status
-        data[university_code][str(day)]["remarks"] = remarks
+        if remarks:
+            data[university_code][str(day)]["remarks"] = remarks
         data[university_code][str(day)]["updated_at"] = datetime.now().isoformat()
-        save_data(data)
-        return True
+        return save_data(data)
     return False
 
 def get_university_progress(university_code):
@@ -183,14 +193,12 @@ def get_university_progress(university_code):
         task_data = data[university_code].get(str(day), {})
         framework, task_name = TASK_SCHEDULE.get(day, ("Unknown", "Unknown"))
         status = task_data.get("status", "pending")
-        status_display = status.upper()
         
         records.append({
             "Day": day,
             "Framework": framework,
             "Task": task_name,
-            "Status": status_display,
-            "Status_Code": status,
+            "Status": status.upper(),
             "Remarks": task_data.get("remarks", ""),
             "Last Updated": task_data.get("updated_at", "")[:10] if task_data.get("updated_at") else ""
         })
@@ -257,19 +265,17 @@ def get_framework_progress(university_code=None):
 
 # Initialize data on first run
 if not os.path.exists(DATA_FILE):
-    save_data(load_data())
-
-# Initialize session state for navigation
-if 'page' not in st.session_state:
-    st.session_state.page = "Dashboard"
+    save_data(create_initial_data())
 
 # Sidebar
 with st.sidebar:
     st.title("📊 mahaSTRIDE")
     st.markdown("---")
     
-    menu_options = ["Dashboard", "University Progress", "Update Status", "Framework Analysis", "Reports", "About"]
-    selected_menu = st.radio("Navigation", menu_options, key="menu")
+    menu = st.radio(
+        "Navigation",
+        ["Dashboard", "University Progress", "Update Status", "Framework Analysis", "Reports", "About"]
+    )
     
     st.markdown("---")
     
@@ -293,7 +299,7 @@ with st.sidebar:
         st.progress(current_day/50)
 
 # Main content
-if selected_menu == "Dashboard":
+if menu == "Dashboard":
     st.markdown('<div class="main-header"><h1>🏠 mahaSTRIDE Dashboard</h1><p>Project Progress Tracking System</p></div>', unsafe_allow_html=True)
     
     # Key metrics
@@ -301,37 +307,13 @@ if selected_menu == "Dashboard":
     
     if not summary_df.empty:
         with col1:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>📋 Total Tasks</h3>
-                <h2>{50 * 7}</h2>
-                <small>Across 7 universities</small>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("📋 Total Tasks", "350", help="50 days × 7 universities")
         with col2:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>✅ Completed</h3>
-                <h2>{summary_df['Completed'].sum()}</h2>
-                <small>Tasks finished</small>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("✅ Completed", f"{summary_df['Completed'].sum()}")
         with col3:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>📊 Completion</h3>
-                <h2>{overall_pct:.1f}%</h2>
-                <small>Overall progress</small>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("📊 Completion", f"{overall_pct:.1f}%")
         with col4:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>🏛️ Universities</h3>
-                <h2>7/7</h2>
-                <small>Active participants</small>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("🏛️ Universities", "7")
     
     st.markdown("---")
     
@@ -353,31 +335,10 @@ if selected_menu == "Dashboard":
     
     if current_day <= 50:
         framework, task = TASK_SCHEDULE[current_day]
-        st.info(f"**Day {current_day} - {framework} Framework**\n\n📋 **Task:** {task}\n\n📅 **Due Date:** {(project_start + timedelta(days=current_day-1)).strftime('%Y-%m-%d')}")
-    
-    # Recent updates
-    st.markdown("---")
-    st.subheader("🔄 Recent Updates")
-    data = load_data()
-    recent_updates = []
-    for uni_code, uni_data in data.items():
-        for day_str, task_data in uni_data.items():
-            if task_data.get("updated_at") and task_data.get("status") == "completed":
-                recent_updates.append({
-                    "University": UNIVERSITIES[uni_code]["name"],
-                    "Day": day_str,
-                    "Task": TASK_SCHEDULE.get(int(day_str), ("", ""))[1],
-                    "Completed At": task_data["updated_at"][:16]
-                })
-    
-    if recent_updates:
-        recent_df = pd.DataFrame(recent_updates).sort_values("Completed At", ascending=False).head(10)
-        st.dataframe(recent_df, use_container_width=True)
-    else:
-        st.info("No recent updates yet. Start updating task statuses!")
+        st.info(f"**Day {current_day} - {framework} Framework**\n\n📋 **Task:** {task}")
 
-elif selected_menu == "University Progress":
-    st.title("🏛️ University Progress Tracking")
+elif menu == "University Progress":
+    st.title("🏛️ University Progress")
     st.markdown("---")
     
     selected_uni = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
@@ -390,205 +351,101 @@ elif selected_menu == "University Progress":
         
         if not df.empty:
             # Stats
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3 = st.columns(3)
             completed = len(df[df["Status"] == "COMPLETED"])
             in_progress = len(df[df["Status"] == "IN PROGRESS"])
-            pending = len(df[df["Status"] == "PENDING"])
             
             with col1:
-                st.metric("✅ Completed", completed, delta=f"{(completed/50*100):.1f}%")
+                st.metric("✅ Completed", completed)
             with col2:
                 st.metric("🔄 In Progress", in_progress)
             with col3:
-                st.metric("⏳ Pending", pending)
-            with col4:
-                st.metric("📊 Progress", f"{(completed/50*100):.1f}%")
+                st.metric("⏳ Pending", 50 - completed - in_progress)
             
             # Progress bar
             st.progress(completed / 50)
             
-            # Framework breakdown
-            st.subheader("📚 Framework-wise Breakdown")
-            framework_df = get_framework_progress(selected_uni)
-            if not framework_df.empty:
-                col1, col2 = st.columns(2)
-                for idx, (_, row) in enumerate(framework_df.iterrows()):
-                    if idx < 2:
-                        with col1:
-                            st.metric(row["Framework"], f"{row['Percentage']:.1f}%", f"{row['Completed']}/{row['Total']}")
-                    else:
-                        with col2:
-                            st.metric(row["Framework"], f"{row['Percentage']:.1f}%", f"{row['Completed']}/{row['Total']}")
-            
             # Detailed table
-            st.subheader("📋 Task-wise Progress")
-            
-            # Apply status colors
-            def style_status(val):
-                if val == "COMPLETED":
-                    return 'background-color: #90EE90'
-                elif val == "IN PROGRESS":
-                    return 'background-color: #FFD700'
-                return 'background-color: #FFB6C1'
-            
-            styled_df = df.style.applymap(style_status, subset=['Status'])
-            st.dataframe(styled_df, use_container_width=True, height=500)
+            st.subheader("Task Details")
+            st.dataframe(df, use_container_width=True, height=400)
 
-elif selected_menu == "Update Status":
+elif menu == "Update Status":
     st.title("✅ Update Task Status")
     st.markdown("---")
     
-    st.warning("⚠️ Coordinator Access Only - Please update your university's task status")
+    st.warning("⚠️ Coordinator Access Only")
     
-    selected_uni = st.selectbox("Select Your University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"], key="update_uni")
+    selected_uni = st.selectbox("University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
     
     if selected_uni:
         df = get_university_progress(selected_uni)
-        pending_df = df[df["Status_Code"].isin(["pending", "in_progress"])]
+        pending_df = df[df["Status"].isin(["PENDING", "IN PROGRESS"])]
         
         if not pending_df.empty:
-            st.subheader("📝 Update Task Status")
-            
-            # Create task selection
-            task_options = {row["Day"]: f"Day {row['Day']}: {row['Task']} ({row['Framework']})" for _, row in pending_df.iterrows()}
-            selected_day = st.selectbox("Select Task", options=list(task_options.keys()), format_func=lambda x: task_options[x])
-            
-            task_data = pending_df[pending_df["Day"] == selected_day].iloc[0]
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.info(f"**Framework:** {task_data['Framework']}\n\n**Task:** {task_data['Task']}")
-            with col2:
-                current_status = task_data["Status"]
-                if current_status == "PENDING":
-                    st.warning(f"**Current Status:** ⏳ {current_status}")
-                else:
-                    st.info(f"**Current Status:** 🔄 {current_status}")
-            
-            new_status = st.radio(
-                "Update Status To:", 
-                ["in_progress", "completed"],
-                format_func=lambda x: "🔄 In Progress" if x == "in_progress" else "✅ Completed"
+            selected_day = st.selectbox(
+                "Select Task", 
+                pending_df["Day"].tolist(),
+                format_func=lambda x: f"Day {x}: {pending_df[pending_df['Day']==x]['Task'].iloc[0]}"
             )
             
-            remarks = st.text_area("📝 Remarks (optional)", placeholder="Add any notes about this task...")
+            task_data = pending_df[pending_df["Day"] == selected_day].iloc[0]
+            st.info(f"**Framework:** {task_data['Framework']}\n\n**Current Status:** {task_data['Status']}")
             
-            if st.button("🚀 Update Status", type="primary", use_container_width=True):
+            new_status = st.radio("Update Status", ["in_progress", "completed"], format_func=lambda x: "🔄 In Progress" if x == "in_progress" else "✅ Completed")
+            remarks = st.text_area("Remarks")
+            
+            if st.button("Update", type="primary"):
                 if update_task_status(selected_uni, selected_day, new_status, remarks):
-                    st.success(f"✅ Task status updated to {new_status.upper()} successfully!")
-                    st.balloons()
+                    st.success("✅ Status updated successfully!")
                     st.rerun()
-                else:
-                    st.error("❌ Failed to update status. Please try again.")
         else:
-            st.markdown("""
-            <div class="success-card">
-                <h3>🎉 Congratulations!</h3>
-                <p>All tasks for your university have been completed!</p>
-                <p>Great work by the entire team!</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.success("🎉 All tasks completed!")
 
-elif selected_menu == "Framework Analysis":
-    st.title("📚 Framework-wise Analysis")
+elif menu == "Framework Analysis":
+    st.title("📚 Framework Analysis")
     st.markdown("---")
     
     framework_df = get_framework_progress()
     
     if not framework_df.empty:
-        # Framework selector with descriptions
-        frameworks_info = {
-            "SAMARTH": "📖 Days 1-25: Core Implementation",
-            "NEP": "🎓 Days 26-35: National Education Policy",
-            "AEGIS": "🛡️ Days 36-42: Security & Governance",
-            "IKS": "🏛️ Days 43-50: Indian Knowledge Systems"
-        }
-        
-        selected_framework = st.selectbox("Select Framework", list(frameworks_info.keys()), format_func=lambda x: frameworks_info[x])
+        selected_framework = st.selectbox("Select Framework", ["SAMARTH", "NEP", "AEGIS", "IKS"])
         
         filtered_df = framework_df[framework_df["Framework"] == selected_framework]
         
-        # Create bar chart
+        # Chart
         chart_data = filtered_df.set_index("University")["Percentage"]
         st.bar_chart(chart_data)
         
-        # Statistics
-        st.subheader("📊 Framework Statistics")
+        # Stats
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("📈 Average Completion", f"{filtered_df['Percentage'].mean():.1f}%")
+            st.metric("Average", f"{filtered_df['Percentage'].mean():.1f}%")
         with col2:
-            st.metric("🏆 Highest Completion", f"{filtered_df['Percentage'].max():.1f}%")
+            st.metric("Highest", f"{filtered_df['Percentage'].max():.1f}%")
         with col3:
-            st.metric("📉 Lowest Completion", f"{filtered_df['Percentage'].min():.1f}%")
+            st.metric("Lowest", f"{filtered_df['Percentage'].min():.1f}%")
         
-        # Detailed breakdown
-        st.subheader("📋 Detailed Breakdown")
-        display_df = filtered_df[["University", "Completed", "Total", "Percentage"]].sort_values("Percentage", ascending=False)
-        st.dataframe(display_df, use_container_width=True)
-        
-        # Show framework tasks
-        with st.expander(f"📖 View All Tasks in {selected_framework} Framework"):
-            if selected_framework == "SAMARTH":
-                days = range(1, 26)
-            elif selected_framework == "NEP":
-                days = range(26, 36)
-            elif selected_framework == "AEGIS":
-                days = range(36, 43)
-            else:
-                days = range(43, 51)
-            
-            for day in days:
-                _, task = TASK_SCHEDULE[day]
-                st.write(f"**Day {day}:** {task}")
+        # Details
+        st.subheader("Detailed Breakdown")
+        st.dataframe(filtered_df[["University", "Completed", "Total", "Percentage"]].sort_values("Percentage", ascending=False), use_container_width=True)
 
-elif selected_menu == "Reports":
-    st.title("📊 Reports & Analytics")
+elif menu == "Reports":
+    st.title("📊 Reports")
     st.markdown("---")
     
-    report_type = st.selectbox("Select Report Type", ["Summary Report", "Framework Report", "Export Data"])
+    report_type = st.selectbox("Report Type", ["Summary Report", "Export Data"])
     
     if report_type == "Summary Report":
-        st.subheader("📈 Overall Summary Report")
         summary_df = get_summary_stats()
         if not summary_df.empty:
-            # Display summary metrics
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Total Tasks", f"{summary_df['Completed'].sum()}/350")
-            with col2:
-                st.metric("Average Completion", f"{summary_df['Completion %'].mean():.1f}%")
-            with col3:
-                best_uni = summary_df.loc[summary_df['Completion %'].idxmax(), 'University']
-                st.metric("Top Performer", best_uni)
-            
             st.dataframe(summary_df, use_container_width=True)
             
-            # Download button
-            csv = summary_df.to_csv(index=False)
-            st.download_button("📥 Download Summary Report", csv, "mahastride_summary.csv", "text/csv")
-    
-    elif report_type == "Framework Report":
-        st.subheader("📚 Framework Performance Report")
-        framework_df = get_framework_progress()
-        if not framework_df.empty:
-            # Create pivot table
-            pivot_df = framework_df.pivot(index="University", columns="Framework", values="Percentage")
-            st.dataframe(pivot_df, use_container_width=True)
-            
-            # Heatmap style
-            st.subheader("📊 Framework Completion Heatmap")
-            st.dataframe(pivot_df.style.background_gradient(cmap='YlOrRd', axis=None), use_container_width=True)
-            
             # Download
-            csv = framework_df.to_csv(index=False)
-            st.download_button("📥 Download Framework Report", csv, "framework_report.csv", "text/csv")
+            csv = summary_df.to_csv(index=False)
+            st.download_button("Download CSV", csv, "summary_report.csv", "text/csv")
     
     else:
-        st.subheader("💾 Export All Data")
-        
-        if st.button("Generate Complete Export", type="primary"):
-            # Create comprehensive export
+        if st.button("Export All Data"):
             all_data = []
             for uni_code in UNIVERSITIES.keys():
                 df = get_university_progress(uni_code)
@@ -596,96 +453,36 @@ elif selected_menu == "Reports":
                 all_data.append(df)
             
             if all_data:
-                combined_df = pd.concat(all_data, ignore_index=True)
-                
-                # Summary statistics
-                st.success("✅ Data export ready!")
-                st.dataframe(combined_df.head(100), use_container_width=True)
-                
-                # Download buttons
-                csv_full = combined_df.to_csv(index=False)
-                st.download_button("📥 Download Complete Data (CSV)", csv_full, "complete_mahastride_data.csv", "text/csv")
-                
-                # Summary stats
-                summary = get_summary_stats()
-                csv_summary = summary.to_csv(index=False)
-                st.download_button("📥 Download Summary Stats (CSV)", csv_summary, "summary_stats.csv", "text/csv")
+                combined = pd.concat(all_data, ignore_index=True)
+                csv = combined.to_csv(index=False)
+                st.download_button("Download CSV", csv, "all_data.csv", "text/csv")
 
-else:  # About
-    st.title("ℹ️ About mahaSTRIDE Tracker")
+else:
+    st.title("ℹ️ About")
     st.markdown("---")
     
     st.markdown("""
-    <div class="main-header">
-        <h2>🎯 Project Overview</h2>
-    </div>
-    """, unsafe_allow_html=True)
+    ### 🎯 mahaSTRIDE Project Tracker
     
-    col1, col2 = st.columns(2)
+    **Duration:** 10 Weeks (50 Days)  
+    **Universities:** 7 Participating Universities  
+    **Frameworks:** SAMARTH, NEP, AEGIS, IKS
     
-    with col1:
-        st.markdown("""
-        ### 📋 Project Details
-        
-        **Project Name:** mahaSTRIDE  
-        **Duration:** 10 Weeks (50 Days)  
-        **Universities:** 7 Participating  
-        **Frameworks:** 4 Major Frameworks
-        
-        #### 🎓 Participating Universities
-        1. **Mumbai University** - Ms Sneha, Shubham
-        2. **SSPU Pune** - Mr Jagan
-        3. **COEP Tech University** - Mr Vaibhav
-        4. **Amravati University** - Mr Pratham
-        5. **Nagpur University** - Ms Anjali
-        6. **KBCNMU Jalgaon University** - Mr Nitish
-        7. **BAMU University Aurangabad** - Mr Atharv
-        
-        #### 👨‍💻 Developer
-        Developed for **Dr. Harshal**
-        """)
+    ### 🏛️ Universities
     
-    with col2:
-        st.markdown("""
-        ### 📚 Framework Timeline
-        
-        #### SAMARTH Framework (Days 1-25)
-        - Faculty Roster, Students, Financial
-        - IPR/Patents, Publications
-        - PhD Faculties, SAM TLR, SAM RP
-        - SAM-GO, SAM-OI, SAM PR
-        
-        #### NEP Framework (Days 26-35)
-        - NEP CUR, NEP-TCH, NEP RES
-        - NEP GOV, NEP INC, NEP OUT
-        - NEP-DIG, NEP SUS
-        
-        #### AEGIS Framework (Days 36-42)
-        - AEG-BI, AEG-EDU, AEG-GRD
-        - AEG-INC, AEG-SAF
-        
-        #### IKS Framework (Days 43-50)
-        - IKS-CUR, IKS-TCH, IKS-RES
-        - IKS-GOV, IKS-OUT, IKS-DIG
-        """)
+    1. **Mumbai University** - Ms Sneha, Shubham
+    2. **SSPU Pune** - Mr Jagan  
+    3. **COEP Tech University** - Mr Vaibhav
+    4. **Amravati University** - Mr Pratham
+    5. **Nagpur University** - Ms Anjali
+    6. **KBCNMU Jalgaon University** - Mr Nitish
+    7. **BAMU University Aurangabad** - Mr Atharv
     
-    st.markdown("---")
+    ### 👨‍💻 Developer
     
-    st.markdown("""
-    <div class="success-card">
-        <h3>🚀 Features</h3>
-        <ul>
-            <li>✅ Real-time progress tracking across 7 universities</li>
-            <li>📊 Interactive dashboards with visual analytics</li>
-            <li>📚 Framework-wise performance analysis</li>
-            <li>📈 Automated report generation</li>
-            <li>💾 Data export capabilities (CSV format)</li>
-            <li>📱 Mobile-responsive design</li>
-            <li>🔄 Live status updates</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
+    Developed for **Dr. Harshal**
+    """)
 
 # Footer
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: gray; padding: 1rem;'>© 2024 mahaSTRIDE Project Tracker | Developed for Dr. Harshal | Version 2.0</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray;'>© 2024 mahaSTRIDE Project Tracker | Developed for Dr. Harshal</p>", unsafe_allow_html=True)
