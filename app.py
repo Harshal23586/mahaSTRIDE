@@ -388,7 +388,7 @@ def create_admin_dashboard():
     
     st.markdown("---")
     
-    # Timeline Heatmap (fixed version)
+    # Timeline Heatmap
     st.subheader("📅 Project Timeline Heatmap")
     
     # Prepare data for heatmap
@@ -483,14 +483,11 @@ def create_admin_dashboard():
     
     cumulative_data = []
     for day in range(1, 51):
-        cumulative_completed = 0
-        for uni_code in UNIVERSITIES.keys():
-            if uni_data.get(str(day), {}).get("status") == "completed":
-                cumulative_completed += 1
-        cumulative_data.append({"Day": day, "Cumulative": cumulative_completed})
+        day_completed = sum(1 for uni_data in data.values() if uni_data.get(str(day), {}).get("status") == "completed")
+        cumulative_data.append({"Day": day, "Completed": day_completed})
     
     cum_df = pd.DataFrame(cumulative_data)
-    cum_df["Cumulative_Total"] = cum_df["Cumulative"].cumsum()
+    cum_df["Cumulative_Total"] = cum_df["Completed"].cumsum()
     
     fig2 = go.Figure()
     fig2.add_trace(go.Scatter(
@@ -520,9 +517,25 @@ def create_admin_dashboard():
     framework_detail = get_framework_progress()
     if not framework_detail.empty:
         pivot_framework = framework_detail.pivot(index="University", columns="Framework", values="Percentage")
-        # Apply styling
-        styled_pivot = pivot_framework.style.background_gradient(cmap='YlOrRd', axis=None)
-        st.dataframe(styled_pivot, use_container_width=True)
+        # Fill NaN values with 0
+        pivot_framework = pivot_framework.fillna(0)
+        # Display without styling to avoid matplotlib dependency
+        st.dataframe(pivot_framework, use_container_width=True)
+        
+        # Add a bar chart for framework comparison
+        st.subheader("📊 Framework Comparison Chart")
+        fig3 = px.bar(
+            framework_detail, 
+            x="University", 
+            y="Percentage", 
+            color="Framework",
+            barmode="group",
+            title="Framework Completion by University",
+            text="Percentage"
+        )
+        fig3.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+        fig3.update_layout(height=500)
+        st.plotly_chart(fig3, use_container_width=True)
     
     # Recent Activity
     st.subheader("🔄 Recent Activity Log")
@@ -761,14 +774,52 @@ def main():
             st.title("📚 Framework Analytics")
             framework_df = get_framework_progress()
             if not framework_df.empty:
+                # Create pivot table
                 pivot_df = framework_df.pivot(index="University", columns="Framework", values="Percentage")
                 # Fill NaN values with 0
                 pivot_df = pivot_df.fillna(0)
-                st.dataframe(pivot_df.style.background_gradient(cmap='YlOrRd', axis=None), use_container_width=True)
+                
+                # Display as regular dataframe (no styling to avoid matplotlib)
+                st.subheader("📊 Framework Completion Matrix (%)")
+                st.dataframe(pivot_df, use_container_width=True)
                 
                 # Framework comparison chart
-                fig = px.bar(framework_df, x="Framework", y="Percentage", color="University", barmode="group", title="Framework Completion by University")
+                st.subheader("📊 Framework Comparison Chart")
+                fig = px.bar(
+                    framework_df, 
+                    x="University", 
+                    y="Percentage", 
+                    color="Framework",
+                    barmode="group",
+                    title="Framework Completion by University",
+                    text="Percentage",
+                    height=500
+                )
+                fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # Heatmap visualization
+                st.subheader("📊 Framework Completion Heatmap")
+                fig2 = px.imshow(
+                    pivot_df,
+                    text_auto=True,
+                    aspect="auto",
+                    color_continuous_scale="Viridis",
+                    title="Framework Completion Heatmap (%)"
+                )
+                fig2.update_layout(height=500)
+                st.plotly_chart(fig2, use_container_width=True)
+                
+                # Summary statistics
+                st.subheader("📈 Framework Summary Statistics")
+                col1, col2, col3 = st.columns(3)
+                framework_avg = framework_df.groupby("Framework")["Percentage"].mean()
+                with col1:
+                    st.metric("Best Framework", framework_avg.idxmax(), f"{framework_avg.max():.1f}%")
+                with col2:
+                    st.metric("Needs Improvement", framework_avg.idxmin(), f"{framework_avg.min():.1f}%")
+                with col3:
+                    st.metric("Overall Average", f"{framework_avg.mean():.1f}%")
         elif menu == "User Management":
             st.title("👥 User Management")
             st.info("Current Users:")
