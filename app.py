@@ -1,8 +1,12 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 import os
 import json
+from hashlib import sha256
 
 # Page configuration
 st.set_page_config(
@@ -55,6 +59,13 @@ st.markdown("""
         border-radius: 5px;
         margin: 1rem 0;
     }
+    .admin-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
     .stButton > button {
         background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
         color: white;
@@ -67,8 +78,39 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
+    .timeline-container {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# User credentials (same for all users of same role)
+USERS = {
+    "admin@mahastride.com": {
+        "password": sha256("Admin@2026".encode()).hexdigest(),
+        "role": "admin",
+        "name": "Dr. Harshal"
+    },
+    "dataanalyst@mahastride.com": {
+        "password": sha256("Data@2026".encode()).hexdigest(),
+        "role": "data_analyst",
+        "name": "Data Analyst"
+    }
+}
+
+# University to Data Analyst mapping (each analyst can edit their assigned university)
+UNIVERSITY_ANALYST_MAPPING = {
+    "MU": "dataanalyst@mahastride.com",
+    "SSPU": "dataanalyst@mahastride.com",
+    "COEP": "dataanalyst@mahastride.com",
+    "AU": "dataanalyst@mahastride.com",
+    "NU": "dataanalyst@mahastride.com",
+    "KBCNMU": "dataanalyst@mahastride.com",
+    "BAMU": "dataanalyst@mahastride.com",
+}
 
 # Task schedule
 TASK_SCHEDULE = {
@@ -137,10 +179,21 @@ UNIVERSITIES = {
 
 # Project start date - May 18, 2026
 PROJECT_START_DATE = datetime(2026, 5, 18)
-PROJECT_END_DATE = PROJECT_START_DATE + timedelta(days=49)  # 50 days total (day 1 to day 50)
+PROJECT_END_DATE = PROJECT_START_DATE + timedelta(days=49)
 
 # Data file path
 DATA_FILE = "progress_data.json"
+
+def hash_password(password):
+    """Hash a password"""
+    return sha256(password.encode()).hexdigest()
+
+def authenticate_user(email, password):
+    """Authenticate user"""
+    if email in USERS:
+        if USERS[email]["password"] == hash_password(password):
+            return True, USERS[email]["role"], USERS[email]["name"]
+    return False, None, None
 
 def load_data():
     """Load progress data from JSON file"""
@@ -162,7 +215,8 @@ def create_initial_data():
             data[uni_code][str(day)] = {
                 "status": "pending",
                 "remarks": "",
-                "updated_at": None
+                "updated_at": None,
+                "updated_by": None
             }
     return data
 
@@ -175,7 +229,7 @@ def save_data(data):
     except:
         return False
 
-def update_task_status(university_code, day, status, remarks=""):
+def update_task_status(university_code, day, status, remarks="", updated_by=""):
     """Update task status"""
     data = load_data()
     if university_code in data and str(day) in data[university_code]:
@@ -183,6 +237,7 @@ def update_task_status(university_code, day, status, remarks=""):
         if remarks:
             data[university_code][str(day)]["remarks"] = remarks
         data[university_code][str(day)]["updated_at"] = datetime.now().isoformat()
+        data[university_code][str(day)]["updated_by"] = updated_by
         return save_data(data)
     return False
 
@@ -197,8 +252,6 @@ def get_university_progress(university_code):
         task_data = data[university_code].get(str(day), {})
         framework, task_name = TASK_SCHEDULE.get(day, ("Unknown", "Unknown"))
         status = task_data.get("status", "pending")
-        
-        # Calculate due date
         due_date = PROJECT_START_DATE + timedelta(days=day-1)
         
         records.append({
@@ -206,9 +259,11 @@ def get_university_progress(university_code):
             "Framework": framework,
             "Task": task_name,
             "Status": status.upper(),
+            "Status_Code": status,
             "Due Date": due_date.strftime("%Y-%m-%d"),
             "Remarks": task_data.get("remarks", ""),
-            "Last Updated": task_data.get("updated_at", "")[:10] if task_data.get("updated_at") else ""
+            "Last Updated": task_data.get("updated_at", "")[:10] if task_data.get("updated_at") else "",
+            "Updated By": task_data.get("updated_by", "")
         })
     return pd.DataFrame(records)
 
@@ -224,6 +279,12 @@ def get_summary_stats():
         in_progress = sum(1 for d in uni_data.values() if d.get("status") == "in_progress")
         pending = total - completed - in_progress
         
+        # Calculate on-track status
+        current_day = get_current_project_day()
+        expected_completion = (current_day / total * 100) if current_day > 0 else 0
+        actual_completion = (completed / total * 100) if total > 0 else 0
+        is_on_track = actual_completion >= expected_completion - 10
+        
         stats.append({
             "University": uni_info["name"],
             "Code": uni_code,
@@ -231,7 +292,8 @@ def get_summary_stats():
             "Completed": completed,
             "In Progress": in_progress,
             "Pending": pending,
-            "Completion %": round((completed / total * 100), 1)
+            "Completion %": round((completed / total * 100), 1),
+            "On Track": "✅ Yes" if is_on_track else "⚠️ Behind"
         })
     
     return pd.DataFrame(stats)
@@ -259,12 +321,14 @@ def get_framework_progress(university_code=None):
         for framework, days in frameworks.items():
             total = len(days)
             completed = sum(1 for day in days if uni_data.get(str(day), {}).get("status") == "completed")
+            in_progress = sum(1 for day in days if uni_data.get(str(day), {}).get("status") == "in_progress")
             percentage = (completed / total * 100) if total > 0 else 0
             
             records.append({
                 "University": uni_name,
                 "Framework": framework,
                 "Completed": completed,
+                "In Progress": in_progress,
                 "Total": total,
                 "Percentage": round(percentage, 1)
             })
@@ -275,254 +339,471 @@ def get_current_project_day():
     """Get current day of the project"""
     today = datetime.now()
     if today < PROJECT_START_DATE:
-        return 0  # Project hasn't started yet
+        return 0
     days_passed = (today - PROJECT_START_DATE).days
     return min(days_passed + 1, 50)
 
-# Initialize data on first run
-if not os.path.exists(DATA_FILE):
-    save_data(create_initial_data())
-
-# Sidebar
-with st.sidebar:
-    st.title("📊 mahaSTRIDE")
+def create_admin_dashboard():
+    """Create comprehensive admin dashboard with all visualizations"""
+    
+    # Project header
+    st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2><p>Complete Project Analytics & Insights</p></div>', unsafe_allow_html=True)
+    
+    # Project timeline info
+    current_day = get_current_project_day()
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Project Day", f"{current_day}/50")
+    with col2:
+        st.metric("Start Date", PROJECT_START_DATE.strftime("%Y-%m-%d"))
+    with col3:
+        st.metric("End Date", PROJECT_END_DATE.strftime("%Y-%m-%d"))
+    with col4:
+        days_left = 50 - current_day if current_day > 0 else 50
+        st.metric("Days Remaining", days_left)
+    
     st.markdown("---")
     
-    menu = st.radio(
-        "Navigation",
-        ["Dashboard", "University Progress", "Update Status", "Framework Analysis", "Reports", "About"]
+    # Key Performance Indicators
+    st.subheader("🎯 Key Performance Indicators")
+    summary_df = get_summary_stats()
+    
+    if not summary_df.empty:
+        col1, col2, col3, col4, col5 = st.columns(5)
+        with col1:
+            total_completed = summary_df["Completed"].sum()
+            st.metric("✅ Total Completed", f"{total_completed}/350", delta=f"{(total_completed/350*100):.1f}%")
+        with col2:
+            avg_completion = summary_df["Completion %"].mean()
+            st.metric("📊 Avg Completion", f"{avg_completion:.1f}%")
+        with col3:
+            on_track_count = len(summary_df[summary_df["On Track"] == "✅ Yes"])
+            st.metric("🏆 On Track", f"{on_track_count}/7")
+        with col4:
+            total_in_progress = summary_df["In Progress"].sum()
+            st.metric("🔄 In Progress", total_in_progress)
+        with col5:
+            best_uni = summary_df.loc[summary_df["Completion %"].idxmax(), "University"]
+            st.metric("🥇 Top Performer", best_uni[:15])
+    
+    st.markdown("---")
+    
+    # Timeline Gantt Chart
+    st.subheader("📅 Project Timeline Gantt Chart")
+    
+    # Prepare data for Gantt chart
+    gantt_data = []
+    data = load_data()
+    for uni_code, uni_info in UNIVERSITIES.items():
+        uni_data = data.get(uni_code, {})
+        for day in range(1, 51):
+            task_data = uni_data.get(str(day), {})
+            status = task_data.get("status", "pending")
+            due_date = PROJECT_START_DATE + timedelta(days=day-1)
+            
+            # Determine color based on status
+            color = "#FFB6C1" if status == "pending" else "#FFD700" if status == "in_progress" else "#90EE90"
+            
+            gantt_data.append({
+                "University": uni_info["name"],
+                "Day": day,
+                "Task": TASK_SCHEDULE[day][1][:30],
+                "Status": status.upper(),
+                "Due Date": due_date,
+                "Color": color
+            })
+    
+    gantt_df = pd.DataFrame(gantt_data)
+    
+    # Create Gantt-like heatmap
+    pivot_data = gantt_df.pivot_table(index="University", columns="Day", values="Status", aggfunc='first')
+    fig = px.imshow(
+        pivot_data.applymap(lambda x: 2 if x == "COMPLETED" else 1 if x == "IN PROGRESS" else 0),
+        color_continuous_scale=["red", "yellow", "green"],
+        aspect="auto",
+        title="Project Progress Heatmap (Red=Pending, Yellow=In Progress, Green=Completed)"
+    )
+    fig.update_layout(height=400)
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Multi-metric charts
+    st.subheader("📈 Performance Analytics")
+    
+    # Create subplots
+    fig = make_subplots(
+        rows=2, cols=2,
+        subplot_titles=("Completion % by University", "Framework-wise Progress", "Task Status Distribution", "Daily Progress Trend")
     )
     
-    st.markdown("---")
+    # Chart 1: Completion by University
+    fig.add_trace(
+        go.Bar(x=summary_df["University"], y=summary_df["Completion %"], marker_color='#1e3c72', text=summary_df["Completion %"], textposition='auto'),
+        row=1, col=1
+    )
     
-    # Show overall progress
-    summary_df = get_summary_stats()
-    if not summary_df.empty:
-        total_completed = summary_df["Completed"].sum()
-        total_tasks = 50 * 7
-        overall_pct = (total_completed / total_tasks * 100) if total_tasks > 0 else 0
-        st.metric("Overall Progress", f"{overall_pct:.1f}%")
-        st.progress(overall_pct / 100)
-        
-        # Project timeline
-        st.markdown("---")
-        st.markdown("### 📅 Timeline")
-        current_day = get_current_project_day()
-        
-        if current_day == 0:
-            st.info("Project starts on May 18, 2026")
-            st.write(f"**Start Date:** {PROJECT_START_DATE.strftime('%Y-%m-%d')}")
-            st.write(f"**End Date:** {PROJECT_END_DATE.strftime('%Y-%m-%d')}")
-        else:
-            st.write(f"**Day:** {current_day} / 50")
-            st.write(f"**Progress:** {(current_day/50*100):.1f}%")
-            st.progress(current_day/50)
-            st.write(f"**Start Date:** {PROJECT_START_DATE.strftime('%Y-%m-%d')}")
-            st.write(f"**End Date:** {PROJECT_END_DATE.strftime('%Y-%m-%d')}")
-
-# Main content
-if menu == "Dashboard":
-    st.markdown('<div class="main-header"><h1>🏠 mahaSTRIDE Dashboard</h1><p>Project Progress Tracking System</p></div>', unsafe_allow_html=True)
-    
-    # Project info banner
-    current_day = get_current_project_day()
-    if current_day == 0:
-        st.info(f"🚀 Project starts on {PROJECT_START_DATE.strftime('%B %d, %Y')}")
-    elif current_day <= 50:
-        days_remaining = 50 - current_day
-        st.success(f"📅 Project is ongoing - Day {current_day} of 50 | {days_remaining} days remaining")
-    else:
-        st.success("🎉 Project Completed! Congratulations to all teams!")
-    
-    # Key metrics
-    col1, col2, col3, col4 = st.columns(4)
-    
-    if not summary_df.empty:
-        with col1:
-            st.metric("📋 Total Tasks", "350", help="50 days × 7 universities")
-        with col2:
-            st.metric("✅ Completed", f"{summary_df['Completed'].sum()}")
-        with col3:
-            st.metric("📊 Completion", f"{overall_pct:.1f}%")
-        with col4:
-            st.metric("🏛️ Universities", "7")
-    
-    st.markdown("---")
-    
-    # University progress chart
-    st.subheader("📈 University Progress")
-    if not summary_df.empty:
-        chart_data = summary_df.set_index("University")["Completion %"]
-        st.bar_chart(chart_data)
-        
-        with st.expander("📋 View Detailed Statistics"):
-            st.dataframe(summary_df, use_container_width=True)
-    
-    # Today's tasks
-    st.markdown("---")
-    st.subheader("📅 Today's Schedule")
-    
-    if current_day > 0 and current_day <= 50:
-        framework, task = TASK_SCHEDULE[current_day]
-        due_date = PROJECT_START_DATE + timedelta(days=current_day-1)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info(f"**Day {current_day} - {framework} Framework**\n\n📋 **Task:** {task}")
-        with col2:
-            st.info(f"📅 **Due Date:** {due_date.strftime('%Y-%m-%d')}")
-    elif current_day == 0:
-        st.info("Project hasn't started yet. First day is May 18, 2026")
-    else:
-        st.success("Project has been completed!")
-
-elif menu == "University Progress":
-    st.title("🏛️ University Progress")
-    st.markdown("---")
-    
-    selected_uni = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
-    
-    if selected_uni:
-        uni_info = UNIVERSITIES[selected_uni]
-        st.info(f"**Coordinators:** {uni_info['coordinators']}")
-        
-        df = get_university_progress(selected_uni)
-        
-        if not df.empty:
-            # Stats
-            col1, col2, col3 = st.columns(3)
-            completed = len(df[df["Status"] == "COMPLETED"])
-            in_progress = len(df[df["Status"] == "IN PROGRESS"])
-            
-            with col1:
-                st.metric("✅ Completed", completed)
-            with col2:
-                st.metric("🔄 In Progress", in_progress)
-            with col3:
-                st.metric("⏳ Pending", 50 - completed - in_progress)
-            
-            # Progress bar
-            st.progress(completed / 50)
-            
-            # Detailed table
-            st.subheader("Task Details")
-            st.dataframe(df, use_container_width=True, height=400)
-
-elif menu == "Update Status":
-    st.title("✅ Update Task Status")
-    st.markdown("---")
-    
-    st.warning("⚠️ Coordinator Access Only")
-    
-    selected_uni = st.selectbox("University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
-    
-    if selected_uni:
-        df = get_university_progress(selected_uni)
-        pending_df = df[df["Status"].isin(["PENDING", "IN PROGRESS"])]
-        
-        if not pending_df.empty:
-            selected_day = st.selectbox(
-                "Select Task", 
-                pending_df["Day"].tolist(),
-                format_func=lambda x: f"Day {x}: {pending_df[pending_df['Day']==x]['Task'].iloc[0]} (Due: {pending_df[pending_df['Day']==x]['Due Date'].iloc[0]})"
-            )
-            
-            task_data = pending_df[pending_df["Day"] == selected_day].iloc[0]
-            st.info(f"**Framework:** {task_data['Framework']}\n\n**Current Status:** {task_data['Status']}\n\n**Due Date:** {task_data['Due Date']}")
-            
-            new_status = st.radio("Update Status", ["in_progress", "completed"], format_func=lambda x: "🔄 In Progress" if x == "in_progress" else "✅ Completed")
-            remarks = st.text_area("Remarks")
-            
-            if st.button("Update", type="primary"):
-                if update_task_status(selected_uni, selected_day, new_status, remarks):
-                    st.success("✅ Status updated successfully!")
-                    st.rerun()
-        else:
-            st.success("🎉 All tasks completed!")
-
-elif menu == "Framework Analysis":
-    st.title("📚 Framework Analysis")
-    st.markdown("---")
-    
+    # Chart 2: Framework-wise Progress
     framework_df = get_framework_progress()
-    
     if not framework_df.empty:
-        selected_framework = st.selectbox("Select Framework", ["SAMARTH", "NEP", "AEGIS", "IKS"])
-        
-        filtered_df = framework_df[framework_df["Framework"] == selected_framework]
-        
-        # Chart
-        chart_data = filtered_df.set_index("University")["Percentage"]
-        st.bar_chart(chart_data)
-        
-        # Stats
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Average", f"{filtered_df['Percentage'].mean():.1f}%")
-        with col2:
-            st.metric("Highest", f"{filtered_df['Percentage'].max():.1f}%")
-        with col3:
-            st.metric("Lowest", f"{filtered_df['Percentage'].min():.1f}%")
-        
-        # Details
-        st.subheader("Detailed Breakdown")
-        st.dataframe(filtered_df[["University", "Completed", "Total", "Percentage"]].sort_values("Percentage", ascending=False), use_container_width=True)
-
-elif menu == "Reports":
-    st.title("📊 Reports")
-    st.markdown("---")
+        framework_avg = framework_df.groupby("Framework")["Percentage"].mean().reset_index()
+        fig.add_trace(
+            go.Bar(x=framework_avg["Framework"], y=framework_avg["Percentage"], marker_color='#2a5298', text=framework_avg["Percentage"], textposition='auto'),
+            row=1, col=2
+        )
     
-    report_type = st.selectbox("Report Type", ["Summary Report", "Export Data"])
+    # Chart 3: Task Status Distribution (Donut chart)
+    status_counts = {
+        "Completed": summary_df["Completed"].sum(),
+        "In Progress": summary_df["In Progress"].sum(),
+        "Pending": summary_df["Pending"].sum()
+    }
+    fig.add_trace(
+        go.Pie(labels=list(status_counts.keys()), values=list(status_counts.values()), hole=0.3),
+        row=2, col=1
+    )
     
-    if report_type == "Summary Report":
-        summary_df = get_summary_stats()
-        if not summary_df.empty:
-            st.dataframe(summary_df, use_container_width=True)
-            
-            # Download
-            csv = summary_df.to_csv(index=False)
-            st.download_button("Download CSV", csv, "summary_report.csv", "text/csv")
+    # Chart 4: Daily Progress Trend
+    daily_progress = []
+    for day in range(1, 51):
+        completed = sum(1 for uni_data in data.values() if uni_data.get(str(day), {}).get("status") == "completed")
+        daily_progress.append({"Day": day, "Completed": completed})
+    daily_df = pd.DataFrame(daily_progress)
+    fig.add_trace(
+        go.Scatter(x=daily_df["Day"], y=daily_df["Completed"], mode='lines+markers', name='Daily Completions', line=dict(color='green', width=2)),
+        row=2, col=2
+    )
     
+    fig.update_layout(height=800, showlegend=True)
+    fig.update_xaxes(title_text="University", row=1, col=1)
+    fig.update_xaxes(title_text="Framework", row=1, col=2)
+    fig.update_xaxes(title_text="Day", row=2, col=2)
+    fig.update_yaxes(title_text="Completion %", row=1, col=1)
+    fig.update_yaxes(title_text="Completion %", row=1, col=2)
+    fig.update_yaxes(title_text="Number of Tasks", row=2, col=2)
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # University Ranking
+    st.subheader("🏆 University Rankings")
+    ranking_df = summary_df[["University", "Completion %", "Completed", "In Progress", "Pending", "On Track"]].sort_values("Completion %", ascending=False)
+    ranking_df.index = range(1, len(ranking_df) + 1)
+    st.dataframe(ranking_df, use_container_width=True)
+    
+    # Framework Analysis
+    st.subheader("📚 Detailed Framework Analysis")
+    framework_detail = get_framework_progress()
+    if not framework_detail.empty:
+        pivot_framework = framework_detail.pivot(index="University", columns="Framework", values="Percentage")
+        st.dataframe(pivot_framework.style.background_gradient(cmap='YlOrRd', axis=None), use_container_width=True)
+    
+    # Recent Activity
+    st.subheader("🔄 Recent Activity Log")
+    recent_updates = []
+    for uni_code, uni_data in data.items():
+        for day_str, task_data in uni_data.items():
+            if task_data.get("updated_at"):
+                recent_updates.append({
+                    "University": UNIVERSITIES[uni_code]["name"],
+                    "Day": day_str,
+                    "Task": TASK_SCHEDULE.get(int(day_str), ("", ""))[1],
+                    "Status": task_data.get("status", "").upper(),
+                    "Updated By": task_data.get("updated_by", ""),
+                    "Updated At": task_data["updated_at"]
+                })
+    
+    if recent_updates:
+        recent_df = pd.DataFrame(recent_updates).sort_values("Updated At", ascending=False).head(20)
+        st.dataframe(recent_df, use_container_width=True)
     else:
-        if st.button("Export All Data"):
+        st.info("No updates recorded yet")
+    
+    # Export Options
+    st.subheader("💾 Export Data")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📥 Export Complete Report (CSV)", use_container_width=True):
             all_data = []
             for uni_code in UNIVERSITIES.keys():
                 df = get_university_progress(uni_code)
                 df["University"] = UNIVERSITIES[uni_code]["name"]
                 all_data.append(df)
-            
             if all_data:
                 combined = pd.concat(all_data, ignore_index=True)
                 csv = combined.to_csv(index=False)
-                st.download_button("Download CSV", csv, "all_data.csv", "text/csv")
+                st.download_button("Download CSV", csv, "complete_mahastride_data.csv", "text/csv")
+    with col2:
+        if st.button("📊 Export Summary Report (CSV)", use_container_width=True):
+            csv = summary_df.to_csv(index=False)
+            st.download_button("Download CSV", csv, "summary_report.csv", "text/csv")
 
-else:
-    st.title("ℹ️ About")
-    st.markdown("---")
+def create_data_analyst_dashboard(user_email):
+    """Create data analyst dashboard for assigned universities"""
     
-    st.markdown(f"""
-    ### 🎯 mahaSTRIDE Project Tracker
+    st.markdown('<div class="info-card"><h2>📊 Data Analyst Dashboard</h2><p>Update and track your assigned university progress</p></div>', unsafe_allow_html=True)
     
-    **Duration:** 10 Weeks (50 Days)  
-    **Start Date:** {PROJECT_START_DATE.strftime('%B %d, %Y')}  
-    **End Date:** {PROJECT_END_DATE.strftime('%B %d, %Y')}  
-    **Universities:** 7 Participating Universities  
-    **Frameworks:** SAMARTH, NEP, AEGIS, IKS
+    # Get universities assigned to this analyst
+    assigned_universities = [code for code, email in UNIVERSITY_ANALYST_MAPPING.items() if email == user_email]
     
-    ### 🏛️ Universities
+    if not assigned_universities:
+        st.warning("No universities assigned to you. Please contact admin.")
+        return
     
-    1. **Mumbai University** - Ms Sneha, Shubham
-    2. **SSPU Pune** - Mr Jagan  
-    3. **COEP Tech University** - Mr Vaibhav
-    4. **Amravati University** - Mr Pratham
-    5. **Nagpur University** - Ms Anjali
-    6. **KBCNMU Jalgaon University** - Mr Nitish
-    7. **BAMU University Aurangabad** - Mr Atharv
+    # University selector
+    selected_uni_code = st.selectbox(
+        "Select University", 
+        assigned_universities,
+        format_func=lambda x: UNIVERSITIES[x]["name"]
+    )
     
-    ### 👨‍💻 Developer
-    
-    Developed for **Dr. Harshal**
-    """)
+    if selected_uni_code:
+        uni_info = UNIVERSITIES[selected_uni_code]
+        st.info(f"**Coordinators:** {uni_info['coordinators']}")
+        
+        # Show progress summary
+        df = get_university_progress(selected_uni_code)
+        
+        if not df.empty:
+            # Statistics
+            col1, col2, col3, col4 = st.columns(4)
+            completed = len(df[df["Status"] == "COMPLETED"])
+            in_progress = len(df[df["Status"] == "IN PROGRESS"])
+            pending = len(df[df["Status"] == "PENDING"])
+            
+            with col1:
+                st.metric("✅ Completed", completed, delta=f"{(completed/50*100):.1f}%")
+            with col2:
+                st.metric("🔄 In Progress", in_progress)
+            with col3:
+                st.metric("⏳ Pending", pending)
+            with col4:
+                st.metric("📊 Progress", f"{(completed/50*100):.1f}%")
+            
+            st.progress(completed/50)
+            
+            # Framework breakdown
+            st.subheader("📚 Framework Progress")
+            framework_df = get_framework_progress(selected_uni_code)
+            if not framework_df.empty:
+                cols = st.columns(4)
+                for idx, (_, row) in enumerate(framework_df.iterrows()):
+                    with cols[idx]:
+                        st.metric(row["Framework"], f"{row['Percentage']:.1f}%", f"{row['Completed']}/{row['Total']}")
+            
+            # Task update section
+            st.markdown("---")
+            st.subheader("✏️ Update Task Status")
+            
+            pending_tasks = df[df["Status_Code"].isin(["pending", "in_progress"])]
+            
+            if not pending_tasks.empty:
+                selected_day = st.selectbox(
+                    "Select Task to Update",
+                    pending_tasks["Day"].tolist(),
+                    format_func=lambda x: f"Day {x}: {pending_tasks[pending_tasks['Day']==x]['Task'].iloc[0]} (Due: {pending_tasks[pending_tasks['Day']==x]['Due Date'].iloc[0]})"
+                )
+                
+                task_data = pending_tasks[pending_tasks["Day"] == selected_day].iloc[0]
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.info(f"**Framework:** {task_data['Framework']}\n\n**Current Status:** {task_data['Status']}")
+                with col2:
+                    st.warning(f"**Due Date:** {task_data['Due Date']}")
+                
+                new_status = st.radio(
+                    "Update Status To:",
+                    ["in_progress", "completed"],
+                    format_func=lambda x: "🔄 In Progress" if x == "in_progress" else "✅ Completed"
+                )
+                
+                remarks = st.text_area("Remarks (optional)", placeholder="Add any notes about this task...")
+                
+                if st.button("🚀 Update Status", type="primary", use_container_width=True):
+                    if update_task_status(selected_uni_code, selected_day, new_status, remarks, user_email):
+                        st.success(f"✅ Task status updated to {new_status.upper()} successfully!")
+                        st.balloons()
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to update status")
+            else:
+                st.success("🎉 Congratulations! All tasks for this university are completed!")
+            
+            # View all tasks
+            with st.expander("📋 View All Tasks"):
+                st.dataframe(df[["Day", "Framework", "Task", "Status", "Due Date", "Remarks"]], use_container_width=True)
 
-# Footer
-st.markdown("---")
-st.markdown(f"<p style='text-align: center; color: gray;'>© 2026 mahaSTRIDE Project Tracker | Developed for Dr. Harshal | Project: {PROJECT_START_DATE.strftime('%Y-%m-%d')} to {PROJECT_END_DATE.strftime('%Y-%m-%d')}</p>", unsafe_allow_html=True)
+def login_page():
+    """Display login page"""
+    st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE Project Tracker</h1><p>Please login to continue</p></div>', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("### Login")
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        
+        if st.button("Login", type="primary", use_container_width=True):
+            if email and password:
+                success, role, name = authenticate_user(email, password)
+                if success:
+                    st.session_state["authenticated"] = True
+                    st.session_state["user_email"] = email
+                    st.session_state["user_role"] = role
+                    st.session_state["user_name"] = name
+                    st.rerun()
+                else:
+                    st.error("Invalid email or password")
+            else:
+                st.warning("Please enter both email and password")
+        
+        st.markdown("---")
+        st.markdown("""
+        **Demo Credentials:**
+        - **Admin:** admin@mahastride.com / Admin@2026
+        - **Data Analyst:** dataanalyst@mahastride.com / Data@2026
+        """)
+
+def logout():
+    """Logout user"""
+    for key in ["authenticated", "user_email", "user_role", "user_name"]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.rerun()
+
+# Main application
+def main():
+    # Initialize session state
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+    
+    # Show login page if not authenticated
+    if not st.session_state["authenticated"]:
+        login_page()
+        return
+    
+    # Logged in user
+    user_role = st.session_state["user_role"]
+    user_name = st.session_state["user_name"]
+    user_email = st.session_state["user_email"]
+    
+    # Sidebar with user info
+    with st.sidebar:
+        st.title("📊 mahaSTRIDE")
+        st.markdown(f"**Welcome, {user_name}**")
+        st.markdown(f"*Role: {'Admin' if user_role == 'admin' else 'Data Analyst'}*")
+        st.markdown("---")
+        
+        if user_role == "admin":
+            menu = st.radio(
+                "Navigation",
+                ["Admin Dashboard", "University Details", "Framework Analytics", "User Management", "About"]
+            )
+        else:
+            menu = st.radio(
+                "Navigation",
+                ["My Dashboard", "Update Progress", "View Tasks", "About"]
+            )
+        
+        st.markdown("---")
+        
+        # Show overall progress in sidebar
+        summary_df = get_summary_stats()
+        if not summary_df.empty:
+            total_completed = summary_df["Completed"].sum()
+            total_tasks = 50 * 7
+            overall_pct = (total_completed / total_tasks * 100) if total_tasks > 0 else 0
+            st.metric("Overall Progress", f"{overall_pct:.1f}%")
+            st.progress(overall_pct / 100)
+        
+        st.markdown("---")
+        
+        if st.button("🚪 Logout", use_container_width=True):
+            logout()
+    
+    # Main content based on role and menu
+    if user_role == "admin":
+        if menu == "Admin Dashboard":
+            create_admin_dashboard()
+        elif menu == "University Details":
+            st.title("🏛️ University Details")
+            summary_df = get_summary_stats()
+            if not summary_df.empty:
+                st.dataframe(summary_df, use_container_width=True)
+        elif menu == "Framework Analytics":
+            st.title("📚 Framework Analytics")
+            framework_df = get_framework_progress()
+            if not framework_df.empty:
+                pivot_df = framework_df.pivot(index="University", columns="Framework", values="Percentage")
+                st.dataframe(pivot_df.style.background_gradient(cmap='YlOrRd', axis=None), use_container_width=True)
+                
+                # Framework comparison chart
+                fig = px.bar(framework_df, x="Framework", y="Percentage", color="University", barmode="group", title="Framework Completion by University")
+                st.plotly_chart(fig, use_container_width=True)
+        elif menu == "User Management":
+            st.title("👥 User Management")
+            st.info("Current Users:")
+            user_df = pd.DataFrame([
+                {"Email": email, "Role": info["role"], "Name": info["name"]}
+                for email, info in USERS.items()
+            ])
+            st.dataframe(user_df, use_container_width=True)
+        else:
+            st.title("ℹ️ About")
+            st.markdown(f"""
+            ### mahaSTRIDE Project Tracker
+            
+            **Project Duration:** 50 Days  
+            **Timeline:** {PROJECT_START_DATE.strftime('%Y-%m-%d')} to {PROJECT_END_DATE.strftime('%Y-%m-%d')}  
+            **Universities:** 7 Participating Universities  
+            
+            ### Admin Features:
+            - Complete project overview dashboard
+            - Real-time progress tracking
+            - Advanced analytics and visualizations
+            - Gantt charts and heatmaps
+            - Export capabilities
+            - User management
+            
+            ### Access Credentials:
+            - **Admin:** admin@mahastride.com / Admin@2026
+            - **Data Analyst:** dataanalyst@mahastride.com / Data@2026
+            """)
+    
+    else:  # Data Analyst
+        if menu == "My Dashboard":
+            create_data_analyst_dashboard(user_email)
+        elif menu == "Update Progress":
+            st.title("✅ Update Progress")
+            create_data_analyst_dashboard(user_email)
+        elif menu == "View Tasks":
+            st.title("📋 View All Tasks")
+            assigned_universities = [code for code, email in UNIVERSITY_ANALYST_MAPPING.items() if email == user_email]
+            if assigned_universities:
+                selected_uni = st.selectbox("Select University", assigned_universities, format_func=lambda x: UNIVERSITIES[x]["name"])
+                if selected_uni:
+                    df = get_university_progress(selected_uni)
+                    st.dataframe(df, use_container_width=True)
+        else:
+            st.title("ℹ️ About")
+            st.markdown(f"""
+            ### mahaSTRIDE Project Tracker - Data Analyst Portal
+            
+            **Your Role:** Update and track progress for assigned universities
+            
+            **Project Timeline:** {PROJECT_START_DATE.strftime('%Y-%m-%d')} to {PROJECT_END_DATE.strftime('%Y-%m-%d')}
+            
+            ### Your Responsibilities:
+            - Update task status regularly
+            - Add remarks for completed/in-progress tasks
+            - Ensure timely completion of tasks
+            - Maintain accurate progress records
+            
+            ### Access Credentials:
+            - **Email:** dataanalyst@mahastride.com
+            - **Password:** Data@2026
+            """)
+
+if __name__ == "__main__":
+    # Initialize data on first run
+    if not os.path.exists(DATA_FILE):
+        save_data(create_initial_data())
+    
+    main()
