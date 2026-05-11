@@ -101,7 +101,7 @@ USERS = {
     }
 }
 
-# University to Data Analyst mapping (each analyst can edit their assigned university)
+# University to Data Analyst mapping (each analyst can edit their respective university)
 UNIVERSITY_ANALYST_MAPPING = {
     "MU": "dataanalyst@mahastride.com",
     "SSPU": "dataanalyst@mahastride.com",
@@ -388,42 +388,39 @@ def create_admin_dashboard():
     
     st.markdown("---")
     
-    # Timeline Gantt Chart
-    st.subheader("📅 Project Timeline Gantt Chart")
+    # Timeline Heatmap (fixed version)
+    st.subheader("📅 Project Timeline Heatmap")
     
-    # Prepare data for Gantt chart
-    gantt_data = []
+    # Prepare data for heatmap
     data = load_data()
+    heatmap_data = []
     for uni_code, uni_info in UNIVERSITIES.items():
         uni_data = data.get(uni_code, {})
         for day in range(1, 51):
             task_data = uni_data.get(str(day), {})
             status = task_data.get("status", "pending")
-            due_date = PROJECT_START_DATE + timedelta(days=day-1)
-            
-            # Determine color based on status
-            color = "#FFB6C1" if status == "pending" else "#FFD700" if status == "in_progress" else "#90EE90"
-            
-            gantt_data.append({
+            status_value = 2 if status == "completed" else 1 if status == "in_progress" else 0
+            heatmap_data.append({
                 "University": uni_info["name"],
                 "Day": day,
-                "Task": TASK_SCHEDULE[day][1][:30],
-                "Status": status.upper(),
-                "Due Date": due_date,
-                "Color": color
+                "Status": status_value,
+                "Status_Text": status.upper()
             })
     
-    gantt_df = pd.DataFrame(gantt_data)
+    heatmap_df = pd.DataFrame(heatmap_data)
     
-    # Create Gantt-like heatmap
-    pivot_data = gantt_df.pivot_table(index="University", columns="Day", values="Status", aggfunc='first')
+    # Create pivot table for heatmap
+    pivot_data = heatmap_df.pivot(index="University", columns="Day", values="Status")
+    
+    # Create heatmap using plotly
     fig = px.imshow(
-        pivot_data.applymap(lambda x: 2 if x == "COMPLETED" else 1 if x == "IN PROGRESS" else 0),
+        pivot_data,
         color_continuous_scale=["red", "yellow", "green"],
         aspect="auto",
-        title="Project Progress Heatmap (Red=Pending, Yellow=In Progress, Green=Completed)"
+        title="Project Progress Heatmap (Red=Pending, Yellow=In Progress, Green=Completed)",
+        labels=dict(x="Project Day", y="University", color="Status Value")
     )
-    fig.update_layout(height=400)
+    fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
     
     # Multi-metric charts
@@ -481,6 +478,37 @@ def create_admin_dashboard():
     fig.update_yaxes(title_text="Number of Tasks", row=2, col=2)
     st.plotly_chart(fig, use_container_width=True)
     
+    # Cumulative Progress Chart
+    st.subheader("📈 Cumulative Progress Over Time")
+    
+    cumulative_data = []
+    for day in range(1, 51):
+        cumulative_completed = 0
+        for uni_code in UNIVERSITIES.keys():
+            if uni_data.get(str(day), {}).get("status") == "completed":
+                cumulative_completed += 1
+        cumulative_data.append({"Day": day, "Cumulative": cumulative_completed})
+    
+    cum_df = pd.DataFrame(cumulative_data)
+    cum_df["Cumulative_Total"] = cum_df["Cumulative"].cumsum()
+    
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(
+        x=cum_df["Day"],
+        y=cum_df["Cumulative_Total"],
+        mode='lines+markers',
+        name='Cumulative Tasks Completed',
+        fill='tozeroy',
+        line=dict(color='#1e3c72', width=3)
+    ))
+    fig2.update_layout(
+        title="Cumulative Tasks Completed Across All Universities",
+        xaxis_title="Project Day",
+        yaxis_title="Total Tasks Completed",
+        height=400
+    )
+    st.plotly_chart(fig2, use_container_width=True)
+    
     # University Ranking
     st.subheader("🏆 University Rankings")
     ranking_df = summary_df[["University", "Completion %", "Completed", "In Progress", "Pending", "On Track"]].sort_values("Completion %", ascending=False)
@@ -492,7 +520,9 @@ def create_admin_dashboard():
     framework_detail = get_framework_progress()
     if not framework_detail.empty:
         pivot_framework = framework_detail.pivot(index="University", columns="Framework", values="Percentage")
-        st.dataframe(pivot_framework.style.background_gradient(cmap='YlOrRd', axis=None), use_container_width=True)
+        # Apply styling
+        styled_pivot = pivot_framework.style.background_gradient(cmap='YlOrRd', axis=None)
+        st.dataframe(styled_pivot, use_container_width=True)
     
     # Recent Activity
     st.subheader("🔄 Recent Activity Log")
@@ -732,6 +762,8 @@ def main():
             framework_df = get_framework_progress()
             if not framework_df.empty:
                 pivot_df = framework_df.pivot(index="University", columns="Framework", values="Percentage")
+                # Fill NaN values with 0
+                pivot_df = pivot_df.fillna(0)
                 st.dataframe(pivot_df.style.background_gradient(cmap='YlOrRd', axis=None), use_container_width=True)
                 
                 # Framework comparison chart
@@ -758,7 +790,7 @@ def main():
             - Complete project overview dashboard
             - Real-time progress tracking
             - Advanced analytics and visualizations
-            - Gantt charts and heatmaps
+            - Heatmaps and cumulative charts
             - Export capabilities
             - User management
             
