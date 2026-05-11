@@ -1,7 +1,0 @@
-gcc
-g++
-libz-dev
-libjpeg-dev
-libfreetype6-dev
-libwebp-dev
-libtiff-dev
