@@ -78,16 +78,10 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .timeline-container {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# User credentials (same for all users of same role)
+# User credentials
 USERS = {
     "admin@mahastride.com": {
         "password": sha256("Admin@2026".encode()).hexdigest(),
@@ -101,7 +95,7 @@ USERS = {
     }
 }
 
-# University to Data Analyst mapping (each analyst can edit their respective university)
+# University to Data Analyst mapping
 UNIVERSITY_ANALYST_MAPPING = {
     "MU": "dataanalyst@mahastride.com",
     "SSPU": "dataanalyst@mahastride.com",
@@ -185,18 +179,15 @@ PROJECT_END_DATE = PROJECT_START_DATE + timedelta(days=49)
 DATA_FILE = "progress_data.json"
 
 def hash_password(password):
-    """Hash a password"""
     return sha256(password.encode()).hexdigest()
 
 def authenticate_user(email, password):
-    """Authenticate user"""
     if email in USERS:
         if USERS[email]["password"] == hash_password(password):
             return True, USERS[email]["role"], USERS[email]["name"]
     return False, None, None
 
 def load_data():
-    """Load progress data from JSON file"""
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, 'r') as f:
@@ -207,7 +198,6 @@ def load_data():
         return create_initial_data()
 
 def create_initial_data():
-    """Create initial data structure"""
     data = {}
     for uni_code in UNIVERSITIES.keys():
         data[uni_code] = {}
@@ -221,7 +211,6 @@ def create_initial_data():
     return data
 
 def save_data(data):
-    """Save progress data to JSON file"""
     try:
         with open(DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
@@ -230,7 +219,6 @@ def save_data(data):
         return False
 
 def update_task_status(university_code, day, status, remarks="", updated_by=""):
-    """Update task status"""
     data = load_data()
     if university_code in data and str(day) in data[university_code]:
         data[university_code][str(day)]["status"] = status
@@ -242,7 +230,6 @@ def update_task_status(university_code, day, status, remarks="", updated_by=""):
     return False
 
 def get_university_progress(university_code):
-    """Get progress dataframe for a university"""
     data = load_data()
     if university_code not in data:
         return pd.DataFrame()
@@ -268,7 +255,6 @@ def get_university_progress(university_code):
     return pd.DataFrame(records)
 
 def get_summary_stats():
-    """Get summary statistics"""
     data = load_data()
     stats = []
     
@@ -279,7 +265,6 @@ def get_summary_stats():
         in_progress = sum(1 for d in uni_data.values() if d.get("status") == "in_progress")
         pending = total - completed - in_progress
         
-        # Calculate on-track status
         current_day = get_current_project_day()
         expected_completion = (current_day / total * 100) if current_day > 0 else 0
         actual_completion = (completed / total * 100) if total > 0 else 0
@@ -299,7 +284,6 @@ def get_summary_stats():
     return pd.DataFrame(stats)
 
 def get_framework_progress(university_code=None):
-    """Get framework-wise progress"""
     data = load_data()
     frameworks = {
         "SAMARTH": list(range(1, 26)),
@@ -336,7 +320,6 @@ def get_framework_progress(university_code=None):
     return pd.DataFrame(records)
 
 def get_current_project_day():
-    """Get current day of the project"""
     today = datetime.now()
     if today < PROJECT_START_DATE:
         return 0
@@ -391,7 +374,6 @@ def create_admin_dashboard():
     # Timeline Heatmap
     st.subheader("📅 Project Timeline Heatmap")
     
-    # Prepare data for heatmap
     data = load_data()
     heatmap_data = []
     for uni_code, uni_info in UNIVERSITIES.items():
@@ -403,80 +385,99 @@ def create_admin_dashboard():
             heatmap_data.append({
                 "University": uni_info["name"],
                 "Day": day,
-                "Status": status_value,
-                "Status_Text": status.upper()
+                "Status": status_value
             })
     
     heatmap_df = pd.DataFrame(heatmap_data)
-    
-    # Create pivot table for heatmap
     pivot_data = heatmap_df.pivot(index="University", columns="Day", values="Status")
     
-    # Create heatmap using plotly
     fig = px.imshow(
         pivot_data,
         color_continuous_scale=["red", "yellow", "green"],
         aspect="auto",
         title="Project Progress Heatmap (Red=Pending, Yellow=In Progress, Green=Completed)",
-        labels=dict(x="Project Day", y="University", color="Status Value")
+        labels=dict(x="Project Day", y="University", color="Status")
     )
     fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
     
-    # Multi-metric charts
+    # Performance Analytics - Fixed version with separate charts
     st.subheader("📈 Performance Analytics")
     
-    # Create subplots
-    fig = make_subplots(
-        rows=2, cols=2,
-        subplot_titles=("Completion % by University", "Framework-wise Progress", "Task Status Distribution", "Daily Progress Trend")
-    )
+    # Row 1: Two charts side by side
+    col1, col2 = st.columns(2)
     
-    # Chart 1: Completion by University
-    fig.add_trace(
-        go.Bar(x=summary_df["University"], y=summary_df["Completion %"], marker_color='#1e3c72', text=summary_df["Completion %"], textposition='auto'),
-        row=1, col=1
-    )
-    
-    # Chart 2: Framework-wise Progress
-    framework_df = get_framework_progress()
-    if not framework_df.empty:
-        framework_avg = framework_df.groupby("Framework")["Percentage"].mean().reset_index()
-        fig.add_trace(
-            go.Bar(x=framework_avg["Framework"], y=framework_avg["Percentage"], marker_color='#2a5298', text=framework_avg["Percentage"], textposition='auto'),
-            row=1, col=2
+    with col1:
+        # Chart 1: Completion by University
+        fig1 = px.bar(
+            summary_df, 
+            x="University", 
+            y="Completion %", 
+            color="Completion %",
+            color_continuous_scale="Viridis",
+            title="Completion % by University",
+            text="Completion %",
+            height=400
         )
+        fig1.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+        st.plotly_chart(fig1, use_container_width=True)
     
-    # Chart 3: Task Status Distribution (Donut chart)
-    status_counts = {
-        "Completed": summary_df["Completed"].sum(),
-        "In Progress": summary_df["In Progress"].sum(),
-        "Pending": summary_df["Pending"].sum()
-    }
-    fig.add_trace(
-        go.Pie(labels=list(status_counts.keys()), values=list(status_counts.values()), hole=0.3),
-        row=2, col=1
-    )
+    with col2:
+        # Chart 2: Framework-wise Progress
+        framework_df = get_framework_progress()
+        if not framework_df.empty:
+            framework_avg = framework_df.groupby("Framework")["Percentage"].mean().reset_index()
+            fig2 = px.bar(
+                framework_avg, 
+                x="Framework", 
+                y="Percentage", 
+                color="Percentage",
+                color_continuous_scale="Plasma",
+                title="Average Framework Completion",
+                text="Percentage",
+                height=400
+            )
+            fig2.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+            st.plotly_chart(fig2, use_container_width=True)
     
-    # Chart 4: Daily Progress Trend
-    daily_progress = []
-    for day in range(1, 51):
-        completed = sum(1 for uni_data in data.values() if uni_data.get(str(day), {}).get("status") == "completed")
-        daily_progress.append({"Day": day, "Completed": completed})
-    daily_df = pd.DataFrame(daily_progress)
-    fig.add_trace(
-        go.Scatter(x=daily_df["Day"], y=daily_df["Completed"], mode='lines+markers', name='Daily Completions', line=dict(color='green', width=2)),
-        row=2, col=2
-    )
+    # Row 2: Two more charts
+    col3, col4 = st.columns(2)
     
-    fig.update_layout(height=800, showlegend=True)
-    fig.update_xaxes(title_text="University", row=1, col=1)
-    fig.update_xaxes(title_text="Framework", row=1, col=2)
-    fig.update_xaxes(title_text="Day", row=2, col=2)
-    fig.update_yaxes(title_text="Completion %", row=1, col=1)
-    fig.update_yaxes(title_text="Completion %", row=1, col=2)
-    fig.update_yaxes(title_text="Number of Tasks", row=2, col=2)
-    st.plotly_chart(fig, use_container_width=True)
+    with col3:
+        # Chart 3: Task Status Distribution (Pie Chart)
+        status_counts = {
+            "Completed": summary_df["Completed"].sum(),
+            "In Progress": summary_df["In Progress"].sum(),
+            "Pending": summary_df["Pending"].sum()
+        }
+        fig3 = px.pie(
+            values=list(status_counts.values()), 
+            names=list(status_counts.keys()),
+            title="Overall Task Status Distribution",
+            color_discrete_sequence=["#90EE90", "#FFD700", "#FFB6C1"],
+            hole=0.3,
+            height=400
+        )
+        st.plotly_chart(fig3, use_container_width=True)
+    
+    with col4:
+        # Chart 4: Daily Progress Trend
+        daily_progress = []
+        for day in range(1, 51):
+            completed = sum(1 for uni_data in data.values() if uni_data.get(str(day), {}).get("status") == "completed")
+            daily_progress.append({"Day": day, "Completed": completed})
+        daily_df = pd.DataFrame(daily_progress)
+        
+        fig4 = px.line(
+            daily_df, 
+            x="Day", 
+            y="Completed", 
+            markers=True,
+            title="Daily Tasks Completed Across All Universities",
+            height=400
+        )
+        fig4.update_traces(line=dict(color='green', width=3), marker=dict(size=8))
+        st.plotly_chart(fig4, use_container_width=True)
     
     # Cumulative Progress Chart
     st.subheader("📈 Cumulative Progress Over Time")
@@ -489,8 +490,8 @@ def create_admin_dashboard():
     cum_df = pd.DataFrame(cumulative_data)
     cum_df["Cumulative_Total"] = cum_df["Completed"].cumsum()
     
-    fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(
+    fig5 = go.Figure()
+    fig5.add_trace(go.Scatter(
         x=cum_df["Day"],
         y=cum_df["Cumulative_Total"],
         mode='lines+markers',
@@ -498,13 +499,13 @@ def create_admin_dashboard():
         fill='tozeroy',
         line=dict(color='#1e3c72', width=3)
     ))
-    fig2.update_layout(
+    fig5.update_layout(
         title="Cumulative Tasks Completed Across All Universities",
         xaxis_title="Project Day",
         yaxis_title="Total Tasks Completed",
         height=400
     )
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig5, use_container_width=True)
     
     # University Ranking
     st.subheader("🏆 University Rankings")
@@ -517,25 +518,34 @@ def create_admin_dashboard():
     framework_detail = get_framework_progress()
     if not framework_detail.empty:
         pivot_framework = framework_detail.pivot(index="University", columns="Framework", values="Percentage")
-        # Fill NaN values with 0
         pivot_framework = pivot_framework.fillna(0)
-        # Display without styling to avoid matplotlib dependency
-        st.dataframe(pivot_framework, use_container_width=True)
         
-        # Add a bar chart for framework comparison
-        st.subheader("📊 Framework Comparison Chart")
-        fig3 = px.bar(
+        # Framework Comparison Heatmap
+        fig6 = px.imshow(
+            pivot_framework,
+            text_auto=True,
+            aspect="auto",
+            color_continuous_scale="Viridis",
+            title="Framework Completion Matrix (%)",
+            labels=dict(x="Framework", y="University", color="Percentage")
+        )
+        fig6.update_layout(height=400)
+        st.plotly_chart(fig6, use_container_width=True)
+        
+        # Framework bar chart
+        st.subheader("Framework Comparison Chart")
+        fig7 = px.bar(
             framework_detail, 
             x="University", 
             y="Percentage", 
             color="Framework",
             barmode="group",
             title="Framework Completion by University",
-            text="Percentage"
+            text="Percentage",
+            height=500
         )
-        fig3.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-        fig3.update_layout(height=500)
-        st.plotly_chart(fig3, use_container_width=True)
+        fig7.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+        st.plotly_chart(fig7, use_container_width=True)
     
     # Recent Activity
     st.subheader("🔄 Recent Activity Log")
@@ -582,14 +592,12 @@ def create_data_analyst_dashboard(user_email):
     
     st.markdown('<div class="info-card"><h2>📊 Data Analyst Dashboard</h2><p>Update and track your assigned university progress</p></div>', unsafe_allow_html=True)
     
-    # Get universities assigned to this analyst
     assigned_universities = [code for code, email in UNIVERSITY_ANALYST_MAPPING.items() if email == user_email]
     
     if not assigned_universities:
         st.warning("No universities assigned to you. Please contact admin.")
         return
     
-    # University selector
     selected_uni_code = st.selectbox(
         "Select University", 
         assigned_universities,
@@ -600,11 +608,9 @@ def create_data_analyst_dashboard(user_email):
         uni_info = UNIVERSITIES[selected_uni_code]
         st.info(f"**Coordinators:** {uni_info['coordinators']}")
         
-        # Show progress summary
         df = get_university_progress(selected_uni_code)
         
         if not df.empty:
-            # Statistics
             col1, col2, col3, col4 = st.columns(4)
             completed = len(df[df["Status"] == "COMPLETED"])
             in_progress = len(df[df["Status"] == "IN PROGRESS"])
@@ -621,7 +627,6 @@ def create_data_analyst_dashboard(user_email):
             
             st.progress(completed/50)
             
-            # Framework breakdown
             st.subheader("📚 Framework Progress")
             framework_df = get_framework_progress(selected_uni_code)
             if not framework_df.empty:
@@ -630,7 +635,6 @@ def create_data_analyst_dashboard(user_email):
                     with cols[idx]:
                         st.metric(row["Framework"], f"{row['Percentage']:.1f}%", f"{row['Completed']}/{row['Total']}")
             
-            # Task update section
             st.markdown("---")
             st.subheader("✏️ Update Task Status")
             
@@ -669,7 +673,6 @@ def create_data_analyst_dashboard(user_email):
             else:
                 st.success("🎉 Congratulations! All tasks for this university are completed!")
             
-            # View all tasks
             with st.expander("📋 View All Tasks"):
                 st.dataframe(df[["Day", "Framework", "Task", "Status", "Due Date", "Remarks"]], use_container_width=True)
 
@@ -705,29 +708,23 @@ def login_page():
         """)
 
 def logout():
-    """Logout user"""
     for key in ["authenticated", "user_email", "user_role", "user_name"]:
         if key in st.session_state:
             del st.session_state[key]
     st.rerun()
 
-# Main application
 def main():
-    # Initialize session state
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
     
-    # Show login page if not authenticated
     if not st.session_state["authenticated"]:
         login_page()
         return
     
-    # Logged in user
     user_role = st.session_state["user_role"]
     user_name = st.session_state["user_name"]
     user_email = st.session_state["user_email"]
     
-    # Sidebar with user info
     with st.sidebar:
         st.title("📊 mahaSTRIDE")
         st.markdown(f"**Welcome, {user_name}**")
@@ -747,7 +744,6 @@ def main():
         
         st.markdown("---")
         
-        # Show overall progress in sidebar
         summary_df = get_summary_stats()
         if not summary_df.empty:
             total_completed = summary_df["Completed"].sum()
@@ -761,7 +757,6 @@ def main():
         if st.button("🚪 Logout", use_container_width=True):
             logout()
     
-    # Main content based on role and menu
     if user_role == "admin":
         if menu == "Admin Dashboard":
             create_admin_dashboard()
@@ -774,16 +769,12 @@ def main():
             st.title("📚 Framework Analytics")
             framework_df = get_framework_progress()
             if not framework_df.empty:
-                # Create pivot table
                 pivot_df = framework_df.pivot(index="University", columns="Framework", values="Percentage")
-                # Fill NaN values with 0
                 pivot_df = pivot_df.fillna(0)
                 
-                # Display as regular dataframe (no styling to avoid matplotlib)
                 st.subheader("📊 Framework Completion Matrix (%)")
                 st.dataframe(pivot_df, use_container_width=True)
                 
-                # Framework comparison chart
                 st.subheader("📊 Framework Comparison Chart")
                 fig = px.bar(
                     framework_df, 
@@ -798,7 +789,6 @@ def main():
                 fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # Heatmap visualization
                 st.subheader("📊 Framework Completion Heatmap")
                 fig2 = px.imshow(
                     pivot_df,
@@ -810,8 +800,6 @@ def main():
                 fig2.update_layout(height=500)
                 st.plotly_chart(fig2, use_container_width=True)
                 
-                # Summary statistics
-                st.subheader("📈 Framework Summary Statistics")
                 col1, col2, col3 = st.columns(3)
                 framework_avg = framework_df.groupby("Framework")["Percentage"].mean()
                 with col1:
@@ -850,7 +838,7 @@ def main():
             - **Data Analyst:** dataanalyst@mahastride.com / Data@2026
             """)
     
-    else:  # Data Analyst
+    else:
         if menu == "My Dashboard":
             create_data_analyst_dashboard(user_email)
         elif menu == "Update Progress":
@@ -885,7 +873,6 @@ def main():
             """)
 
 if __name__ == "__main__":
-    # Initialize data on first run
     if not os.path.exists(DATA_FILE):
         save_data(create_initial_data())
     
