@@ -135,6 +135,10 @@ UNIVERSITIES = {
     "BAMU": {"name": "BAMU University Aurangabad", "coordinators": "Mr Atharv"},
 }
 
+# Project start date - May 18, 2026
+PROJECT_START_DATE = datetime(2026, 5, 18)
+PROJECT_END_DATE = PROJECT_START_DATE + timedelta(days=49)  # 50 days total (day 1 to day 50)
+
 # Data file path
 DATA_FILE = "progress_data.json"
 
@@ -194,11 +198,15 @@ def get_university_progress(university_code):
         framework, task_name = TASK_SCHEDULE.get(day, ("Unknown", "Unknown"))
         status = task_data.get("status", "pending")
         
+        # Calculate due date
+        due_date = PROJECT_START_DATE + timedelta(days=day-1)
+        
         records.append({
             "Day": day,
             "Framework": framework,
             "Task": task_name,
             "Status": status.upper(),
+            "Due Date": due_date.strftime("%Y-%m-%d"),
             "Remarks": task_data.get("remarks", ""),
             "Last Updated": task_data.get("updated_at", "")[:10] if task_data.get("updated_at") else ""
         })
@@ -263,6 +271,14 @@ def get_framework_progress(university_code=None):
     
     return pd.DataFrame(records)
 
+def get_current_project_day():
+    """Get current day of the project"""
+    today = datetime.now()
+    if today < PROJECT_START_DATE:
+        return 0  # Project hasn't started yet
+    days_passed = (today - PROJECT_START_DATE).days
+    return min(days_passed + 1, 50)
+
 # Initialize data on first run
 if not os.path.exists(DATA_FILE):
     save_data(create_initial_data())
@@ -291,16 +307,32 @@ with st.sidebar:
         # Project timeline
         st.markdown("---")
         st.markdown("### 📅 Timeline")
-        project_start = datetime(2024, 11, 1)
-        current_day = (datetime.now() - project_start).days + 1
-        current_day = max(1, min(current_day, 50))
-        st.write(f"**Day:** {current_day} / 50")
-        st.write(f"**Progress:** {(current_day/50*100):.1f}%")
-        st.progress(current_day/50)
+        current_day = get_current_project_day()
+        
+        if current_day == 0:
+            st.info("Project starts on May 18, 2026")
+            st.write(f"**Start Date:** {PROJECT_START_DATE.strftime('%Y-%m-%d')}")
+            st.write(f"**End Date:** {PROJECT_END_DATE.strftime('%Y-%m-%d')}")
+        else:
+            st.write(f"**Day:** {current_day} / 50")
+            st.write(f"**Progress:** {(current_day/50*100):.1f}%")
+            st.progress(current_day/50)
+            st.write(f"**Start Date:** {PROJECT_START_DATE.strftime('%Y-%m-%d')}")
+            st.write(f"**End Date:** {PROJECT_END_DATE.strftime('%Y-%m-%d')}")
 
 # Main content
 if menu == "Dashboard":
     st.markdown('<div class="main-header"><h1>🏠 mahaSTRIDE Dashboard</h1><p>Project Progress Tracking System</p></div>', unsafe_allow_html=True)
+    
+    # Project info banner
+    current_day = get_current_project_day()
+    if current_day == 0:
+        st.info(f"🚀 Project starts on {PROJECT_START_DATE.strftime('%B %d, %Y')}")
+    elif current_day <= 50:
+        days_remaining = 50 - current_day
+        st.success(f"📅 Project is ongoing - Day {current_day} of 50 | {days_remaining} days remaining")
+    else:
+        st.success("🎉 Project Completed! Congratulations to all teams!")
     
     # Key metrics
     col1, col2, col3, col4 = st.columns(4)
@@ -329,13 +361,19 @@ if menu == "Dashboard":
     # Today's tasks
     st.markdown("---")
     st.subheader("📅 Today's Schedule")
-    project_start = datetime(2024, 11, 1)
-    current_day = (datetime.now() - project_start).days + 1
-    current_day = max(1, min(current_day, 50))
     
-    if current_day <= 50:
+    if current_day > 0 and current_day <= 50:
         framework, task = TASK_SCHEDULE[current_day]
-        st.info(f"**Day {current_day} - {framework} Framework**\n\n📋 **Task:** {task}")
+        due_date = PROJECT_START_DATE + timedelta(days=current_day-1)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info(f"**Day {current_day} - {framework} Framework**\n\n📋 **Task:** {task}")
+        with col2:
+            st.info(f"📅 **Due Date:** {due_date.strftime('%Y-%m-%d')}")
+    elif current_day == 0:
+        st.info("Project hasn't started yet. First day is May 18, 2026")
+    else:
+        st.success("Project has been completed!")
 
 elif menu == "University Progress":
     st.title("🏛️ University Progress")
@@ -385,11 +423,11 @@ elif menu == "Update Status":
             selected_day = st.selectbox(
                 "Select Task", 
                 pending_df["Day"].tolist(),
-                format_func=lambda x: f"Day {x}: {pending_df[pending_df['Day']==x]['Task'].iloc[0]}"
+                format_func=lambda x: f"Day {x}: {pending_df[pending_df['Day']==x]['Task'].iloc[0]} (Due: {pending_df[pending_df['Day']==x]['Due Date'].iloc[0]})"
             )
             
             task_data = pending_df[pending_df["Day"] == selected_day].iloc[0]
-            st.info(f"**Framework:** {task_data['Framework']}\n\n**Current Status:** {task_data['Status']}")
+            st.info(f"**Framework:** {task_data['Framework']}\n\n**Current Status:** {task_data['Status']}\n\n**Due Date:** {task_data['Due Date']}")
             
             new_status = st.radio("Update Status", ["in_progress", "completed"], format_func=lambda x: "🔄 In Progress" if x == "in_progress" else "✅ Completed")
             remarks = st.text_area("Remarks")
@@ -461,10 +499,12 @@ else:
     st.title("ℹ️ About")
     st.markdown("---")
     
-    st.markdown("""
+    st.markdown(f"""
     ### 🎯 mahaSTRIDE Project Tracker
     
     **Duration:** 10 Weeks (50 Days)  
+    **Start Date:** {PROJECT_START_DATE.strftime('%B %d, %Y')}  
+    **End Date:** {PROJECT_END_DATE.strftime('%B %d, %Y')}  
     **Universities:** 7 Participating Universities  
     **Frameworks:** SAMARTH, NEP, AEGIS, IKS
     
@@ -485,4 +525,4 @@ else:
 
 # Footer
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: gray;'>© 2024 mahaSTRIDE Project Tracker | Developed for Dr. Harshal</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center; color: gray;'>© 2026 mahaSTRIDE Project Tracker | Developed for Dr. Harshal | Project: {PROJECT_START_DATE.strftime('%Y-%m-%d')} to {PROJECT_END_DATE.strftime('%Y-%m-%d')}</p>", unsafe_allow_html=True)
