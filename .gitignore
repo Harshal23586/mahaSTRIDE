@@ -1,12 +1,52 @@
+# Python
 *.pyc
 __pycache__/
-*.db
-*.json
-.DS_Store
-.env
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
 venv/
+env/
+ENV/
 .venv/
-*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Streamlit secrets (CRITICAL - don't commit these!)
 .streamlit/secrets.toml
-config.toml
-!example.config.toml
+.streamlit/secrets/
+
+# Data files
+*.db
+*.sqlite
+*.sqlite3
+*.json
+!package.json
+!tsconfig.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+progress_data_local.json
+backups/
