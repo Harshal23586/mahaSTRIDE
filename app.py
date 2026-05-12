@@ -2,11 +2,11 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 import os
 import json
 from hashlib import sha256
+from github_storage import get_github_storage
 
 # Page configuration
 st.set_page_config(
@@ -77,6 +77,20 @@ st.markdown("""
     .stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .storage-status {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 5px;
+        display: inline-block;
+    }
+    .storage-connected {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .storage-disconnected {
+        background-color: #f8d7da;
+        color: #721c24;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -175,8 +189,8 @@ UNIVERSITIES = {
 PROJECT_START_DATE = datetime(2026, 5, 18)
 PROJECT_END_DATE = PROJECT_START_DATE + timedelta(days=49)
 
-# Data file path
-DATA_FILE = "progress_data.json"
+# Data file path for local backup
+LOCAL_DATA_FILE = "progress_data_local.json"
 
 def hash_password(password):
     return sha256(password.encode()).hexdigest()
@@ -186,16 +200,6 @@ def authenticate_user(email, password):
         if USERS[email]["password"] == hash_password(password):
             return True, USERS[email]["role"], USERS[email]["name"]
     return False, None, None
-
-def load_data():
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, 'r') as f:
-                return json.load(f)
-        except:
-            return create_initial_data()
-    else:
-        return create_initial_data()
 
 def create_initial_data():
     data = {}
@@ -210,13 +214,44 @@ def create_initial_data():
             }
     return data
 
+def load_data():
+    """Load data from GitHub or local backup"""
+    github_storage = get_github_storage()
+    
+    # Try to load from GitHub first
+    if github_storage.repo:
+        data = github_storage.load_data()
+        if data:
+            # Save local backup
+            with open(LOCAL_DATA_FILE, 'w') as f:
+                json.dump(data, f, indent=2)
+            return data
+    
+    # Fallback to local file
+    if os.path.exists(LOCAL_DATA_FILE):
+        try:
+            with open(LOCAL_DATA_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return create_initial_data()
+    
+    return create_initial_data()
+
 def save_data(data):
+    """Save data to GitHub and local backup"""
+    # Always save locally first
     try:
-        with open(DATA_FILE, 'w') as f:
+        with open(LOCAL_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
-        return True
     except:
-        return False
+        pass
+    
+    # Save to GitHub
+    github_storage = get_github_storage()
+    if github_storage.repo:
+        success = github_storage.save_data(data)
+        return success
+    return False
 
 def update_task_status(university_code, day, status, remarks="", updated_by=""):
     data = load_data()
@@ -326,11 +361,29 @@ def get_current_project_day():
     days_passed = (today - PROJECT_START_DATE).days
     return min(days_passed + 1, 50)
 
+def create_backup():
+    """Create a manual backup"""
+    github_storage = get_github_storage()
+    data = load_data()
+    if github_storage.backup_data(data):
+        st.success("✅ Backup created successfully!")
+    else:
+        st.error("❌ Failed to create backup")
+
 def create_admin_dashboard():
     """Create comprehensive admin dashboard with all visualizations"""
     
     # Project header
     st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2><p>Complete Project Analytics & Insights</p></div>', unsafe_allow_html=True)
+    
+    # Storage status
+    github_storage = get_github_storage()
+    if github_storage.repo:
+        st.markdown('<span class="storage-status storage-connected">✅ Connected to GitHub Storage</span>', unsafe_allow_html=True)
+    else:
+        st.markdown('<span class="storage-status storage-disconnected">⚠️ Using Local Storage Only (GitHub not configured)</span>', unsafe_allow_html=True)
+    
+    st.markdown("---")
     
     # Project timeline info
     current_day = get_current_project_day()
@@ -371,6 +424,14 @@ def create_admin_dashboard():
     
     st.markdown("---")
     
+    # Backup button
+    col1, col2, col3 = st.columns([1, 1, 4])
+    with col1:
+        if st.button("💾 Manual Backup", use_container_width=True):
+            create_backup()
+    
+    st.markdown("---")
+    
     # Timeline Heatmap
     st.subheader("📅 Project Timeline Heatmap")
     
@@ -401,14 +462,12 @@ def create_admin_dashboard():
     fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
     
-    # Performance Analytics - Fixed version with separate charts
+    # Performance Analytics
     st.subheader("📈 Performance Analytics")
     
-    # Row 1: Two charts side by side
     col1, col2 = st.columns(2)
     
     with col1:
-        # Chart 1: Completion by University
         fig1 = px.bar(
             summary_df, 
             x="University", 
@@ -423,7 +482,6 @@ def create_admin_dashboard():
         st.plotly_chart(fig1, use_container_width=True)
     
     with col2:
-        # Chart 2: Framework-wise Progress
         framework_df = get_framework_progress()
         if not framework_df.empty:
             framework_avg = framework_df.groupby("Framework")["Percentage"].mean().reset_index()
@@ -440,11 +498,9 @@ def create_admin_dashboard():
             fig2.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
             st.plotly_chart(fig2, use_container_width=True)
     
-    # Row 2: Two more charts
     col3, col4 = st.columns(2)
     
     with col3:
-        # Chart 3: Task Status Distribution (Pie Chart)
         status_counts = {
             "Completed": summary_df["Completed"].sum(),
             "In Progress": summary_df["In Progress"].sum(),
@@ -461,7 +517,6 @@ def create_admin_dashboard():
         st.plotly_chart(fig3, use_container_width=True)
     
     with col4:
-        # Chart 4: Daily Progress Trend
         daily_progress = []
         for day in range(1, 51):
             completed = sum(1 for uni_data in data.values() if uni_data.get(str(day), {}).get("status") == "completed")
@@ -520,7 +575,6 @@ def create_admin_dashboard():
         pivot_framework = framework_detail.pivot(index="University", columns="Framework", values="Percentage")
         pivot_framework = pivot_framework.fillna(0)
         
-        # Framework Comparison Heatmap
         fig6 = px.imshow(
             pivot_framework,
             text_auto=True,
@@ -532,7 +586,6 @@ def create_admin_dashboard():
         fig6.update_layout(height=400)
         st.plotly_chart(fig6, use_container_width=True)
         
-        # Framework bar chart
         st.subheader("Framework Comparison Chart")
         fig7 = px.bar(
             framework_detail, 
@@ -825,6 +878,12 @@ def main():
             **Timeline:** {PROJECT_START_DATE.strftime('%Y-%m-%d')} to {PROJECT_END_DATE.strftime('%Y-%m-%d')}  
             **Universities:** 7 Participating Universities  
             
+            ### Data Storage:
+            - ✅ **GitHub-based persistent storage**
+            - ✅ Automatic backups on every update
+            - ✅ Local fallback for reliability
+            - ✅ Manual backup option
+            
             ### Admin Features:
             - Complete project overview dashboard
             - Real-time progress tracking
@@ -873,7 +932,9 @@ def main():
             """)
 
 if __name__ == "__main__":
-    if not os.path.exists(DATA_FILE):
+    # Initialize data if needed
+    data = load_data()
+    if not data:
         save_data(create_initial_data())
     
     main()
