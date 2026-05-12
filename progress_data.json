@@ -1209,10 +1209,10 @@
   },
   "NU": {
     "1": {
-      "status": "pending",
+      "status": "in_progress",
       "remarks": "",
-      "updated_at": null,
-      "updated_by": null
+      "updated_at": "2026-05-12T07:35:44.937212",
+      "updated_by": "dataanalyst@mahastride.com"
     },
     "2": {
       "status": "pending",
