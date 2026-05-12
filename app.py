@@ -8,6 +8,21 @@ import json
 from hashlib import sha256
 from github_storage import get_github_storage
 
+# Security check for secrets
+def check_security():
+    """Check if secrets are properly configured"""
+    try:
+        if st.secrets.get("GITHUB_TOKEN"):
+            st.sidebar.success("🔒 GitHub Storage: Connected")
+        else:
+            st.sidebar.warning("⚠️ GitHub Storage: Not configured. Add secrets in Streamlit Cloud settings.")
+    except:
+        st.sidebar.info("💡 GitHub Storage: Configure secrets for cloud backup")
+
+# Call this in sidebar
+with st.sidebar:
+    check_security()
+
 # Page configuration
 st.set_page_config(
     page_title="mahaSTRIDE Project Tracker",
