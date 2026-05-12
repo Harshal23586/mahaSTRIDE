@@ -7,3 +7,6 @@ __pycache__/
 venv/
 .venv/
 *.log
+.streamlit/secrets.toml
+config.toml
+!example.config.toml
