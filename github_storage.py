@@ -10,20 +10,33 @@ class GitHubStorage:
     """Handle data storage using GitHub API"""
     
     def __init__(self):
-        self.token = st.secrets.get("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN"))
-        self.repo_name = st.secrets.get("GITHUB_REPO", os.getenv("GITHUB_REPO", "harshal23586/mahastride-data"))
-        self.branch = st.secrets.get("GITHUB_BRANCH", os.getenv("GITHUB_BRANCH", "main"))
-        self.file_path = st.secrets.get("DATA_FILE_PATH", os.getenv("DATA_FILE_PATH", "progress_data.json"))
+        # Try to get secrets from Streamlit Cloud secrets
+        try:
+            self.token = st.secrets.get("GITHUB_TOKEN")
+            self.repo_name = st.secrets.get("GITHUB_REPO")
+            self.branch = st.secrets.get("GITHUB_BRANCH", "main")
+            self.file_path = st.secrets.get("DATA_FILE_PATH", "progress_data.json")
+        except:
+            # Fallback to environment variables for local development
+            self.token = os.getenv("GITHUB_TOKEN")
+            self.repo_name = os.getenv("GITHUB_REPO")
+            self.branch = os.getenv("GITHUB_BRANCH", "main")
+            self.file_path = os.getenv("DATA_FILE_PATH", "progress_data.json")
+        
         self.repo = None
         self.sha = None
         
-        if self.token:
+        if self.token and self.repo_name:
             try:
                 self.g = Github(self.token)
                 self.repo = self.g.get_repo(self.repo_name)
+                # Test connection
+                _ = self.repo.name
             except Exception as e:
-                st.error(f"GitHub connection error: {e}")
+                st.warning(f"⚠️ GitHub storage not available: {e}. Using local storage only.")
                 self.repo = None
+        else:
+            st.info("💡 GitHub storage not configured. Using local storage only. To enable cloud backup, add GitHub secrets in Streamlit Cloud settings.")
     
     def save_data(self, data):
         """Save data to GitHub"""
@@ -44,14 +57,17 @@ class GitHubStorage:
                     self.sha,
                     branch=self.branch
                 )
-            except GithubException:
-                # File doesn't exist, create it
-                self.repo.create_file(
-                    self.file_path,
-                    f"Auto-save: Initial data save {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-                    content,
-                    branch=self.branch
-                )
+            except GithubException as e:
+                if e.status == 404:
+                    # File doesn't exist, create it
+                    self.repo.create_file(
+                        self.file_path,
+                        f"Auto-save: Initial data save {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                        content,
+                        branch=self.branch
+                    )
+                else:
+                    raise
             return True
         except Exception as e:
             st.error(f"Error saving to GitHub: {e}")
@@ -67,9 +83,13 @@ class GitHubStorage:
             self.sha = contents.sha
             content = base64.b64decode(contents.content).decode('utf-8')
             return json.loads(content)
-        except GithubException:
-            # File doesn't exist yet
-            return None
+        except GithubException as e:
+            if e.status == 404:
+                # File doesn't exist yet
+                return None
+            else:
+                st.error(f"Error loading from GitHub: {e}")
+                return None
         except Exception as e:
             st.error(f"Error loading from GitHub: {e}")
             return None
@@ -95,6 +115,10 @@ class GitHubStorage:
                 return False
         except:
             return False
+    
+    def is_available(self):
+        """Check if GitHub storage is available"""
+        return self.repo is not None
 
 # Initialize GitHub storage
 @st.cache_resource
