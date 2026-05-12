@@ -1,7 +1,6 @@
 import json
 import base64
-from github import Github
-from github import GithubException
+from github import Github, GithubException
 import os
 from datetime import datetime
 import streamlit as st
@@ -26,17 +25,35 @@ class GitHubStorage:
         self.repo = None
         self.sha = None
         
-        if self.token and self.repo_name:
+        if not self.token:
+            st.info("💡 GitHub token not configured. Add GITHUB_TOKEN in secrets for cloud backup.")
+            return
+        
+        if not self.repo_name:
+            st.info("💡 GitHub repository not configured. Add GITHUB_REPO in secrets (format: username/repo-name)")
+            return
+        
+        try:
+            self.g = Github(self.token)
+            # Test authentication
+            user = self.g.get_user()
+            st.success(f"✅ Authenticated as: {user.login}")
+            
+            # Try to get the repository
             try:
-                self.g = Github(self.token)
                 self.repo = self.g.get_repo(self.repo_name)
-                # Test connection
-                _ = self.repo.name
-            except Exception as e:
-                st.warning(f"⚠️ GitHub storage not available: {e}. Using local storage only.")
+                st.success(f"✅ Connected to repository: {self.repo_name}")
+            except GithubException as e:
+                if e.status == 404:
+                    st.error(f"❌ Repository '{self.repo_name}' not found. Please create it first.")
+                    st.info("📝 To fix: Create a repository at https://github.com/new and update GITHUB_REPO secret")
+                else:
+                    st.error(f"❌ GitHub error: {e}")
                 self.repo = None
-        else:
-            st.info("💡 GitHub storage not configured. Using local storage only. To enable cloud backup, add GitHub secrets in Streamlit Cloud settings.")
+                
+        except Exception as e:
+            st.error(f"❌ GitHub connection error: {e}")
+            self.repo = None
     
     def save_data(self, data):
         """Save data to GitHub"""
@@ -57,6 +74,7 @@ class GitHubStorage:
                     self.sha,
                     branch=self.branch
                 )
+                return True
             except GithubException as e:
                 if e.status == 404:
                     # File doesn't exist, create it
@@ -66,9 +84,9 @@ class GitHubStorage:
                         content,
                         branch=self.branch
                     )
+                    return True
                 else:
                     raise
-            return True
         except Exception as e:
             st.error(f"Error saving to GitHub: {e}")
             return False
@@ -88,10 +106,8 @@ class GitHubStorage:
                 # File doesn't exist yet
                 return None
             else:
-                st.error(f"Error loading from GitHub: {e}")
                 return None
         except Exception as e:
-            st.error(f"Error loading from GitHub: {e}")
             return None
     
     def backup_data(self, data):
@@ -100,19 +116,23 @@ class GitHubStorage:
             return False
         
         try:
+            # Ensure backups directory exists
+            try:
+                self.repo.get_contents("backups", ref=self.branch)
+            except:
+                # Create backups directory if it doesn't exist
+                pass
+            
             backup_path = f"backups/progress_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
             content = json.dumps(data, indent=2)
             
-            try:
-                self.repo.create_file(
-                    backup_path,
-                    f"Backup: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-                    content,
-                    branch=self.branch
-                )
-                return True
-            except:
-                return False
+            self.repo.create_file(
+                backup_path,
+                f"Backup: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                content,
+                branch=self.branch
+            )
+            return True
         except:
             return False
     
