@@ -6,22 +6,6 @@ from datetime import datetime, timedelta
 import os
 import json
 from hashlib import sha256
-from github_storage import get_github_storage
-
-# Security check for secrets
-def check_security():
-    """Check if secrets are properly configured"""
-    try:
-        if st.secrets.get("GITHUB_TOKEN"):
-            st.sidebar.success("🔒 GitHub Storage: Connected")
-        else:
-            st.sidebar.warning("⚠️ GitHub Storage: Not configured. Add secrets in Streamlit Cloud settings.")
-    except:
-        st.sidebar.info("💡 GitHub Storage: Configure secrets for cloud backup")
-
-# Call this in sidebar
-with st.sidebar:
-    check_security()
 
 # Page configuration
 st.set_page_config(
@@ -103,9 +87,21 @@ st.markdown("""
         background-color: #d4edda;
         color: #155724;
     }
-    .storage-disconnected {
+    .weekend-badge {
         background-color: #f8d7da;
         color: #721c24;
+        padding: 0.2rem 0.5rem;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        display: inline-block;
+    }
+    .working-day-badge {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 0.2rem 0.5rem;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        display: inline-block;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -135,7 +131,7 @@ UNIVERSITY_ANALYST_MAPPING = {
     "BAMU": "dataanalyst@mahastride.com",
 }
 
-# Task schedule
+# Task schedule (50 working days)
 TASK_SCHEDULE = {
     1: ("SAMARTH", "Faculty Roster - Day 1"),
     2: ("SAMARTH", "Faculty Roster - Day 2"),
@@ -200,12 +196,60 @@ UNIVERSITIES = {
     "BAMU": {"name": "BAMU University Aurangabad", "coordinators": "Mr Atharv"},
 }
 
-# Project start date - May 18, 2026
+# Project start date - May 18, 2026 (Monday)
 PROJECT_START_DATE = datetime(2026, 5, 18)
-PROJECT_END_DATE = PROJECT_START_DATE + timedelta(days=49)
 
-# Data file path for local backup
-LOCAL_DATA_FILE = "progress_data_local.json"
+def get_working_date(working_day_number):
+    """
+    Convert working day number (1-50) to actual calendar date
+    Skipping Saturdays and Sundays
+    """
+    current_date = PROJECT_START_DATE
+    working_days_counted = 0
+    
+    while working_days_counted < working_day_number:
+        # Skip Saturday (5) and Sunday (6)
+        if current_date.weekday() < 5:  # Monday=0, Tuesday=1, Wednesday=2, Thursday=3, Friday=4
+            working_days_counted += 1
+            if working_days_counted == working_day_number:
+                return current_date
+        current_date += timedelta(days=1)
+    
+    return current_date
+
+def get_current_working_day():
+    """Get current working day number based on actual date"""
+    today = datetime.now()
+    
+    if today < PROJECT_START_DATE:
+        return 0
+    
+    current_date = PROJECT_START_DATE
+    working_days_counted = 0
+    
+    while current_date <= today:
+        if current_date.weekday() < 5:  # Monday to Friday
+            working_days_counted += 1
+        current_date += timedelta(days=1)
+    
+    return min(working_days_counted, 50)
+
+def get_calendar_date_range():
+    """Get start and end calendar dates for the project"""
+    start_date = PROJECT_START_DATE
+    end_date = get_working_date(50)
+    return start_date, end_date
+
+def is_weekend(date):
+    """Check if a date is weekend (Saturday or Sunday)"""
+    return date.weekday() >= 5  # 5=Saturday, 6=Sunday
+
+# Calculate project end date
+PROJECT_END_DATE = get_working_date(50)
+TOTAL_CALENDAR_DAYS = (PROJECT_END_DATE - PROJECT_START_DATE).days + 1
+
+# Data file path
+DATA_FILE = "progress_data.json"
 
 def hash_password(password):
     return sha256(password.encode()).hexdigest()
@@ -230,43 +274,30 @@ def create_initial_data():
     return data
 
 def load_data():
-    """Load data from GitHub or local backup"""
-    github_storage = get_github_storage()
-    
-    # Try to load from GitHub first
-    if github_storage.repo:
-        data = github_storage.load_data()
-        if data:
-            # Save local backup
-            with open(LOCAL_DATA_FILE, 'w') as f:
-                json.dump(data, f, indent=2)
-            return data
-    
-    # Fallback to local file
-    if os.path.exists(LOCAL_DATA_FILE):
-        try:
-            with open(LOCAL_DATA_FILE, 'r') as f:
-                return json.load(f)
-        except:
+    """Load data from persistent JSON file"""
+    try:
+        if os.path.exists(DATA_FILE):
+            with open(DATA_FILE, 'r') as f:
+                data = json.load(f)
+                if all(uni_code in data for uni_code in UNIVERSITIES.keys()):
+                    return data
+                else:
+                    return create_initial_data()
+        else:
             return create_initial_data()
-    
-    return create_initial_data()
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return create_initial_data()
 
 def save_data(data):
-    """Save data to GitHub and local backup"""
-    # Always save locally first
+    """Save data to persistent JSON file"""
     try:
-        with open(LOCAL_DATA_FILE, 'w') as f:
+        with open(DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
-    except:
-        pass
-    
-    # Save to GitHub
-    github_storage = get_github_storage()
-    if github_storage.repo:
-        success = github_storage.save_data(data)
-        return success
-    return False
+        return True
+    except Exception as e:
+        st.error(f"Error saving data: {e}")
+        return False
 
 def update_task_status(university_code, day, status, remarks="", updated_by=""):
     data = load_data()
@@ -289,15 +320,17 @@ def get_university_progress(university_code):
         task_data = data[university_code].get(str(day), {})
         framework, task_name = TASK_SCHEDULE.get(day, ("Unknown", "Unknown"))
         status = task_data.get("status", "pending")
-        due_date = PROJECT_START_DATE + timedelta(days=day-1)
+        due_date = get_working_date(day)
         
         records.append({
             "Day": day,
+            "Working Day": day,
             "Framework": framework,
             "Task": task_name,
             "Status": status.upper(),
             "Status_Code": status,
             "Due Date": due_date.strftime("%Y-%m-%d"),
+            "Day of Week": due_date.strftime("%A"),
             "Remarks": task_data.get("remarks", ""),
             "Last Updated": task_data.get("updated_at", "")[:10] if task_data.get("updated_at") else "",
             "Updated By": task_data.get("updated_by", "")
@@ -315,8 +348,8 @@ def get_summary_stats():
         in_progress = sum(1 for d in uni_data.values() if d.get("status") == "in_progress")
         pending = total - completed - in_progress
         
-        current_day = get_current_project_day()
-        expected_completion = (current_day / total * 100) if current_day > 0 else 0
+        current_working_day = get_current_working_day()
+        expected_completion = (current_working_day / total * 100) if current_working_day > 0 else 0
         actual_completion = (completed / total * 100) if total > 0 else 0
         is_on_track = actual_completion >= expected_completion - 10
         
@@ -364,26 +397,11 @@ def get_framework_progress(university_code=None):
                 "Completed": completed,
                 "In Progress": in_progress,
                 "Total": total,
-                "Percentage": round(percentage, 1)
+                "Percentage": round(percentage, 1),
+                "Due Date": f"Days {days[0]}-{days[-1]}"
             })
     
     return pd.DataFrame(records)
-
-def get_current_project_day():
-    today = datetime.now()
-    if today < PROJECT_START_DATE:
-        return 0
-    days_passed = (today - PROJECT_START_DATE).days
-    return min(days_passed + 1, 50)
-
-def create_backup():
-    """Create a manual backup"""
-    github_storage = get_github_storage()
-    data = load_data()
-    if github_storage.backup_data(data):
-        st.success("✅ Backup created successfully!")
-    else:
-        st.error("❌ Failed to create backup")
 
 def create_admin_dashboard():
     """Create comprehensive admin dashboard with all visualizations"""
@@ -391,27 +409,29 @@ def create_admin_dashboard():
     # Project header
     st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2><p>Complete Project Analytics & Insights</p></div>', unsafe_allow_html=True)
     
-    # Storage status
-    github_storage = get_github_storage()
-    if github_storage.repo:
-        st.markdown('<span class="storage-status storage-connected">✅ Connected to GitHub Storage</span>', unsafe_allow_html=True)
-    else:
-        st.markdown('<span class="storage-status storage-disconnected">⚠️ Using Local Storage Only (GitHub not configured)</span>', unsafe_allow_html=True)
+    # Show storage status
+    st.markdown('<span class="storage-status storage-connected">✅ Persistent Storage Active - Data is saved between sessions</span>', unsafe_allow_html=True)
     
     st.markdown("---")
     
     # Project timeline info
-    current_day = get_current_project_day()
-    col1, col2, col3, col4 = st.columns(4)
+    current_working_day = get_current_working_day()
+    start_date, end_date = get_calendar_date_range()
+    
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric("Project Day", f"{current_day}/50")
+        st.metric("Working Day", f"{current_working_day}/50")
     with col2:
-        st.metric("Start Date", PROJECT_START_DATE.strftime("%Y-%m-%d"))
+        st.metric("Start Date", start_date.strftime("%Y-%m-%d"))
     with col3:
-        st.metric("End Date", PROJECT_END_DATE.strftime("%Y-%m-%d"))
+        st.metric("End Date", end_date.strftime("%Y-%m-%d"))
     with col4:
-        days_left = 50 - current_day if current_day > 0 else 50
-        st.metric("Days Remaining", days_left)
+        days_left = 50 - current_working_day if current_working_day > 0 else 50
+        st.metric("Working Days Left", days_left)
+    with col5:
+        st.metric("Total Duration", f"{TOTAL_CALENDAR_DAYS} calendar days")
+    
+    st.info(f"📅 **Working Schedule:** Monday to Friday only. Weekends (Saturday & Sunday) are automatically skipped.")
     
     st.markdown("---")
     
@@ -439,14 +459,6 @@ def create_admin_dashboard():
     
     st.markdown("---")
     
-    # Backup button
-    col1, col2, col3 = st.columns([1, 1, 4])
-    with col1:
-        if st.button("💾 Manual Backup", use_container_width=True):
-            create_backup()
-    
-    st.markdown("---")
-    
     # Timeline Heatmap
     st.subheader("📅 Project Timeline Heatmap")
     
@@ -458,21 +470,23 @@ def create_admin_dashboard():
             task_data = uni_data.get(str(day), {})
             status = task_data.get("status", "pending")
             status_value = 2 if status == "completed" else 1 if status == "in_progress" else 0
+            due_date = get_working_date(day)
             heatmap_data.append({
                 "University": uni_info["name"],
-                "Day": day,
+                "Working Day": day,
+                "Calendar Date": due_date.strftime("%Y-%m-%d"),
                 "Status": status_value
             })
     
     heatmap_df = pd.DataFrame(heatmap_data)
-    pivot_data = heatmap_df.pivot(index="University", columns="Day", values="Status")
+    pivot_data = heatmap_df.pivot(index="University", columns="Working Day", values="Status")
     
     fig = px.imshow(
         pivot_data,
         color_continuous_scale=["red", "yellow", "green"],
         aspect="auto",
         title="Project Progress Heatmap (Red=Pending, Yellow=In Progress, Green=Completed)",
-        labels=dict(x="Project Day", y="University", color="Status")
+        labels=dict(x="Working Day", y="University", color="Status")
     )
     fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
@@ -535,12 +549,12 @@ def create_admin_dashboard():
         daily_progress = []
         for day in range(1, 51):
             completed = sum(1 for uni_data in data.values() if uni_data.get(str(day), {}).get("status") == "completed")
-            daily_progress.append({"Day": day, "Completed": completed})
+            daily_progress.append({"Working Day": day, "Completed": completed})
         daily_df = pd.DataFrame(daily_progress)
         
         fig4 = px.line(
             daily_df, 
-            x="Day", 
+            x="Working Day", 
             y="Completed", 
             markers=True,
             title="Daily Tasks Completed Across All Universities",
@@ -555,14 +569,14 @@ def create_admin_dashboard():
     cumulative_data = []
     for day in range(1, 51):
         day_completed = sum(1 for uni_data in data.values() if uni_data.get(str(day), {}).get("status") == "completed")
-        cumulative_data.append({"Day": day, "Completed": day_completed})
+        cumulative_data.append({"Working Day": day, "Completed": day_completed})
     
     cum_df = pd.DataFrame(cumulative_data)
     cum_df["Cumulative_Total"] = cum_df["Completed"].cumsum()
     
     fig5 = go.Figure()
     fig5.add_trace(go.Scatter(
-        x=cum_df["Day"],
+        x=cum_df["Working Day"],
         y=cum_df["Cumulative_Total"],
         mode='lines+markers',
         name='Cumulative Tasks Completed',
@@ -571,7 +585,7 @@ def create_admin_dashboard():
     ))
     fig5.update_layout(
         title="Cumulative Tasks Completed Across All Universities",
-        xaxis_title="Project Day",
+        xaxis_title="Working Day",
         yaxis_title="Total Tasks Completed",
         height=400
     )
@@ -621,9 +635,11 @@ def create_admin_dashboard():
     for uni_code, uni_data in data.items():
         for day_str, task_data in uni_data.items():
             if task_data.get("updated_at"):
+                due_date = get_working_date(int(day_str))
                 recent_updates.append({
                     "University": UNIVERSITIES[uni_code]["name"],
-                    "Day": day_str,
+                    "Working Day": day_str,
+                    "Calendar Date": due_date.strftime("%Y-%m-%d"),
                     "Task": TASK_SCHEDULE.get(int(day_str), ("", ""))[1],
                     "Status": task_data.get("status", "").upper(),
                     "Updated By": task_data.get("updated_by", ""),
@@ -712,7 +728,7 @@ def create_data_analyst_dashboard(user_email):
                 selected_day = st.selectbox(
                     "Select Task to Update",
                     pending_tasks["Day"].tolist(),
-                    format_func=lambda x: f"Day {x}: {pending_tasks[pending_tasks['Day']==x]['Task'].iloc[0]} (Due: {pending_tasks[pending_tasks['Day']==x]['Due Date'].iloc[0]})"
+                    format_func=lambda x: f"Working Day {x}: {pending_tasks[pending_tasks['Day']==x]['Task'].iloc[0]} (Due: {pending_tasks[pending_tasks['Day']==x]['Due Date'].iloc[0]} - {pending_tasks[pending_tasks['Day']==x]['Day of Week'].iloc[0]})"
                 )
                 
                 task_data = pending_tasks[pending_tasks["Day"] == selected_day].iloc[0]
@@ -721,7 +737,11 @@ def create_data_analyst_dashboard(user_email):
                 with col1:
                     st.info(f"**Framework:** {task_data['Framework']}\n\n**Current Status:** {task_data['Status']}")
                 with col2:
-                    st.warning(f"**Due Date:** {task_data['Due Date']}")
+                    due_date_obj = datetime.strptime(task_data['Due Date'], "%Y-%m-%d")
+                    if is_weekend(due_date_obj):
+                        st.error(f"⚠️ **Due Date:** {task_data['Due Date']} ({task_data['Day of Week']}) - Weekend!")
+                    else:
+                        st.warning(f"**Due Date:** {task_data['Due Date']} ({task_data['Day of Week']})")
                 
                 new_status = st.radio(
                     "Update Status To:",
@@ -742,7 +762,8 @@ def create_data_analyst_dashboard(user_email):
                 st.success("🎉 Congratulations! All tasks for this university are completed!")
             
             with st.expander("📋 View All Tasks"):
-                st.dataframe(df[["Day", "Framework", "Task", "Status", "Due Date", "Remarks"]], use_container_width=True)
+                display_df = df[["Working Day", "Framework", "Task", "Status", "Due Date", "Day of Week", "Remarks"]]
+                st.dataframe(display_df, use_container_width=True)
 
 def login_page():
     """Display login page"""
@@ -797,6 +818,17 @@ def main():
         st.title("📊 mahaSTRIDE")
         st.markdown(f"**Welcome, {user_name}**")
         st.markdown(f"*Role: {'Admin' if user_role == 'admin' else 'Data Analyst'}*")
+        st.markdown("---")
+        
+        # Show working day info
+        current_working_day = get_current_working_day()
+        st.markdown(f"**Current Working Day:** {current_working_day}/50")
+        
+        if current_working_day > 0:
+            next_due_date = get_working_date(current_working_day + 1) if current_working_day < 50 else None
+            if next_due_date:
+                st.markdown(f"**Next Due Date:** {next_due_date.strftime('%Y-%m-%d')} ({next_due_date.strftime('%A')})")
+        
         st.markdown("---")
         
         if user_role == "admin":
@@ -886,18 +918,22 @@ def main():
             st.dataframe(user_df, use_container_width=True)
         else:
             st.title("ℹ️ About")
+            end_date = get_working_date(50)
             st.markdown(f"""
             ### mahaSTRIDE Project Tracker
             
-            **Project Duration:** 50 Days  
-            **Timeline:** {PROJECT_START_DATE.strftime('%Y-%m-%d')} to {PROJECT_END_DATE.strftime('%Y-%m-%d')}  
+            **Project Duration:** 50 Working Days  
+            **Working Schedule:** Monday to Friday (Weekends skipped)  
+            **Start Date:** {PROJECT_START_DATE.strftime('%A, %B %d, %Y')}  
+            **End Date:** {end_date.strftime('%A, %B %d, %Y')}  
+            **Total Calendar Days:** {(end_date - PROJECT_START_DATE).days + 1} days  
             **Universities:** 7 Participating Universities  
             
-            ### Data Storage:
-            - ✅ **GitHub-based persistent storage**
-            - ✅ Automatic backups on every update
-            - ✅ Local fallback for reliability
-            - ✅ Manual backup option
+            ### Working Day Calculation:
+            - Working days are Monday through Friday
+            - Saturdays and Sundays are automatically skipped
+            - Day 1 = {PROJECT_START_DATE.strftime('%A, %B %d, %Y')}
+            - Day 50 = {end_date.strftime('%A, %B %d, %Y')}
             
             ### Admin Features:
             - Complete project overview dashboard
@@ -925,21 +961,27 @@ def main():
                 selected_uni = st.selectbox("Select University", assigned_universities, format_func=lambda x: UNIVERSITIES[x]["name"])
                 if selected_uni:
                     df = get_university_progress(selected_uni)
-                    st.dataframe(df, use_container_width=True)
+                    display_df = df[["Working Day", "Framework", "Task", "Status", "Due Date", "Day of Week", "Remarks"]]
+                    st.dataframe(display_df, use_container_width=True)
         else:
             st.title("ℹ️ About")
+            end_date = get_working_date(50)
             st.markdown(f"""
             ### mahaSTRIDE Project Tracker - Data Analyst Portal
             
             **Your Role:** Update and track progress for assigned universities
             
-            **Project Timeline:** {PROJECT_START_DATE.strftime('%Y-%m-%d')} to {PROJECT_END_DATE.strftime('%Y-%m-%d')}
+            **Working Schedule:** Monday to Friday (Weekends skipped)  
+            **Project Timeline:** {PROJECT_START_DATE.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}  
+            **Working Days:** 50 days (Monday-Friday only)
             
             ### Your Responsibilities:
-            - Update task status regularly
+            - Update task status regularly on working days
             - Add remarks for completed/in-progress tasks
             - Ensure timely completion of tasks
             - Maintain accurate progress records
+            
+            **Note:** Weekends (Saturday & Sunday) are automatically skipped in the schedule.
             
             ### Access Credentials:
             - **Email:** dataanalyst@mahastride.com
@@ -947,9 +989,7 @@ def main():
             """)
 
 if __name__ == "__main__":
-    # Initialize data if needed
-    data = load_data()
-    if not data:
+    if not os.path.exists(DATA_FILE):
         save_data(create_initial_data())
     
     main()
