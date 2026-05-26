@@ -410,7 +410,6 @@ def get_university_entries(university_code):
             "Updated By": entry.get("updated_by", "")
         })
     
-    # Return empty DataFrame if no records, otherwise sort
     if not records:
         return pd.DataFrame()
     
@@ -1147,15 +1146,12 @@ def main():
                 """)
 
 if __name__ == "__main__":
-    for file in [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE, ATTENDANCE_DATA_FILE]:
-        if not os.path.exists(file):
-            if file == PROGRESS_DATA_FILE:
-                save_progress_data(create_initial_progress_data())
-            elif file == ASSIGNMENTS_DATA_FILE:
-                save_assignments_data(create_initial_assignments_data())
-            elif file == CUSTOM_TASKS_DATA_FILE:
-                save_custom_tasks_data(create_initial_custom_tasks_data())
-            else:
-                save_attendance_data(create_initial_attendance_data())
+    # Initialize data files if they don't exist
+    if not os.path.exists(PROGRESS_DATA_FILE):
+        save_progress_data(create_initial_progress_data())
+    if not os.path.exists(ASSIGNMENTS_DATA_FILE):
+        save_assignments_data(create_initial_assignments_data())
+    if not os.path.exists(CUSTOM_TASKS_DATA_FILE):
+        save_custom_tasks_data(create_initial_custom_tasks_data())
     
     main()
