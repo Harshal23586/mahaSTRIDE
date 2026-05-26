@@ -122,6 +122,20 @@ st.markdown("""
         margin: 1rem 0;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    .pending-task-card {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+    }
+    .completed-task-card {
+        background-color: #d4edda;
+        border-left: 4px solid #28a745;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+    }
     .planned-task {
         color: #1e8449;
         font-weight: bold;
@@ -615,6 +629,33 @@ def get_plan_for_date(date_str):
     # Otherwise return default plan
     return get_default_plan_for_date(date_str)
 
+def get_all_planned_dates():
+    """Get all dates that have a plan (default or custom) within Phase 1"""
+    phase1_dates = list(DEFAULT_PLAN.keys())
+    custom_tasks = load_custom_tasks_data()
+    custom_dates = list(custom_tasks["date_specific_tasks"].keys())
+    return sorted(set(phase1_dates + custom_dates))
+
+def get_pending_tasks_for_coordinator(university_code):
+    """Get all planned tasks that are not yet completed by the coordinator"""
+    data = load_progress_data()
+    completed_dates = set(data.get(university_code, {}).keys())
+    all_planned_dates = get_all_planned_dates()
+    
+    pending_dates = []
+    for date in all_planned_dates:
+        if date not in completed_dates:
+            plan = get_plan_for_date(date)
+            if plan:
+                pending_dates.append({
+                    "date": date,
+                    "task": plan.get("task", ""),
+                    "category": plan.get("task_category", ""),
+                    "description": plan.get("description", ""),
+                    "deliverables": plan.get("deliverables", "")
+                })
+    return pending_dates
+
 def log_daily_entry(university_code, date, task_category, task_name, description, deliverables, status, hours_spent, remarks, swapped_from_default, edited_task, updated_by):
     data = load_progress_data()
     if university_code not in data:
@@ -804,25 +845,20 @@ def get_summary_stats():
     
     for uni_code, uni_info in UNIVERSITIES.items():
         entries = data.get(uni_code, {})
-        total_days = len(entries)
+        total_planned = len(get_all_planned_dates())
         completed = sum(1 for e in entries.values() if e.get("status") == "completed")
-        in_progress = sum(1 for e in entries.values() if e.get("status") == "in_progress")
         total_hours = sum(e.get("hours_spent", 0) for e in entries.values())
-        swapped = sum(1 for e in entries.values() if e.get("swapped_from_default", False))
-        edited = sum(1 for e in entries.values() if e.get("edited_task", False))
         
         stats.append({
             "University": uni_info["name"],
             "Code": uni_code,
             "Coordinators": uni_info["coordinators"],
             "Nodal Officer": uni_info["nodal_officer"],
-            "Days Logged": total_days,
+            "Planned Tasks": total_planned,
             "Completed": completed,
-            "In Progress": in_progress,
+            "Pending": total_planned - completed,
             "Total Hours": round(total_hours, 1),
-            "Swapped": swapped,
-            "Edited": edited,
-            "Completion %": round((completed / total_days * 100), 1) if total_days > 0 else 0
+            "Completion %": round((completed / total_planned * 100), 1) if total_planned > 0 else 0
         })
     
     return pd.DataFrame(stats)
@@ -854,8 +890,8 @@ def create_admin_dashboard():
         total_unis = len(UNIVERSITIES)
         st.metric("Universities", f"{total_unis}")
     with col4:
-        days_elapsed = (datetime.now() - PROJECT_START_DATE).days
-        st.metric("Days Elapsed", max(0, days_elapsed))
+        total_planned = len(get_all_planned_dates())
+        st.metric("Phase 1 Tasks", total_planned)
     
     st.markdown("---")
     
@@ -943,11 +979,15 @@ def create_admin_dashboard():
                 fig7.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 st.plotly_chart(fig7, use_container_width=True)
             with col2:
-                fig8 = px.bar(summary_df, x="University", y="Total Hours", title="University-wise Total Hours", color="Total Hours", text="Total Hours", height=500)
-                fig8.update_traces(texttemplate='%{text:.1f}', textposition='outside')
+                fig8 = px.bar(summary_df, x="University", y="Completed", title="University-wise Tasks Completed", color="Completed", text="Completed", height=500)
+                fig8.update_traces(texttemplate='%{text}', textposition='outside')
                 st.plotly_chart(fig8, use_container_width=True)
             
             st.dataframe(summary_df, use_container_width=True)
+            
+            # Export button
+            csv = summary_df.to_csv(index=False)
+            st.download_button("📥 Export Summary Report", csv, "progress_summary.csv", "text/csv")
         else:
             st.info("No data available yet")
 
@@ -1112,7 +1152,103 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     
     st.markdown("---")
     
-    with st.expander("📋 View Your Previous Entries", expanded=False):
+    # Show Pending Tasks (All Phase 1 tasks not yet completed)
+    st.subheader("📋 Your Pending Tasks (Phase 1: May 7-30, 2026)")
+    
+    pending_tasks = get_pending_tasks_for_coordinator(university_code)
+    completed_entries = get_university_entries(university_code)
+    
+    if pending_tasks:
+        st.markdown(f"**Total Pending Tasks:** {len(pending_tasks)}")
+        
+        # Let coordinator select which date to log
+        selected_date_str = st.selectbox(
+            "Select Date to Log Work",
+            [task["date"] for task in pending_tasks],
+            format_func=lambda x: f"{x} - {next((t['task'][:50] for t in pending_tasks if t['date'] == x), '')}"
+        )
+        
+        if selected_date_str:
+            selected_task = next((t for t in pending_tasks if t["date"] == selected_date_str), None)
+            if selected_task:
+                selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d")
+                
+                st.markdown(f"""
+                <div class="default-task-card">
+                    <strong>📋 TASK FOR {selected_date_str} ({selected_date.strftime('%A')})</strong><br><br>
+                    <strong>🎯 Task:</strong> {selected_task['task']}<br>
+                    <strong>📂 Category:</strong> {selected_task['category']}<br>
+                    <strong>📝 Description:</strong> {selected_task['description']}<br>
+                    <strong>📎 Expected Deliverables:</strong> {selected_task['deliverables']}
+                </div>
+                """, unsafe_allow_html=True)
+                
+                with st.form("log_pending_task_form"):
+                    st.markdown("### Log Your Work for this Date")
+                    
+                    use_planned = st.radio(
+                        "Did you complete the planned task?",
+                        ["✅ Yes, I completed the planned task", "🔄 No, I want to log a different task"],
+                        horizontal=True
+                    )
+                    
+                    if use_planned == "✅ Yes, I completed the planned task":
+                        task_category = selected_task['category']
+                        task_name = selected_task['task']
+                        description = selected_task['description']
+                        deliverables = selected_task['deliverables']
+                        swapped = False
+                        edited = False
+                        
+                        st.success(f"Using planned task: {task_name}")
+                        st.text_input("Task Category", value=task_category, disabled=True)
+                        st.text_input("Task", value=task_name, disabled=True)
+                    else:
+                        task_category = st.selectbox("Task Category", list(TASK_CATEGORIES.keys()))
+                        suggested_tasks = TASK_CATEGORIES.get(task_category, [])
+                        if suggested_tasks:
+                            task_name = st.selectbox("Select Task", ["-- Type or select --"] + suggested_tasks)
+                            if task_name == "-- Type or select --":
+                                task_name = st.text_input("Or type custom task")
+                        else:
+                            task_name = st.text_input("Task")
+                        description = st.text_area("Detailed Description", placeholder="Describe what you did...", height=100)
+                        deliverables = st.text_area("Deliverables Produced", placeholder="What outputs/deliverables were created?", height=80)
+                        swapped = True
+                        edited = True
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        status = st.selectbox("Status", ["completed"], index=0)
+                    with col2:
+                        hours_spent = st.number_input("Hours Spent", min_value=0.5, max_value=12.0, step=0.5, value=8.0)
+                    
+                    remarks = st.text_area("Additional Remarks", placeholder="Any challenges, blockers, or notes...")
+                    
+                    if st.form_submit_button("Submit Log for this Date"):
+                        if use_planned == "✅ Yes, I completed the planned task":
+                            if log_daily_entry(university_code, selected_date_str, selected_task['category'], selected_task['task'],
+                                              selected_task['description'], selected_task['deliverables'], 
+                                              status, hours_spent, remarks, False, False, coordinator_name):
+                                st.success(f"✅ Work for {selected_date_str} logged successfully!")
+                                st.balloons()
+                                st.rerun()
+                        else:
+                            if task_name and task_name != "-- Type or select --":
+                                if log_daily_entry(university_code, selected_date_str, task_category, task_name, description, 
+                                                  deliverables, status, hours_spent, remarks, swapped, edited, coordinator_name):
+                                    st.success(f"✅ Work for {selected_date_str} logged successfully!")
+                                    st.balloons()
+                                    st.rerun()
+                            else:
+                                st.error("Please fill Task field")
+    else:
+        st.success("🎉 Congratulations! You have completed all Phase 1 tasks!")
+    
+    st.markdown("---")
+    
+    # Show completed entries
+    with st.expander("📋 View Your Completed Entries", expanded=False):
         df = get_university_entries(university_code)
         if not df.empty:
             st.dataframe(df, use_container_width=True)
@@ -1121,138 +1257,33 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     
     st.markdown("---")
     
-    st.subheader("📝 Log Today's Work")
+    # Show today's task if not yet completed and within Phase 1
+    today_str = datetime.now().date().strftime("%Y-%m-%d")
+    today_plan = get_plan_for_date(today_str)
+    today_completed = today_str in [e.get("Date", "") for e in get_university_entries(university_code).to_dict('records')]
     
-    today_date = datetime.now().date()
-    today_str = today_date.strftime("%Y-%m-%d")
-    today_day = today_date.strftime("%A")
-    
-    existing_data = load_progress_data()
-    already_logged = today_str in existing_data.get(university_code, {})
-    
-    # Get the plan for today - first check custom tasks, then default plan
-    plan_for_today = get_plan_for_date(today_str)
-    
-    # Show if today has a planned task
-    if plan_for_today and not already_logged:
-        st.markdown(f"""
-        <div class="default-task-card">
-            <strong>📋 YOUR PLANNED TASK FOR TODAY</strong><br>
-            <strong>Date:</strong> {today_day}, {today_str}<br><br>
-            <strong>🎯 Task:</strong> <span class="planned-task">{plan_for_today['task']}</span><br>
-            <strong>📂 Category:</strong> {plan_for_today['task_category']}<br>
-            <strong>📝 Description:</strong> {plan_for_today['description']}<br>
-            <strong>📎 Expected Deliverables:</strong> {plan_for_today['deliverables']}
-        </div>
-        """, unsafe_allow_html=True)
-    elif not plan_for_today and not already_logged:
-        st.info(f"📋 No planned task for {today_day}, {today_str}. Please log your work below.")
-    
-    if already_logged:
-        st.warning(f"⚠️ You have already logged work for {today_str}. You can edit below.")
+    if today_plan and not today_completed and today_str in [t["date"] for t in pending_tasks]:
+        st.subheader("📝 Log Today's Work (Quick Entry)")
         
-        existing_entry = existing_data[university_code][today_str]
-        
-        with st.form("edit_entry_form"):
-            st.markdown("### Edit Today's Entry")
-            
-            task_category = st.selectbox("Task Category", list(TASK_CATEGORIES.keys()),
-                                        index=list(TASK_CATEGORIES.keys()).index(existing_entry.get("task_category", "Data Collection")) if existing_entry.get("task_category") in TASK_CATEGORIES else 0)
-            
-            task_name = st.text_input("Task", value=existing_entry.get("task_name", ""))
-            description = st.text_area("Detailed Description", value=existing_entry.get("description", ""), height=100)
-            deliverables = st.text_area("Deliverables Produced", value=existing_entry.get("deliverables", ""), height=80)
+        with st.form("today_quick_entry"):
+            st.markdown(f"### Today: {today_str}")
+            st.markdown(f"**Planned Task:** {today_plan['task']}")
             
             col1, col2 = st.columns(2)
             with col1:
-                status = st.selectbox("Status", ["in_progress", "completed"], index=0 if existing_entry.get("status") == "in_progress" else 1)
-            with col2:
-                hours_spent = st.number_input("Hours Spent", min_value=0.5, max_value=12.0, step=0.5, value=float(existing_entry.get("hours_spent", 8)))
-            
-            remarks = st.text_area("Additional Remarks", value=existing_entry.get("remarks", ""))
-            
-            if st.form_submit_button("Update Entry"):
-                if log_daily_entry(university_code, today_str, task_category, task_name, description, deliverables, status, hours_spent, remarks, False, False, coordinator_name):
-                    st.success("Entry updated successfully!")
-                    st.balloons()
-                    st.rerun()
-                else:
-                    st.error("Failed to update entry")
-    else:
-        # Show options for logging
-        if plan_for_today:
-            use_planned = st.radio(
-                "Did you complete the planned task today?",
-                ["✅ Yes, I completed the planned task", "🔄 No, I want to log a different task"],
-                horizontal=True,
-                help="Select 'Yes' to use the planned task details, or 'No' to log something different"
-            )
-        else:
-            use_planned = "🔄 No, I want to log a different task"
-        
-        with st.form("daily_entry_form"):
-            st.markdown("### Today's Work Log")
-            
-            if use_planned == "✅ Yes, I completed the planned task" and plan_for_today:
-                # Use the planned task
-                task_category = plan_for_today['task_category']
-                task_name = plan_for_today['task']
-                description = plan_for_today['description']
-                deliverables = plan_for_today['deliverables']
-                
-                st.success(f"✅ Using planned task: **{task_name}**")
-                st.info("The task details have been pre-filled. Review and submit.")
-                
-                st.text_input("Task Category", value=task_category, disabled=True)
-                st.text_input("Task", value=task_name, disabled=True)
-                st.text_area("Description", value=description, disabled=True, height=80)
-                st.text_area("Expected Deliverables", value=deliverables, disabled=True, height=60)
-                
-            else:
-                # Allow custom task selection
-                task_category = st.selectbox("Task Category", list(TASK_CATEGORIES.keys()))
-                
-                # Show suggested tasks based on category
-                suggested_tasks = TASK_CATEGORIES.get(task_category, [])
-                if suggested_tasks:
-                    task_name = st.selectbox("Select Task", ["-- Type or select --"] + suggested_tasks)
-                    if task_name == "-- Type or select --":
-                        task_name = st.text_input("Or type custom task")
-                else:
-                    task_name = st.text_input("Task")
-                
-                description = st.text_area("Detailed Description", placeholder="Describe what you did today...", height=100)
-                deliverables = st.text_area("Deliverables Produced", placeholder="What outputs/deliverables were created?", height=80)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                status = st.selectbox("Status", ["in_progress", "completed"])
+                status = st.selectbox("Status", ["completed"], index=0)
             with col2:
                 hours_spent = st.number_input("Hours Spent", min_value=0.5, max_value=12.0, step=0.5, value=8.0)
             
-            remarks = st.text_area("Additional Remarks", placeholder="Any challenges, blockers, or notes...")
+            remarks = st.text_area("Remarks")
             
-            if st.form_submit_button("Submit Daily Log"):
-                if use_planned == "✅ Yes, I completed the planned task" and plan_for_today:
-                    # Submit using planned task
-                    if log_daily_entry(university_code, today_str, plan_for_today['task_category'], plan_for_today['task'],
-                                      plan_for_today['description'], plan_for_today['deliverables'], 
-                                      status, hours_spent, remarks, False, False, coordinator_name):
-                        st.success("✅ Daily work log submitted successfully! You used the planned task.")
-                        st.balloons()
-                        st.rerun()
-                    else:
-                        st.error("Failed to submit entry")
-                else:
-                    # Submit custom task
-                    if task_name and task_name != "-- Type or select --":
-                        if log_daily_entry(university_code, today_str, task_category, task_name, description, 
-                                          deliverables, status, hours_spent, remarks, True, True, coordinator_name):
-                            st.success("✅ Daily work log submitted successfully! (Custom task logged)")
-                            st.balloons()
-                            st.rerun()
-                    else:
-                        st.error("Please fill Task field")
+            if st.form_submit_button("Quick Submit - I completed the planned task"):
+                if log_daily_entry(university_code, today_str, today_plan['task_category'], today_plan['task'],
+                                  today_plan['description'], today_plan['deliverables'], 
+                                  status, hours_spent, remarks, False, False, coordinator_name):
+                    st.success("Today's work logged successfully!")
+                    st.balloons()
+                    st.rerun()
     
     st.markdown("---")
     
@@ -1281,6 +1312,13 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     st.markdown("---")
     st.subheader("📅 MPR Submission Reminder")
     st.warning("📋 **Note:** As per SOP Section 1 & 2, approved attendance and MPR must reach PMU MahaSTRIDE by the 10th of each month.")
+    
+    st.markdown("---")
+    st.subheader("📊 Your Progress Summary")
+    completed_count = len(get_university_entries(university_code))
+    total_planned = len(get_all_planned_dates())
+    st.progress(completed_count / total_planned if total_planned > 0 else 0)
+    st.caption(f"Progress: {completed_count}/{total_planned} tasks completed ({round(completed_count/total_planned*100, 1) if total_planned > 0 else 0}%)")
 
 def main():
     if "authenticated" not in st.session_state:
@@ -1356,7 +1394,7 @@ def main():
         elif user_role == "project_lead":
             menu = st.radio("Navigation", ["👨‍💼 Project Lead Dashboard", "📝 Assignments", "ℹ️ About"])
         else:
-            menu = st.radio("Navigation", ["📋 Log Work", "📊 My Progress", "ℹ️ About"])
+            menu = st.radio("Navigation", ["📋 My Tasks", "📊 My Progress", "ℹ️ About"])
         
         st.markdown("---")
         st.caption(f"⏰ {WORKING_HOURS}")
@@ -1380,6 +1418,8 @@ def main():
             ### mahaSTRIDE Project Tracker
             
             **Project Duration:** 2 Years ({PROJECT_START_DATE.strftime('%d-%b-%Y')} to {PROJECT_END_DATE.strftime('%d-%b-%Y')})
+            
+            **Phase 1 (May 7-30, 2026):** 20 planned tasks per coordinator
             
             **Participating Universities:**
             {chr(10).join([f"• {uni['name']} (Nodal Officer: {uni['nodal_officer']})" for uni in UNIVERSITIES.values()])}
@@ -1425,7 +1465,7 @@ def main():
         if not university_code:
             st.error("University not assigned. Please contact admin.")
         else:
-            if menu == "📋 Log Work":
+            if menu == "📋 My Tasks":
                 create_coordinator_dashboard(university_code, user_name)
             elif menu == "📊 My Progress":
                 st.title("📊 My Progress")
@@ -1436,7 +1476,8 @@ def main():
                     col1, col2 = st.columns(2)
                     with col1:
                         completed = len(df[df["Status"] == "COMPLETED"])
-                        st.metric("Completed Tasks", completed)
+                        total_planned = len(get_all_planned_dates())
+                        st.metric("Completed Tasks", f"{completed}/{total_planned}")
                     with col2:
                         total_hours = df["Hours Spent"].sum() if "Hours Spent" in df.columns else 0
                         st.metric("Total Hours", f"{total_hours:.1f}")
@@ -1455,19 +1496,18 @@ def main():
                 **University:** {UNIVERSITIES[university_code]['name']}
                 **Nodal Officer:** {UNIVERSITIES[university_code]['nodal_officer']}
                 
+                **Phase 1 Tasks (May 7-30, 2026):** 20 planned tasks
+                
+                **How to Log Work:**
+                1. Go to "My Tasks" page
+                2. Select a date from the pending tasks list
+                3. Confirm if you completed the planned task or log a different one
+                4. Add hours spent and submit
+                
                 **Daily Schedule:**
                 - 10:00 AM: Report to university
                 - 10:30-11:00 AM: Stand-up with ICARE Team
                 - 6:00 PM: Departure
-                
-                **How to Log Work:**
-                1. You'll see your planned task for the day (if available)
-                2. If you completed it, select "Yes" and submit
-                3. If you did something different, select "No" and enter custom details
-                4. Add hours spent and status
-                
-                **Phase 1 (May 7-30, 2026) has default planned tasks.**
-                After Phase 1, Project Lead will assign tasks as needed.
                 """)
 
 if __name__ == "__main__":
