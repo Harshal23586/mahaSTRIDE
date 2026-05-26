@@ -6,11 +6,6 @@ from datetime import datetime, timedelta
 import os
 import json
 from hashlib import sha256
-from docx import Document
-from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT
-from io import BytesIO
 
 # Page configuration
 st.set_page_config(
@@ -191,7 +186,7 @@ USERS = {
     }
 }
 
-# University details - Updated with correct names, without registrar and VC
+# University details
 UNIVERSITIES = {
     "MU": {
         "name": "University of Mumbai",
@@ -274,14 +269,12 @@ DAILY_ROUTINE = """
 
 WORKING_HOURS = "10:00 AM - 6:00 PM"
 PROJECT_START_DATE = datetime(2026, 5, 7)
-PROJECT_DURATION_YEARS = 2
 PROJECT_END_DATE = datetime(2028, 5, 6)
 
 # Data file paths
 PROGRESS_DATA_FILE = "coordinator_progress_data.json"
 ASSIGNMENTS_DATA_FILE = "assignments_data.json"
 CUSTOM_TASKS_DATA_FILE = "custom_tasks_data.json"
-ATTENDANCE_DATA_FILE = "attendance_data.json"
 
 def hash_password(password):
     return sha256(password.encode()).hexdigest()
@@ -303,12 +296,6 @@ def create_initial_assignments_data():
 
 def create_initial_custom_tasks_data():
     return {"date_specific_tasks": {}}
-
-def create_initial_attendance_data():
-    data = {}
-    for uni_code in UNIVERSITIES.keys():
-        data[uni_code] = {}
-    return data
 
 def load_progress_data():
     try:
@@ -374,30 +361,6 @@ def save_custom_tasks_data(data):
         st.error(f"Error saving custom tasks data: {e}")
         return False
 
-def load_attendance_data():
-    try:
-        if os.path.exists(ATTENDANCE_DATA_FILE):
-            with open(ATTENDANCE_DATA_FILE, 'r') as f:
-                data = json.load(f)
-                if all(uni_code in data for uni_code in UNIVERSITIES.keys()):
-                    return data
-                else:
-                    return create_initial_attendance_data()
-        else:
-            return create_initial_attendance_data()
-    except Exception as e:
-        st.error(f"Error loading attendance data: {e}")
-        return create_initial_attendance_data()
-
-def save_attendance_data(data):
-    try:
-        with open(ATTENDANCE_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except Exception as e:
-        st.error(f"Error saving attendance data: {e}")
-        return False
-
 def add_custom_task_for_date(date_str, task_category, task_name, description, deliverables, added_by):
     custom_tasks = load_custom_tasks_data()
     custom_tasks["date_specific_tasks"][date_str] = {
@@ -433,14 +396,24 @@ def get_university_entries(university_code):
     records = []
     for date, entry in data[university_code].items():
         records.append({
-            "Date": date, "Task Category": entry.get("task_category", ""), "Task": entry.get("task_name", ""),
-            "Description": entry.get("description", ""), "Deliverables": entry.get("deliverables", ""),
-            "Status": entry.get("status", "").upper(), "Hours Spent": entry.get("hours_spent", 0),
+            "Date": date, 
+            "Task Category": entry.get("task_category", ""), 
+            "Task": entry.get("task_name", ""),
+            "Description": entry.get("description", ""), 
+            "Deliverables": entry.get("deliverables", ""),
+            "Status": entry.get("status", "").upper(), 
+            "Hours Spent": entry.get("hours_spent", 0),
             "Swapped": "✅" if entry.get("swapped_from_default", False) else "❌",
             "Edited": "✅" if entry.get("edited_task", False) else "❌",
-            "Remarks": entry.get("remarks", ""), "Updated At": entry.get("updated_at", "")[:16] if entry.get("updated_at") else "",
+            "Remarks": entry.get("remarks", ""), 
+            "Updated At": entry.get("updated_at", "")[:16] if entry.get("updated_at") else "",
             "Updated By": entry.get("updated_by", "")
         })
+    
+    # Return empty DataFrame if no records, otherwise sort
+    if not records:
+        return pd.DataFrame()
+    
     return pd.DataFrame(records).sort_values("Date", ascending=False)
 
 def get_monthly_summary(university_code, year, month):
@@ -461,7 +434,6 @@ def get_monthly_summary(university_code, year, month):
     return monthly_entries
 
 def get_daily_progress_data():
-    """Get daily progress data for all universities"""
     data = load_progress_data()
     daily_records = []
     
@@ -480,7 +452,6 @@ def get_daily_progress_data():
     return df
 
 def get_weekly_progress_data():
-    """Get weekly aggregated progress data"""
     df = get_daily_progress_data()
     if df.empty:
         return pd.DataFrame()
@@ -498,7 +469,6 @@ def get_weekly_progress_data():
     return weekly
 
 def get_monthly_progress_data():
-    """Get monthly aggregated progress data"""
     df = get_daily_progress_data()
     if df.empty:
         return pd.DataFrame()
@@ -563,395 +533,34 @@ def update_assignment_submission(assignment_id, university_code, status, remarks
             return save_assignments_data(assignments_data)
     return False
 
-def create_mpr_word_document(university_code, year, month, coordinator_name):
-    """Generate MPR in Word format - Ready for MITRA submission"""
-    university = UNIVERSITIES[university_code]
-    monthly_entries = get_monthly_summary(university_code, year, month)
+def get_summary_stats():
+    data = load_progress_data()
+    stats = []
     
-    doc = Document()
-    
-    for section in doc.sections:
-        section.top_margin = Inches(0.5)
-        section.bottom_margin = Inches(0.5)
-        section.left_margin = Inches(0.7)
-        section.right_margin = Inches(0.7)
-    
-    # Confidential Header
-    header_para = doc.add_paragraph()
-    header_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    run = header_para.add_run("Confidential")
-    run.bold = True
-    run.font.size = Pt(10)
-    
-    doc.add_paragraph()
-    
-    # MITRA Header
-    mitra_header = doc.add_paragraph()
-    mitra_header.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = mitra_header.add_run("Maharashtra Institution for Transformation (MITRA)")
-    run.bold = True
-    run.font.size = Pt(12)
-    
-    address = doc.add_paragraph()
-    address.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    address.add_run("5th Floor, Nirmal, Nariman Point, Mumbai-400021")
-    address.add_run("\nOffice Tel. No. 022 69979440 | Email: pmu.mahastride@mahamitra.org")
-    
-    doc.add_paragraph()
-    
-    # Title
-    title = doc.add_heading("MONTHLY PROGRESS REPORT", 0)
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    
-    period_end = datetime(year, month, 1).replace(day=30 if month in [4,6,9,11] else 31)
-    subtitle = doc.add_paragraph(f"(From 01-{month:02d}-{year} to {period_end.strftime('%d')}-{month:02d}-{year})")
-    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    
-    doc.add_paragraph()
-    
-    # Client Information
-    doc.add_heading("1. CLIENT INFORMATION", level=1)
-    info_table = doc.add_table(rows=7, cols=2)
-    info_table.style = 'Table Grid'
-    info_data = [
-        ("Client Name", "Maharashtra Institution for Transformation (MITRA)"),
-        ("Project Name", "Comprehensive Data Collection, Advanced Analytics, and Development of Performance Improvement Framework for Maharashtra State Universities under MahaSTRIDE operations"),
-        ("University / Division", university["name"]),
-        ("Reporting Month", f"{datetime(year, month, 1).strftime('%B %Y')}"),
-        ("Report Date", datetime.now().strftime("%d-%m-%Y")),
-        ("Prepared By", coordinator_name),
-        ("Designation", "Institutional Coordinator cum Research & Innovation Officer")
-    ]
-    for i, (label, value) in enumerate(info_data):
-        info_table.rows[i].cells[0].text = label
-        info_table.rows[i].cells[1].text = value
-        info_table.rows[i].cells[0].paragraphs[0].runs[0].bold = True
-    
-    doc.add_paragraph()
-    
-    # Project Team Deployment
-    doc.add_heading("2. PROJECT TEAM DEPLOYMENT", level=1)
-    
-    team_table = doc.add_table(rows=3, cols=6)
-    team_table.style = 'Table Grid'
-    headers = ["Sr. No.", "Name", "Profile", "Location", "Present Days", "Remarks"]
-    
-    header_row = team_table.rows[0].cells
-    for i, header in enumerate(headers):
-        header_row[i].text = header
-        header_row[i].paragraphs[0].runs[0].bold = True
-    
-    total_present = len(monthly_entries)
-    team_data = [
-        ("1", coordinator_name, "Institutional Coordinator", university["name"], str(total_present), "Present all working days"),
-        ("2", "Support Staff", "Data Entry Operator", university["name"], str(total_present), "Present all working days")
-    ]
-    for i, row_data in enumerate(team_data):
-        row_cells = team_table.rows[i + 1].cells
-        for j, cell_data in enumerate(row_data):
-            row_cells[j].text = cell_data
-    
-    doc.add_paragraph()
-    
-    # Monthly Activities
-    doc.add_heading("3. MONTHLY ACTIVITIES UNDERTAKEN", level=1)
-    
-    if monthly_entries:
-        for entry in monthly_entries[:15]:
-            doc.add_paragraph(f"• {entry['date']}: {entry['task_name']} - {entry['description'][:100]}", style='List Bullet')
-    else:
-        doc.add_paragraph("No activities logged for this period.", style='List Bullet')
-    
-    doc.add_paragraph()
-    
-    # Major Deliverables
-    doc.add_heading("4. MAJOR DELIVERABLES", level=1)
-    
-    if monthly_entries:
-        for entry in monthly_entries:
-            if entry.get('deliverables'):
-                doc.add_paragraph(f"• {entry['date']}: {entry['deliverables'][:100]}", style='List Bullet')
-    else:
-        doc.add_paragraph("No deliverables reported for this period.", style='List Bullet')
-    
-    doc.add_paragraph()
-    
-    # Meetings Conducted
-    doc.add_heading("5. MEETINGS CONDUCTED", level=1)
-    doc.add_paragraph("• Daily stand-up meetings with ICARE Team (10:30-11:00 AM)")
-    doc.add_paragraph(f"• Weekly review meeting with Nodal Officer: {university['nodal_officer']}")
-    doc.add_paragraph("• Monthly coordination meeting with MITRA PMU")
-    doc.add_paragraph("• Department-wise data collection meetings")
-    
-    doc.add_paragraph()
-    
-    # Risks and Issues
-    doc.add_heading("6. RISKS AND ISSUES", level=1)
-    doc.add_paragraph("• Timely data availability from certain departments remains a challenge")
-    doc.add_paragraph("• Digitization of legacy data requires additional resources")
-    doc.add_paragraph("• Coordination with multiple stakeholders requires proactive follow-ups")
-    
-    doc.add_paragraph()
-    
-    # Attendance Summary
-    doc.add_heading("7. ATTENDANCE SUMMARY", level=1)
-    
-    att_table = doc.add_table(rows=4, cols=3)
-    att_table.style = 'Table Grid'
-    att_headers = ["Particulars", "Days", "Remarks"]
-    for i, header in enumerate(att_headers):
-        att_table.rows[0].cells[i].text = header
-        att_table.rows[0].cells[i].paragraphs[0].runs[0].bold = True
-    
-    working_days = len(set(entry["date"] for entry in monthly_entries))
-    att_table.rows[1].cells[0].text = "Total Working Days"
-    att_table.rows[1].cells[1].text = str(working_days)
-    att_table.rows[1].cells[2].text = "As per monthly calendar"
-    
-    att_table.rows[2].cells[0].text = "Present Days"
-    att_table.rows[2].cells[1].text = str(working_days)
-    att_table.rows[2].cells[2].text = "Full attendance maintained"
-    
-    att_table.rows[3].cells[0].text = "Leave / Absent"
-    att_table.rows[3].cells[1].text = "0"
-    att_table.rows[3].cells[2].text = "No leave taken"
-    
-    doc.add_paragraph()
-    
-    # Status of Initiatives
-    doc.add_heading("8. STATUS OF INITIATIVES", level=1)
-    doc.add_paragraph("1. Finalisation of Annual Action Plan: In Progress")
-    doc.add_paragraph("2. Data Collection Framework: Implemented")
-    doc.add_paragraph("3. Stakeholder Engagement: Ongoing")
-    doc.add_paragraph("4. NIRF Data Compilation: In Progress")
-    
-    doc.add_paragraph()
-    
-    # Signatures Section - As per SOP
-    doc.add_heading("9. APPROVALS AND SIGNATURES", level=1)
-    
-    sig_table = doc.add_table(rows=7, cols=2)
-    sig_table.style = 'Table Grid'
-    
-    signatures = [
-        ("Prepared by:", f"{coordinator_name}\n(Institutional Coordinator)"),
-        ("Verified by:", f"{university['nodal_officer']}\n(Nodal Officer, IQAC Coordinator)"),
-        ("Approved by:", f"{university['registrar']}\n(Registrar)"),
-        ("Copy to:", f"{university['vc']}\n(Hon. Vice Chancellor)"),
-        ("Reviewed by:", f"{ICARE_OFFICIALS['project_head']}\n(Project Head, ICARE Pvt. Ltd.)"),
-        ("Approved by:", f"{MITRA_OFFICIALS['project_director']}\n(Project Director, MahaSTRIDE)"),
-        ("Copy for information:", f"{MITRA_OFFICIALS['addl_chief_secretary']}\n{university['nodal_officer']}")
-    ]
-    
-    for i, (role, name) in enumerate(signatures):
-        sig_table.rows[i].cells[0].text = role
-        sig_table.rows[i].cells[1].text = name
-        sig_table.rows[i].cells[0].paragraphs[0].runs[0].bold = True
-    
-    doc.add_paragraph()
-    
-    # Footer
-    footer = doc.add_paragraph()
-    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = footer.add_run("This report is submitted as per SOP Section 2 - Monthly Progress Report (MPR)")
-    run.font.size = Pt(9)
-    run.italic = True
-    
-    doc_bytes = BytesIO()
-    doc.save(doc_bytes)
-    doc_bytes.seek(0)
-    return doc_bytes
-
-def create_consolidated_mpr(year, month):
-    """Generate consolidated MPR for all universities"""
-    doc = Document()
-    
-    for section in doc.sections:
-        section.top_margin = Inches(0.5)
-        section.bottom_margin = Inches(0.5)
-        section.left_margin = Inches(0.7)
-        section.right_margin = Inches(0.7)
-    
-    # Confidential Header
-    header_para = doc.add_paragraph()
-    header_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    run = header_para.add_run("Confidential")
-    run.bold = True
-    run.font.size = Pt(10)
-    
-    doc.add_paragraph()
-    
-    # MITRA Header
-    mitra_header = doc.add_paragraph()
-    mitra_header.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = mitra_header.add_run("Maharashtra Institution for Transformation (MITRA)")
-    run.bold = True
-    run.font.size = Pt(12)
-    
-    doc.add_paragraph()
-    
-    # Title
-    title = doc.add_heading("CONSOLIDATED MONTHLY PROGRESS REPORT", 0)
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    
-    subtitle = doc.add_paragraph(f"All Maharashtra State Universities\nReporting Period: {datetime(year, month, 1).strftime('%B %Y')}")
-    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    
-    doc.add_paragraph()
-    
-    # Client Information
-    doc.add_heading("1. CLIENT INFORMATION", level=1)
-    info_table = doc.add_table(rows=6, cols=2)
-    info_table.style = 'Table Grid'
-    info_data = [
-        ("Client Name", "Maharashtra Institution for Transformation (MITRA)"),
-        ("Project Name", "Comprehensive Data Collection, Advanced Analytics, and Development of Performance Improvement Framework for Maharashtra State Universities"),
-        ("Reporting Month", f"{datetime(year, month, 1).strftime('%B %Y')}"),
-        ("Report Date", datetime.now().strftime("%d-%m-%Y")),
-        ("Prepared By", ICARE_OFFICIALS["project_head"]),
-        ("Submitted To", "PMU, MahaSTRIDE, MITRA")
-    ]
-    for i, (label, value) in enumerate(info_data):
-        info_table.rows[i].cells[0].text = label
-        info_table.rows[i].cells[1].text = value
-        info_table.rows[i].cells[0].paragraphs[0].runs[0].bold = True
-    
-    doc.add_paragraph()
-    
-    # University-wise Progress Summary
-    doc.add_heading("2. UNIVERSITY-WISE PROGRESS SUMMARY", level=1)
-    
-    summary_data = []
     for uni_code, uni_info in UNIVERSITIES.items():
-        entries = get_monthly_summary(uni_code, year, month)
-        tasks_completed = sum(1 for e in entries if e.get("status") == "completed")
-        total_hours = sum(e.get("hours_spent", 0) for e in entries)
-        summary_data.append({
-            "University": uni_info["name"][:40], "Days Logged": len(entries),
-            "Tasks Completed": tasks_completed, "Total Hours": total_hours,
-            "Nodal Officer": uni_info["nodal_officer"]
+        entries = data.get(uni_code, {})
+        total_days = len(entries)
+        completed = sum(1 for e in entries.values() if e.get("status") == "completed")
+        in_progress = sum(1 for e in entries.values() if e.get("status") == "in_progress")
+        total_hours = sum(e.get("hours_spent", 0) for e in entries.values())
+        swapped = sum(1 for e in entries.values() if e.get("swapped_from_default", False))
+        edited = sum(1 for e in entries.values() if e.get("edited_task", False))
+        
+        stats.append({
+            "University": uni_info["name"],
+            "Code": uni_code,
+            "Coordinators": uni_info["coordinators"],
+            "Nodal Officer": uni_info["nodal_officer"],
+            "Days Logged": total_days,
+            "Completed": completed,
+            "In Progress": in_progress,
+            "Total Hours": round(total_hours, 1),
+            "Swapped": swapped,
+            "Edited": edited,
+            "Completion %": round((completed / total_days * 100), 1) if total_days > 0 else 0
         })
     
-    summary_df = pd.DataFrame(summary_data)
-    
-    # Create summary table
-    summary_table = doc.add_table(rows=len(summary_data) + 1, cols=5)
-    summary_table.style = 'Table Grid'
-    headers = ["Sr. No.", "University", "Days Logged", "Tasks Completed", "Nodal Officer"]
-    
-    header_row = summary_table.rows[0].cells
-    for i, header in enumerate(headers):
-        header_row[i].text = header
-        header_row[i].paragraphs[0].runs[0].bold = True
-    
-    for i, row in summary_df.iterrows():
-        row_cells = summary_table.rows[i + 1].cells
-        row_cells[0].text = str(i + 1)
-        row_cells[1].text = row["University"]
-        row_cells[2].text = str(row["Days Logged"])
-        row_cells[3].text = str(row["Tasks Completed"])
-        row_cells[4].text = row["Nodal Officer"]
-    
-    doc.add_paragraph()
-    
-    # Overall Statistics
-    doc.add_heading("3. OVERALL STATISTICS", level=1)
-    
-    total_entries = summary_df["Days Logged"].sum()
-    total_tasks = summary_df["Tasks Completed"].sum()
-    total_hours = summary_df["Total Hours"].sum()
-    
-    stats_table = doc.add_table(rows=5, cols=2)
-    stats_table.style = 'Table Grid'
-    stats_data = [
-        ("Total Universities", str(len(UNIVERSITIES))),
-        ("Total Days Logged", str(total_entries)),
-        ("Total Tasks Completed", str(total_tasks)),
-        ("Total Hours Invested", f"{total_hours:.1f} hours"),
-        ("Average per University", f"{(total_entries/len(UNIVERSITIES)):.1f} days")
-    ]
-    for i, (label, value) in enumerate(stats_data):
-        stats_table.rows[i].cells[0].text = label
-        stats_table.rows[i].cells[1].text = value
-        stats_table.rows[i].cells[0].paragraphs[0].runs[0].bold = True
-    
-    doc.add_paragraph()
-    
-    # Task Category Distribution
-    doc.add_heading("4. TASK CATEGORY DISTRIBUTION", level=1)
-    
-    category_data = []
-    for uni_code in UNIVERSITIES.keys():
-        entries = get_monthly_summary(uni_code, year, month)
-        for e in entries:
-            category_data.append({"Category": e.get("task_category", "Other")})
-    
-    if category_data:
-        category_df = pd.DataFrame(category_data)
-        category_counts = category_df["Category"].value_counts()
-        
-        cat_table = doc.add_table(rows=len(category_counts) + 1, cols=2)
-        cat_table.style = 'Table Grid'
-        cat_table.rows[0].cells[0].text = "Task Category"
-        cat_table.rows[0].cells[1].text = "Count"
-        cat_table.rows[0].cells[0].paragraphs[0].runs[0].bold = True
-        cat_table.rows[0].cells[1].paragraphs[0].runs[0].bold = True
-        
-        for i, (cat, count) in enumerate(category_counts.items()):
-            cat_table.rows[i + 1].cells[0].text = cat
-            cat_table.rows[i + 1].cells[1].text = str(count)
-    
-    doc.add_paragraph()
-    
-    # Key Observations
-    doc.add_heading("5. KEY OBSERVATIONS", level=1)
-    doc.add_paragraph("• All 7 universities have active data collection underway")
-    doc.add_paragraph("• IQAC coordinators are effectively engaged with ICARE team")
-    doc.add_paragraph("• Daily stand-up meetings (10:30-11:00 AM) with ICARE Team are being conducted regularly")
-    doc.add_paragraph("• Data collection from academic, research, and placement cells progressing as per plan")
-    doc.add_paragraph("• Weekly progress reports submitted to PMU, MahaSTRIDE")
-    
-    doc.add_paragraph()
-    
-    # Recommendations
-    doc.add_heading("6. RECOMMENDATIONS", level=1)
-    doc.add_paragraph("• Expedite data availability from financial departments")
-    doc.add_paragraph("• Strengthen coordination with library and IT infrastructure teams")
-    doc.add_paragraph("• Schedule additional review meetings for gap closure")
-    
-    doc.add_paragraph()
-    
-    # Signatures - Consolidated
-    doc.add_heading("7. APPROVALS AND SIGNATURES", level=1)
-    
-    sig_table = doc.add_table(rows=5, cols=2)
-    sig_table.style = 'Table Grid'
-    
-    signatures = [
-        ("Prepared by:", f"{ICARE_OFFICIALS['project_head']}\n(Project Head, ICARE Pvt. Ltd.)"),
-        ("Reviewed by:", f"{MITRA_OFFICIALS['project_director']}\n(Project Director, MahaSTRIDE)"),
-        ("Approved by:", f"{MITRA_OFFICIALS['jt_ceo']}\n(Jt. CEO, MITRA)"),
-        ("Copy to:", "Addl. Chief Secretary, Higher and Technical Education Department"),
-        ("Copy to:", "Secretary to Hon. Governor Maharashtra")
-    ]
-    
-    for i, (role, name) in enumerate(signatures):
-        sig_table.rows[i].cells[0].text = role
-        sig_table.rows[i].cells[1].text = name
-        sig_table.rows[i].cells[0].paragraphs[0].runs[0].bold = True
-    
-    doc.add_paragraph()
-    
-    footer = doc.add_paragraph()
-    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = footer.add_run("This consolidated report is submitted as per SOP Section 2 - Monthly Progress Report (MPR)")
-    run.font.size = Pt(9)
-    run.italic = True
-    
-    doc_bytes = BytesIO()
-    doc.save(doc_bytes)
-    doc_bytes.seek(0)
-    return doc_bytes
+    return pd.DataFrame(stats)
 
 def show_sangam_info():
     st.markdown('<div class="sangam-card">', unsafe_allow_html=True)
@@ -985,10 +594,9 @@ def create_admin_dashboard():
     
     st.markdown("---")
     
-    # Infographics Section
     st.subheader("📊 Progress Infographics")
     
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Daily Progress", "📅 Weekly Progress", "📆 Monthly Progress", "🏛️ University-wise", "📄 MPR Reports"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📈 Daily Progress", "📅 Weekly Progress", "📆 Monthly Progress", "🏛️ University-wise"])
     
     with tab1:
         st.markdown("### Daily Progress Overview")
@@ -1062,64 +670,21 @@ def create_admin_dashboard():
     with tab4:
         st.markdown("### University-wise Progress")
         
-        uni_progress = []
-        for uni_code, uni_info in UNIVERSITIES.items():
-            entries = get_university_entries(uni_code)
-            if not entries.empty:
-                total_tasks = len(entries)
-                completed = len(entries[entries["Status"] == "COMPLETED"])
-                total_hours = entries["Hours Spent"].sum() if "Hours Spent" in entries.columns else 0
-                uni_progress.append({
-                    "University": uni_info["name"],
-                    "Nodal Officer": uni_info["nodal_officer"],
-                    "Total Tasks": total_tasks,
-                    "Completed": completed,
-                    "Completion %": round(completed / total_tasks * 100, 1) if total_tasks > 0 else 0,
-                    "Total Hours": total_hours
-                })
-        
-        if uni_progress:
-            uni_df = pd.DataFrame(uni_progress)
-            
+        summary_df = get_summary_stats()
+        if not summary_df.empty:
             col1, col2 = st.columns(2)
             with col1:
-                fig7 = px.bar(uni_df, x="University", y="Completion %", title="University-wise Completion %", color="Completion %", text="Completion %", height=500)
+                fig7 = px.bar(summary_df, x="University", y="Completion %", title="University-wise Completion %", color="Completion %", text="Completion %", height=500)
                 fig7.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 st.plotly_chart(fig7, use_container_width=True)
             with col2:
-                fig8 = px.bar(uni_df, x="University", y="Total Hours", title="University-wise Total Hours", color="Total Hours", text="Total Hours", height=500)
+                fig8 = px.bar(summary_df, x="University", y="Total Hours", title="University-wise Total Hours", color="Total Hours", text="Total Hours", height=500)
                 fig8.update_traces(texttemplate='%{text:.1f}', textposition='outside')
                 st.plotly_chart(fig8, use_container_width=True)
             
-            st.dataframe(uni_df, use_container_width=True)
+            st.dataframe(summary_df, use_container_width=True)
         else:
             st.info("No data available yet")
-    
-    with tab5:
-        st.markdown("### Monthly Progress Report (MPR)")
-        st.markdown("Generate MPR for submission to MITRA as per SOP Section 2")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            report_year = st.selectbox("Select Year", [2026, 2027, 2028], key="admin_report_year")
-            report_month = st.selectbox("Select Month", list(range(1, 13)), key="admin_report_month",
-                                       format_func=lambda x: datetime(2000, x, 1).strftime("%B"))
-            report_type = st.radio("Report Type", ["Individual University", "Consolidated (All Universities)"])
-        
-        with col2:
-            if report_type == "Individual University":
-                selected_uni = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
-        
-        if st.button("📄 Generate MPR", use_container_width=True):
-            with st.spinner("Generating MPR..."):
-                if report_type == "Individual University":
-                    doc_bytes = create_mpr_word_document(selected_uni, report_year, report_month, UNIVERSITIES[selected_uni]["coordinators"][0])
-                    filename = f"MPR_{UNIVERSITIES[selected_uni]['name'].replace(' ', '_')}_{report_year}_{report_month:02d}.docx"
-                else:
-                    doc_bytes = create_consolidated_mpr(report_year, report_month)
-                    filename = f"Consolidated_MPR_{report_year}_{report_month:02d}.docx"
-                
-                st.download_button("📥 Download MPR (Word)", doc_bytes, filename, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
 def create_project_lead_dashboard():
     st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard - Dr. Harshal Kotwal</h2><p>Assign Tasks & Monitor Progress (2-Year Project)</p></div>', unsafe_allow_html=True)
@@ -1170,27 +735,12 @@ def create_project_lead_dashboard():
     with tab2:
         st.subheader("📊 Coordinator Progress Overview")
         
-        uni_progress = []
-        for uni_code, uni_info in UNIVERSITIES.items():
-            entries = get_university_entries(uni_code)
-            if not entries.empty:
-                total_tasks = len(entries)
-                completed = len(entries[entries["Status"] == "COMPLETED"])
-                uni_progress.append({
-                    "University": uni_info["name"],
-                    "Coordinator": ", ".join(uni_info["coordinators"]),
-                    "Tasks Logged": total_tasks,
-                    "Completed": completed,
-                    "Completion %": round(completed / total_tasks * 100, 1) if total_tasks > 0 else 0,
-                    "Nodal Officer": uni_info["nodal_officer"]
-                })
-        
-        if uni_progress:
-            uni_df = pd.DataFrame(uni_progress)
-            fig = px.bar(uni_df, x="University", y="Completion %", title="University-wise Progress", color="Completion %", text="Completion %", height=500)
+        summary_df = get_summary_stats()
+        if not summary_df.empty:
+            fig = px.bar(summary_df, x="University", y="Completion %", title="University-wise Progress", color="Completion %", text="Completion %", height=500)
             fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
             st.plotly_chart(fig, use_container_width=True)
-            st.dataframe(uni_df, use_container_width=True)
+            st.dataframe(summary_df, use_container_width=True)
         else:
             st.info("No progress data available yet")
         
@@ -1240,8 +790,6 @@ def create_project_lead_dashboard():
         st.subheader("📈 Advanced Analytics")
         
         daily_df = get_daily_progress_data()
-        weekly_df = get_weekly_progress_data()
-        monthly_df = get_monthly_progress_data()
         
         if not daily_df.empty:
             col1, col2 = st.columns(2)
@@ -1257,20 +805,11 @@ def create_project_lead_dashboard():
                 fig_hours = px.line(hours_trend, x="Date", y="Hours", title="Daily Hours Trend", markers=True, height=400)
                 st.plotly_chart(fig_hours, use_container_width=True)
             
-            if not weekly_df.empty:
-                weekly_pivot = weekly_df.pivot_table(index="University", columns="Week_Start", values="Tasks Completed", fill_value=0)
-                fig_heatmap = px.imshow(weekly_pivot, title="Weekly Tasks Heatmap", height=500, color_continuous_scale="Viridis")
-                st.plotly_chart(fig_heatmap, use_container_width=True)
-            
             st.subheader("📥 Export Data")
-            col1, col2 = st.columns(2)
-            with col1:
-                csv_daily = daily_df.to_csv(index=False)
-                st.download_button("📊 Export Daily Data (CSV)", csv_daily, "daily_progress.csv", "text/csv")
-            with col2:
-                if not monthly_df.empty:
-                    csv_monthly = monthly_df.to_csv(index=False)
-                    st.download_button("📆 Export Monthly Data (CSV)", csv_monthly, "monthly_progress.csv", "text/csv")
+            csv_daily = daily_df.to_csv(index=False)
+            st.download_button("📊 Export Daily Data (CSV)", csv_daily, "daily_progress.csv", "text/csv")
+        else:
+            st.info("No data available yet")
 
 def create_coordinator_dashboard(university_code, coordinator_name):
     st.markdown('<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>Log Your Daily Work</p></div>', unsafe_allow_html=True)
@@ -1495,9 +1034,9 @@ def main():
         st.markdown("---")
         
         if user_role == "admin":
-            menu = st.radio("Navigation", ["📊 Admin Dashboard", "📄 MPR Reports", "ℹ️ About"])
+            menu = st.radio("Navigation", ["📊 Admin Dashboard", "ℹ️ About"])
         elif user_role == "project_lead":
-            menu = st.radio("Navigation", ["👨‍💼 Project Lead Dashboard", "📝 Assignments", "📊 Analytics", "ℹ️ About"])
+            menu = st.radio("Navigation", ["👨‍💼 Project Lead Dashboard", "📝 Assignments", "ℹ️ About"])
         else:
             menu = st.radio("Navigation", ["📋 Log Work", "📊 My Progress", "ℹ️ About"])
         
@@ -1517,27 +1056,6 @@ def main():
     if user_role == "admin":
         if menu == "📊 Admin Dashboard":
             create_admin_dashboard()
-        elif menu == "📄 MPR Reports":
-            st.title("📄 Monthly Progress Reports")
-            col1, col2 = st.columns(2)
-            with col1:
-                report_year = st.selectbox("Year", [2026, 2027, 2028])
-                report_month = st.selectbox("Month", list(range(1, 13)), format_func=lambda x: datetime(2000, x, 1).strftime("%B"))
-            with col2:
-                report_type = st.radio("Report Type", ["Individual University", "Consolidated (All Universities)"])
-                if report_type == "Individual University":
-                    selected_uni = st.selectbox("University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
-            
-            if st.button("Generate MPR"):
-                with st.spinner("Generating..."):
-                    if report_type == "Individual University":
-                        doc_bytes = create_mpr_word_document(selected_uni, report_year, report_month, UNIVERSITIES[selected_uni]["coordinators"][0])
-                        filename = f"MPR_{UNIVERSITIES[selected_uni]['name'].replace(' ', '_')}_{report_year}_{report_month:02d}.docx"
-                    else:
-                        doc_bytes = create_consolidated_mpr(report_year, report_month)
-                        filename = f"Consolidated_MPR_{report_year}_{report_month:02d}.docx"
-                    
-                    st.download_button("Download MPR", doc_bytes, filename, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         else:
             st.title("ℹ️ About")
             st.markdown(f"""
@@ -1551,8 +1069,6 @@ def main():
             **Features:**
             - Daily progress logging by coordinators
             - Weekly and monthly progress visualizations
-            - Automated MPR generation in Word format
-            - Consolidated reports for MITRA submission
             - 2-year project timeline support
             """)
     
@@ -1580,27 +1096,9 @@ def main():
                 active = [a for a in assignments_data["assignments"] if a["status"] == "active"]
                 for a in active:
                     st.markdown(f"**📌 {a['title']}** (Due: {a['due_date']})")
-        elif menu == "📊 Analytics":
-            st.title("📊 Analytics Dashboard")
-            
-            daily_df = get_daily_progress_data()
-            if not daily_df.empty:
-                fig = px.line(daily_df.groupby("Date").size().reset_index(), x="Date", y=0, title="Daily Activity Trend", markers=True)
-                st.plotly_chart(fig, use_container_width=True)
-                
-                uni_progress = []
-                for uni_code in UNIVERSITIES.keys():
-                    entries = get_university_entries(uni_code)
-                    if not entries.empty:
-                        uni_progress.append({"University": UNIVERSITIES[uni_code]["name"], "Tasks": len(entries)})
-                if uni_progress:
-                    fig2 = px.bar(pd.DataFrame(uni_progress), x="University", y="Tasks", title="Tasks by University")
-                    st.plotly_chart(fig2, use_container_width=True)
-            else:
-                st.info("No data available yet")
         else:
             st.title("ℹ️ About")
-            st.markdown("### Project Lead Dashboard\n\n**Features:**\n- Assign tasks to specific dates\n- Monitor coordinator progress\n- Create and manage assignments\n- Generate progress reports\n- 2-year project timeline support")
+            st.markdown("### Project Lead Dashboard\n\n**Features:**\n- Assign tasks to specific dates\n- Monitor coordinator progress\n- Create and manage assignments\n- 2-year project timeline support")
     
     else:  # coordinator
         university_code = st.session_state.get("user_university")
@@ -1646,7 +1144,6 @@ def main():
                 - Log daily work activities
                 - Submit deliverables
                 - Complete assignments
-                - Prepare MPR inputs
                 """)
 
 if __name__ == "__main__":
