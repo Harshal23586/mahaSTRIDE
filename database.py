@@ -1,193 +1,133 @@
-from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.exc import IntegrityError
-from typing import List, Dict, Optional
-import pandas as pd
-from datetime import datetime, date
-import os
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Enum
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
+from datetime import datetime
+import enum
 
-from models import Base, University, Task, TaskProgress, TaskStatus, TASK_SCHEDULE
+Base = declarative_base()
 
-class DatabaseManager:
-    def __init__(self, db_path: str = "mahastride.db"):
-        self.engine = create_engine(f'sqlite:///{db_path}', echo=False)
-        Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
-        
-    def initialize_data(self):
-        """Initialize universities and tasks if not already present"""
-        session = self.Session()
-        try:
-            # Initialize Universities
-            universities_data = [
-                (1, "Mumbai University", "MU", "Ms Sneha, Shubham"),
-                (2, "SSPU Pune", "SSPU", "Mr Jagan"),
-                (3, "COEP Tech University", "COEP", "Mr Vaibhav"),
-                (4, "Amravati University", "AU", "Mr Pratham"),
-                (5, "Nagpur University", "NU", "Ms Anjali"),
-                (6, "KBCNMU Jalgaon University", "KBCNMU", "Mr Nitish"),
-                (7, "BAMU University Aurangabad", "BAMU", "Mr Atharv"),
-            ]
-            
-            for uni_id, name, code, coordinators in universities_data:
-                existing = session.query(University).filter_by(code=code).first()
-                if not existing:
-                    university = University(id=uni_id, name=name, code=code, coordinators=coordinators)
-                    session.add(university)
-            
-            # Initialize Tasks
-            for day, (framework, task_name) in TASK_SCHEDULE.items():
-                existing = session.query(Task).filter_by(day=day).first()
-                if not existing:
-                    task = Task(day=day, framework=framework, task_name=task_name)
-                    session.add(task)
-            
-            session.commit()
-            
-            # Initialize Task Progress for all universities
-            universities = session.query(University).all()
-            tasks = session.query(Task).all()
-            
-            for university in universities:
-                for task in tasks:
-                    existing = session.query(TaskProgress).filter_by(
-                        university_id=university.id, task_id=task.id
-                    ).first()
-                    if not existing:
-                        progress = TaskProgress(
-                            university_id=university.id,
-                            task_id=task.id,
-                            status=TaskStatus.PENDING.value
-                        )
-                        session.add(progress)
-            
-            session.commit()
-            
-        except Exception as e:
-            session.rollback()
-            print(f"Error initializing data: {e}")
-        finally:
-            session.close()
+class TaskStatus(enum.Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+
+class University(Base):
+    __tablename__ = 'universities'
     
-    def update_task_status(self, university_code: str, day: int, status: str, remarks: str = ""):
-        """Update task status for a specific university and day"""
-        session = self.Session()
-        try:
-            university = session.query(University).filter_by(code=university_code).first()
-            task = session.query(Task).filter_by(day=day).first()
-            
-            if university and task:
-                progress = session.query(TaskProgress).filter_by(
-                    university_id=university.id, task_id=task.id
-                ).first()
-                
-                if progress:
-                    progress.status = status
-                    progress.updated_at = datetime.now()
-                    progress.remarks = remarks
-                    session.commit()
-                    return True
-            return False
-        except Exception as e:
-            session.rollback()
-            print(f"Error updating task status: {e}")
-            return False
-        finally:
-            session.close()
+    id = Column(Integer, primary_key=True)
+    name = Column(String(200), nullable=False)
+    code = Column(String(20), unique=True, nullable=False)
+    coordinators = Column(String(500), nullable=False)
+    nodal_officer = Column(String(200), nullable=True)
+    registrar = Column(String(200), nullable=True)
+    vc = Column(String(200), nullable=True)
+    created_at = Column(DateTime, default=func.now())
     
-    def get_university_progress(self, university_code: str) -> pd.DataFrame:
-        """Get progress DataFrame for a specific university"""
-        session = self.Session()
-        try:
-            university = session.query(University).filter_by(code=university_code).first()
-            if not university:
-                return pd.DataFrame()
-            
-            query = session.query(
-                Task.day,
-                Task.framework,
-                Task.task_name,
-                TaskProgress.status,
-                TaskProgress.updated_at,
-                TaskProgress.remarks
-            ).join(TaskProgress, Task.id == TaskProgress.task_id)\
-             .filter(TaskProgress.university_id == university.id)\
-             .order_by(Task.day)
-            
-            df = pd.read_sql(query.statement, session.bind)
-            return df
-        except Exception as e:
-            print(f"Error getting university progress: {e}")
-            return pd.DataFrame()
-        finally:
-            session.close()
+    def __repr__(self):
+        return f"<University(name='{self.name}', code='{self.code}')>"
+
+class Task(Base):
+    __tablename__ = 'tasks'
     
-    def get_all_universities_progress(self) -> Dict:
-        """Get progress for all universities"""
-        session = self.Session()
-        try:
-            universities = session.query(University).all()
-            result = {}
-            
-            for uni in universities:
-                progress_data = self.get_university_progress(uni.code)
-                result[uni.name] = {
-                    'code': uni.code,
-                    'coordinators': uni.coordinators,
-                    'progress': progress_data
-                }
-            return result
-        finally:
-            session.close()
+    id = Column(Integer, primary_key=True)
+    day = Column(Integer, nullable=False)
+    framework = Column(String(50), nullable=False)
+    task_name = Column(String(500), nullable=False)
+    created_at = Column(DateTime, default=func.now())
     
-    def get_summary_stats(self) -> pd.DataFrame:
-        """Get summary statistics for all universities"""
-        session = self.Session()
-        try:
-            stats = []
-            universities = session.query(University).all()
-            
-            for uni in universities:
-                progress = session.query(TaskProgress).filter_by(university_id=uni.id)
-                total = progress.count()
-                completed = progress.filter_by(status=TaskStatus.COMPLETED.value).count()
-                in_progress = progress.filter_by(status=TaskStatus.IN_PROGRESS.value).count()
-                pending = progress.filter_by(status=TaskStatus.PENDING.value).count()
-                
-                stats.append({
-                    'University': uni.name,
-                    'Code': uni.code,
-                    'Coordinators': uni.coordinators,
-                    'Total Tasks': total,
-                    'Completed': completed,
-                    'In Progress': in_progress,
-                    'Pending': pending,
-                    'Completion %': round((completed / total * 100), 2) if total > 0 else 0
-                })
-            
-            return pd.DataFrame(stats)
-        finally:
-            session.close()
+    def __repr__(self):
+        return f"<Task(day={self.day}, framework='{self.framework}')>"
+
+class TaskProgress(Base):
+    __tablename__ = 'task_progress'
     
-    def get_framework_wise_progress(self, university_code: str = None) -> pd.DataFrame:
-        """Get framework-wise progress"""
-        session = self.Session()
-        try:
-            query = session.query(
-                Task.framework,
-                University.name.label('university'),
-                func.count(Task.id).label('total_tasks'),
-                func.sum(func.case([(TaskProgress.status == TaskStatus.COMPLETED.value, 1)], else_=0)).label('completed')
-            ).join(TaskProgress, Task.id == TaskProgress.task_id)\
-             .join(University, University.id == TaskProgress.university_id)
-            
-            if university_code:
-                query = query.filter(University.code == university_code)
-            
-            results = query.group_by(Task.framework, University.name).all()
-            
-            df = pd.DataFrame(results, columns=['framework', 'university', 'total_tasks', 'completed'])
-            df['completion_percentage'] = (df['completed'] / df['total_tasks'] * 100).round(2)
-            return df
-        finally:
-            session.close()
+    id = Column(Integer, primary_key=True)
+    university_id = Column(Integer, ForeignKey('universities.id'), nullable=False)
+    task_id = Column(Integer, ForeignKey('tasks.id'), nullable=False)
+    status = Column(String(20), default=TaskStatus.PENDING.value)
+    remarks = Column(String(1000), default="")
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    updated_by = Column(String(100), nullable=True)
+    
+    def __repr__(self):
+        return f"<TaskProgress(uni_id={self.university_id}, task_id={self.task_id}, status='{self.status}')>"
+
+class DailyWorkLog(Base):
+    __tablename__ = 'daily_work_logs'
+    
+    id = Column(Integer, primary_key=True)
+    university_id = Column(Integer, ForeignKey('universities.id'), nullable=False)
+    work_date = Column(String(20), nullable=False)  # YYYY-MM-DD format
+    task_category = Column(String(100), nullable=False)
+    task_name = Column(String(500), nullable=False)
+    description = Column(String(2000), nullable=True)
+    deliverables = Column(String(2000), nullable=True)
+    status = Column(String(20), default="in_progress")
+    hours_spent = Column(Float, default=0.0)
+    remarks = Column(String(1000), nullable=True)
+    swapped_from_default = Column(Boolean, default=False)
+    edited_task = Column(Boolean, default=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    updated_by = Column(String(100), nullable=True)
+    
+    # Composite unique constraint handled by application logic
+    
+    def __repr__(self):
+        return f"<DailyWorkLog(uni_id={self.university_id}, date='{self.work_date}')>"
+
+class Assignment(Base):
+    __tablename__ = 'assignments'
+    
+    id = Column(String(50), primary_key=True)
+    title = Column(String(500), nullable=False)
+    description = Column(String(2000), nullable=True)
+    due_date = Column(String(20), nullable=False)
+    created_by = Column(String(200), nullable=False)
+    created_at = Column(DateTime, default=func.now())
+    status = Column(String(20), default="active")
+    
+    def __repr__(self):
+        return f"<Assignment(id='{self.id}', title='{self.title}')>"
+
+class AssignmentSubmission(Base):
+    __tablename__ = 'assignment_submissions'
+    
+    id = Column(Integer, primary_key=True)
+    assignment_id = Column(String(50), ForeignKey('assignments.id'), nullable=False)
+    university_id = Column(Integer, ForeignKey('universities.id'), nullable=False)
+    status = Column(String(20), default="pending")
+    remarks = Column(String(1000), nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    completed_by = Column(String(200), nullable=True)
+    submitted_at = Column(DateTime, default=func.now())
+    
+    def __repr__(self):
+        return f"<AssignmentSubmission(assignment='{self.assignment_id}', uni={self.university_id})>"
+
+class CustomTask(Base):
+    __tablename__ = 'custom_tasks'
+    
+    id = Column(Integer, primary_key=True)
+    date = Column(String(20), nullable=False)  # YYYY-MM-DD format
+    task_category = Column(String(100), nullable=False)
+    task_name = Column(String(500), nullable=False)
+    description = Column(String(2000), nullable=False)
+    deliverables = Column(String(2000), nullable=False)
+    added_by = Column(String(200), nullable=False)
+    added_at = Column(DateTime, default=func.now())
+    
+    def __repr__(self):
+        return f"<CustomTask(date='{self.date}', task='{self.task_name}')>"
+
+class CoordinatorCredentials(Base):
+    __tablename__ = 'coordinator_credentials'
+    
+    id = Column(Integer, primary_key=True)
+    email = Column(String(200), unique=True, nullable=False)
+    password_hash = Column(String(200), nullable=False)
+    name = Column(String(200), nullable=False)
+    university_code = Column(String(20), ForeignKey('universities.code'), nullable=False)
+    created_at = Column(DateTime, default=func.now())
+    
+    def __repr__(self):
+        return f"<CoordinatorCredentials(email='{self.email}')>"
