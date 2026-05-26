@@ -630,16 +630,16 @@ def get_plan_for_date(date_str):
     return get_default_plan_for_date(date_str)
 
 def get_all_planned_dates():
-    """Get all dates that have a plan (default or custom) within Phase 1"""
-    phase1_dates = list(DEFAULT_PLAN.keys())
-    custom_tasks = load_custom_tasks_data()
-    custom_dates = list(custom_tasks["date_specific_tasks"].keys())
-    return sorted(set(phase1_dates + custom_dates))
+    """Get all dates that have a plan (Phase 1: May 7-30, 2026)"""
+    # Return all dates from DEFAULT_PLAN (which excludes weekends)
+    return list(DEFAULT_PLAN.keys())
 
 def get_pending_tasks_for_coordinator(university_code):
     """Get all planned tasks that are not yet completed by the coordinator"""
     data = load_progress_data()
     completed_dates = set(data.get(university_code, {}).keys())
+    
+    # Get all Phase 1 dates (May 7 - May 30, 2026 excluding weekends)
     all_planned_dates = get_all_planned_dates()
     
     pending_dates = []
@@ -1152,20 +1152,37 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     
     st.markdown("---")
     
-    # Show Pending Tasks (All Phase 1 tasks not yet completed)
-    st.subheader("📋 Your Pending Tasks (Phase 1: May 7-30, 2026)")
-    
+    # Get pending tasks (Phase 1 tasks not yet completed)
     pending_tasks = get_pending_tasks_for_coordinator(university_code)
     completed_entries = get_university_entries(university_code)
+    total_planned = len(get_all_planned_dates())
+    completed_count = len(completed_entries)
+    
+    # Show progress summary at the top
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("📋 Total Phase 1 Tasks", total_planned)
+    with col2:
+        st.metric("✅ Completed", completed_count)
+    with col3:
+        st.metric("⏳ Pending", total_planned - completed_count)
+    
+    st.progress(completed_count / total_planned if total_planned > 0 else 0)
+    
+    st.markdown("---")
+    
+    # PENDING DAILY TASKS SECTION - This is the main section for coordinators
+    st.subheader("📋 YOUR PENDING DAILY TASKS (Phase 1: May 7-30, 2026)")
+    st.markdown("Please log your work for each date below. Select a date and submit your work log.")
     
     if pending_tasks:
-        st.markdown(f"**Total Pending Tasks:** {len(pending_tasks)}")
+        st.warning(f"⚠️ You have **{len(pending_tasks)} pending tasks** to complete. Please log them one by one.")
         
         # Let coordinator select which date to log
         selected_date_str = st.selectbox(
             "Select Date to Log Work",
             [task["date"] for task in pending_tasks],
-            format_func=lambda x: f"{x} - {next((t['task'][:50] for t in pending_tasks if t['date'] == x), '')}"
+            format_func=lambda x: f"📅 {x} - {next((t['task'][:60] for t in pending_tasks if t['date'] == x), '')}"
         )
         
         if selected_date_str:
@@ -1175,7 +1192,7 @@ def create_coordinator_dashboard(university_code, coordinator_name):
                 
                 st.markdown(f"""
                 <div class="default-task-card">
-                    <strong>📋 TASK FOR {selected_date_str} ({selected_date.strftime('%A')})</strong><br><br>
+                    <strong>📋 PLANNED TASK FOR {selected_date_str} ({selected_date.strftime('%A')})</strong><br><br>
                     <strong>🎯 Task:</strong> {selected_task['task']}<br>
                     <strong>📂 Category:</strong> {selected_task['category']}<br>
                     <strong>📝 Description:</strong> {selected_task['description']}<br>
@@ -1200,7 +1217,7 @@ def create_coordinator_dashboard(university_code, coordinator_name):
                         swapped = False
                         edited = False
                         
-                        st.success(f"Using planned task: {task_name}")
+                        st.success(f"✅ Using planned task: **{task_name}**")
                         st.text_input("Task Category", value=task_category, disabled=True)
                         st.text_input("Task", value=task_name, disabled=True)
                     else:
@@ -1225,7 +1242,7 @@ def create_coordinator_dashboard(university_code, coordinator_name):
                     
                     remarks = st.text_area("Additional Remarks", placeholder="Any challenges, blockers, or notes...")
                     
-                    if st.form_submit_button("Submit Log for this Date"):
+                    if st.form_submit_button("✅ Submit Work Log for this Date", use_container_width=True):
                         if use_planned == "✅ Yes, I completed the planned task":
                             if log_daily_entry(university_code, selected_date_str, selected_task['category'], selected_task['task'],
                                               selected_task['description'], selected_task['deliverables'], 
@@ -1242,52 +1259,67 @@ def create_coordinator_dashboard(university_code, coordinator_name):
                                     st.rerun()
                             else:
                                 st.error("Please fill Task field")
+        
+        # Show all pending tasks in a list
+        with st.expander("📋 View All Pending Tasks", expanded=False):
+            for task in pending_tasks:
+                st.markdown(f"""
+                <div class="pending-task-card">
+                    <strong>📅 {task['date']}</strong><br>
+                    <strong>Task:</strong> {task['task']}<br>
+                    <strong>Category:</strong> {task['category']}
+                </div>
+                """, unsafe_allow_html=True)
     else:
         st.success("🎉 Congratulations! You have completed all Phase 1 tasks!")
     
     st.markdown("---")
     
-    # Show completed entries
-    with st.expander("📋 View Your Completed Entries", expanded=False):
-        df = get_university_entries(university_code)
-        if not df.empty:
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.info("No entries logged yet")
-    
-    st.markdown("---")
-    
-    # Show today's task if not yet completed and within Phase 1
+    # Today's quick entry (if today is a pending task)
     today_str = datetime.now().date().strftime("%Y-%m-%d")
+    today_pending = any(t["date"] == today_str for t in pending_tasks)
     today_plan = get_plan_for_date(today_str)
-    today_completed = today_str in [e.get("Date", "") for e in get_university_entries(university_code).to_dict('records')]
     
-    if today_plan and not today_completed and today_str in [t["date"] for t in pending_tasks]:
-        st.subheader("📝 Log Today's Work (Quick Entry)")
+    if today_plan and today_pending:
+        st.subheader("📝 QUICK LOG FOR TODAY")
+        st.markdown(f"**Today's Date:** {today_str}")
         
         with st.form("today_quick_entry"):
-            st.markdown(f"### Today: {today_str}")
             st.markdown(f"**Planned Task:** {today_plan['task']}")
             
             col1, col2 = st.columns(2)
             with col1:
                 status = st.selectbox("Status", ["completed"], index=0)
             with col2:
-                hours_spent = st.number_input("Hours Spent", min_value=0.5, max_value=12.0, step=0.5, value=8.0)
+                hours_spent = st.number_input("Hours Spent", min_value=0.5, max_value=12.0, step=0.5, value=8.0, key="today_hours")
             
-            remarks = st.text_area("Remarks")
+            remarks = st.text_area("Remarks", key="today_remarks", placeholder="Any notes about today's work...")
             
-            if st.form_submit_button("Quick Submit - I completed the planned task"):
+            if st.form_submit_button("✅ Quick Submit - I completed the planned task", use_container_width=True):
                 if log_daily_entry(university_code, today_str, today_plan['task_category'], today_plan['task'],
                                   today_plan['description'], today_plan['deliverables'], 
                                   status, hours_spent, remarks, False, False, coordinator_name):
                     st.success("Today's work logged successfully!")
                     st.balloons()
                     st.rerun()
+        
+        st.markdown("---")
+    
+    # COMPLETED ENTRIES SECTION
+    st.subheader("✅ YOUR COMPLETED TASKS")
+    with st.expander("📋 View Your Completed Entries", expanded=False):
+        df = get_university_entries(university_code)
+        if not df.empty:
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.info("No entries logged yet. Please start logging your pending tasks above.")
     
     st.markdown("---")
     
-    st.subheader("📎 Pending Assignments")
+    # ADDITIONAL ASSIGNMENTS (from Project Lead)
+    st.subheader("📎 ADDITIONAL ASSIGNMENTS (From Project Lead)")
+    st.caption("These are special tasks assigned by the Project Lead, separate from your daily planned tasks.")
+    
     assignments = get_university_assignments(university_code)
     
     if assignments:
@@ -1307,7 +1339,7 @@ def create_coordinator_dashboard(university_code, coordinator_name):
                         st.success("Assignment marked as completed!")
                         st.rerun()
     else:
-        st.info("No pending assignments")
+        st.info("No additional assignments from Project Lead.")
     
     st.markdown("---")
     st.subheader("📅 MPR Submission Reminder")
@@ -1315,10 +1347,7 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     
     st.markdown("---")
     st.subheader("📊 Your Progress Summary")
-    completed_count = len(get_university_entries(university_code))
-    total_planned = len(get_all_planned_dates())
-    st.progress(completed_count / total_planned if total_planned > 0 else 0)
-    st.caption(f"Progress: {completed_count}/{total_planned} tasks completed ({round(completed_count/total_planned*100, 1) if total_planned > 0 else 0}%)")
+    st.markdown(f"**Phase 1 Progress:** {completed_count} out of {total_planned} tasks completed ({round(completed_count/total_planned*100, 1) if total_planned > 0 else 0}%)")
 
 def main():
     if "authenticated" not in st.session_state:
