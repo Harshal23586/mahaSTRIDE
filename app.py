@@ -65,6 +65,13 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
+    .projectlead-card {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
     .sangam-card {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         color: white;
@@ -131,6 +138,13 @@ st.markdown("""
         border-radius: 10px;
         font-family: monospace;
     }
+    .edit-task-card {
+        background-color: #fff3e0;
+        border-left: 4px solid #ff9800;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -139,114 +153,139 @@ USERS = {
     "admin@mahastride.com": {
         "password": sha256("Admin@2026".encode()).hexdigest(),
         "role": "admin",
-        "name": "Dr. Harshal"
+        "name": "Admin",
+        "permissions": "full"
     },
-    "dataanalyst@mahastride.com": {
-        "password": sha256("Data@2026".encode()).hexdigest(),
-        "role": "data_analyst",
-        "name": "Data Analyst"
+    "projectlead@mahastride.com": {
+        "password": sha256("ProjectLead@2026".encode()).hexdigest(),
+        "role": "project_lead",
+        "name": "Dr. Harshal Kotwal",
+        "permissions": "edit_all"
     },
+    # Coordinators (Project Leads for respective universities - can edit their own)
     "sneha@mu.edu": {
         "password": sha256("Coord@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Ms Sneha",
-        "university": "MU"
+        "university": "MU",
+        "permissions": "self"
     },
     "shubham@mu.edu": {
         "password": sha256("Coord@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Shubham",
-        "university": "MU"
+        "university": "MU",
+        "permissions": "self"
     },
     "jagan@sspu.edu": {
         "password": sha256("Coord@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Jagan",
-        "university": "SSPU"
+        "university": "SSPU",
+        "permissions": "self"
     },
     "vaibhav@coep.edu": {
         "password": sha256("Coord@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Vaibhav",
-        "university": "COEP"
+        "university": "COEP",
+        "permissions": "self"
     },
     "pratham@au.edu": {
         "password": sha256("Coord@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Pratham",
-        "university": "AU"
+        "university": "AU",
+        "permissions": "self"
     },
     "anjali@nu.edu": {
         "password": sha256("Coord@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Ms Anjali",
-        "university": "NU"
+        "university": "NU",
+        "permissions": "self"
     },
     "nitish@kbcnmu.edu": {
         "password": sha256("Coord@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Nitish",
-        "university": "KBCNMU"
+        "university": "KBCNMU",
+        "permissions": "self"
     },
     "atharv@bamu.edu": {
         "password": sha256("Coord@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Atharv",
-        "university": "BAMU"
+        "university": "BAMU",
+        "permissions": "self"
     }
 }
 
-# University to Data Analyst mapping
-UNIVERSITY_ANALYST_MAPPING = {
-    "MU": "dataanalyst@mahastride.com",
-    "SSPU": "dataanalyst@mahastride.com",
-    "COEP": "dataanalyst@mahastride.com",
-    "AU": "dataanalyst@mahastride.com",
-    "NU": "dataanalyst@mahastride.com",
-    "KBCNMU": "dataanalyst@mahastride.com",
-    "BAMU": "dataanalyst@mahastride.com",
+# University to Project Lead mapping
+UNIVERSITY_LEAD_MAPPING = {
+    "MU": "sneha@mu.edu",
+    "SSPU": "jagan@sspu.edu",
+    "COEP": "vaibhav@coep.edu",
+    "AU": "pratham@au.edu",
+    "NU": "anjali@nu.edu",
+    "KBCNMU": "nitish@kbcnmu.edu",
+    "BAMU": "atharv@bamu.edu",
 }
 
 # NIRF Data Collection Tasks (7 May - 30 May 2026)
-# Working days: Monday to Saturday (Sunday off) | Saturdays are Work from Home
+# Working days: Monday to Saturday (Sunday off) | Saturdays have meaningful WFH tasks
 NIRF_TASK_SCHEDULE = {
-    1: {"date": "2026-05-07", "day_name": "Thursday", "day_type": "Onsite", "task": "Join university, meet VC & Registrar, introduce role. Meet Nodal Officer (IQAC Coordinator) to confirm workspace, access, and data sources.", "deliverable": "Introduction email to PMU & ICARE Head. Meeting minutes.", "framework": "Setup"},
-    2: {"date": "2026-05-08", "day_name": "Friday", "day_type": "Onsite", "task": "With Nodal Officer, map all NIRF-related data sources: admission, academic, research, placement, finance, outreach. Identify missing data owners.", "deliverable": "NIRF Data Source Map (university-specific).", "framework": "Setup"},
-    3: {"date": "2026-05-09", "day_name": "Saturday", "day_type": "WFH", "task": "Holiday / Weekly off (per SOP Annexure C)", "deliverable": "No work", "framework": "Holiday"},
-    4: {"date": "2026-05-10", "day_name": "Sunday", "day_type": "Off", "task": "Holiday / Weekly off", "deliverable": "No work", "framework": "Holiday"},
-    5: {"date": "2026-05-11", "day_name": "Monday", "day_type": "Onsite", "task": "Create NIRF Data Gap Template for FY 2022-23, 2023-24, 2024-25. Share with Nodal Officer for validation.", "deliverable": "Gap template v1.0.", "framework": "Setup"},
+    1: {"date": "2026-05-07", "day_name": "Thursday", "day_type": "Onsite", "task": "Join university, meet VC & Registrar, introduce role. Meet Nodal Officer & ICARE Team to confirm workspace, access, and data sources.", "deliverable": "Introduction email to PMU & ICARE Head. Meeting minutes.", "framework": "Setup"},
+    2: {"date": "2026-05-08", "day_name": "Friday", "day_type": "Onsite", "task": "With Nodal Officer & ICARE Team, map all NIRF-related data sources: admission, academic, research, placement, finance, outreach. Identify missing data owners.", "deliverable": "NIRF Data Source Map (university-specific).", "framework": "Setup"},
+    3: {"date": "2026-05-09", "day_name": "Saturday", "day_type": "WFH", "task": "WFH: Review NIRF data templates. Create digital data collection forms. Organize department-wise data request letters.", "deliverable": "Digital forms created. Data request letters drafted.", "framework": "Setup"},
+    4: {"date": "2026-05-10", "day_name": "Sunday", "day_type": "Off", "task": "Weekly off", "deliverable": "No work", "framework": "Holiday"},
+    5: {"date": "2026-05-11", "day_name": "Monday", "day_type": "Onsite", "task": "Create NIRF Data Gap Template for FY 2022-23, 2023-24, 2024-25. Share with Nodal Officer & ICARE Team for validation.", "deliverable": "Gap template v1.0.", "framework": "Setup"},
     6: {"date": "2026-05-12", "day_name": "Tuesday", "day_type": "Onsite", "task": "Meet HoD (Academic) & Exam Cell - collect student enrollment, graduation, and backlog data.", "deliverable": "Raw data files saved.", "framework": "Data Collection"},
     7: {"date": "2026-05-13", "day_name": "Wednesday", "day_type": "Onsite", "task": "Meet Faculty/HR department - collect faculty count, designation, PhD qualification, experience.", "deliverable": "Faculty master data.", "framework": "Data Collection"},
     8: {"date": "2026-05-14", "day_name": "Thursday", "day_type": "Onsite", "task": "Meet Research Cell - collect publications (Scopus/WoS/PubMed/UGC CARE), citations, patents, sponsored research projects.", "deliverable": "Research output spreadsheet.", "framework": "Data Collection"},
     9: {"date": "2026-05-15", "day_name": "Friday", "day_type": "Onsite", "task": "Meet Placement Cell - collect placement data, median salary, higher education admission data.", "deliverable": "Placement & higher ed data.", "framework": "Data Collection"},
-    10: {"date": "2026-05-16", "day_name": "Saturday", "day_type": "WFH", "task": "Holiday / Weekly off", "deliverable": "No work", "framework": "Holiday"},
-    11: {"date": "2026-05-17", "day_name": "Sunday", "day_type": "Off", "task": "Holiday / Weekly off", "deliverable": "No work", "framework": "Holiday"},
+    10: {"date": "2026-05-16", "day_name": "Saturday", "day_type": "WFH", "task": "WFH: Digitize collected data. Create data validation scripts. Prepare weekly progress report for ICARE Team.", "deliverable": "Digitized dataset. Weekly report submitted.", "framework": "Data Collection"},
+    11: {"date": "2026-05-17", "day_name": "Sunday", "day_type": "Off", "task": "Weekly off", "deliverable": "No work", "framework": "Holiday"},
     12: {"date": "2026-05-18", "day_name": "Monday", "day_type": "Onsite", "task": "Meet Finance/Accounts - collect financial data: research expenditure, infrastructure spending, university income.", "deliverable": "Finance data file.", "framework": "Data Collection"},
     13: {"date": "2026-05-19", "day_name": "Tuesday", "day_type": "Onsite", "task": "Meet Library/IT - collect e-resources, digital repository, library subscriptions, IT infrastructure details.", "deliverable": "Library & IT data.", "framework": "Data Collection"},
-    14: {"date": "2026-05-20", "day_name": "Wednesday", "day_type": "Onsite", "task": "Consolidate all collected data. Cross-verify with Nodal Officer. Identify major gaps.", "deliverable": "Consolidated university dataset v1.", "framework": "Validation"},
+    14: {"date": "2026-05-20", "day_name": "Wednesday", "day_type": "Onsite", "task": "Consolidate all collected data. Cross-verify with Nodal Officer & ICARE Team. Identify major gaps.", "deliverable": "Consolidated university dataset v1.", "framework": "Validation"},
     15: {"date": "2026-05-21", "day_name": "Thursday", "day_type": "Onsite", "task": "Prepare NIRF gap report - list missing data, incomplete years, inconsistent formats. Share with Nodal Officer & VC.", "deliverable": "Gap report submitted to Nodal Officer.", "framework": "Reporting"},
-    16: {"date": "2026-05-22", "day_name": "Friday", "day_type": "Onsite", "task": "Work with Nodal Officer to assign responsibility for each gap to specific department heads.", "deliverable": "Responsibility matrix.", "framework": "Action Plan"},
-    17: {"date": "2026-05-23", "day_name": "Saturday", "day_type": "WFH", "task": "Holiday / Weekly off", "deliverable": "No work", "framework": "Holiday"},
-    18: {"date": "2026-05-24", "day_name": "Sunday", "day_type": "Off", "task": "Holiday / Weekly off", "deliverable": "No work", "framework": "Holiday"},
+    16: {"date": "2026-05-22", "day_name": "Friday", "day_type": "Onsite", "task": "Work with Nodal Officer & ICARE Team to assign responsibility for each gap to specific department heads.", "deliverable": "Responsibility matrix.", "framework": "Action Plan"},
+    17: {"date": "2026-05-23", "day_name": "Saturday", "day_type": "WFH", "task": "WFH: Analyze gap report. Create action plan templates. Prepare follow-up email drafts for departments.", "deliverable": "Action plan templates. Follow-up email drafts.", "framework": "Action Plan"},
+    18: {"date": "2026-05-24", "day_name": "Sunday", "day_type": "Off", "task": "Weekly off", "deliverable": "No work", "framework": "Holiday"},
     19: {"date": "2026-05-25", "day_name": "Monday", "day_type": "Onsite", "task": "Follow up with departments for missing data. Assist them in extracting data in NIRF-required format.", "deliverable": "Updated data files.", "framework": "Data Collection"},
     20: {"date": "2026-05-26", "day_name": "Tuesday", "day_type": "Onsite", "task": "Validate data consistency (enrollment totals, faculty counts match department lists).", "deliverable": "Validation log.", "framework": "Validation"},
-    21: {"date": "2026-05-27", "day_name": "Wednesday", "day_type": "Onsite", "task": "Prepare first draft of NIRF data template as per NIRF 2026 format. Share with Nodal Officer for review.", "deliverable": "Draft NIRF submission file.", "framework": "Reporting"},
-    22: {"date": "2026-05-28", "day_name": "Thursday", "day_type": "Onsite", "task": "Conduct review meeting with Nodal Officer + IQAC team. Document pending items and action owners.", "deliverable": "Meeting minutes.", "framework": "Review"},
+    21: {"date": "2026-05-27", "day_name": "Wednesday", "day_type": "Onsite", "task": "Prepare first draft of NIRF data template as per NIRF 2026 format. Share with Nodal Officer & ICARE Team for review.", "deliverable": "Draft NIRF submission file.", "framework": "Reporting"},
+    22: {"date": "2026-05-28", "day_name": "Thursday", "day_type": "Onsite", "task": "Conduct review meeting with Nodal Officer, ICARE Team & IQAC team. Document pending items and action owners.", "deliverable": "Meeting minutes.", "framework": "Review"},
     23: {"date": "2026-05-29", "day_name": "Friday", "day_type": "Onsite", "task": "Finalize data collection status for May 2026. Prepare inputs for Monthly Progress Report (MPR).", "deliverable": "MPR inputs (to ICARE Head).", "framework": "Reporting"},
-    24: {"date": "2026-05-30", "day_name": "Saturday", "day_type": "WFH", "task": "Holiday / Weekly off", "deliverable": "No work", "framework": "Holiday"},
+    24: {"date": "2026-05-30", "day_name": "Saturday", "day_type": "WFH", "task": "WFH: Finalize May MPR. Compile all deliverables. Prepare for June action plan. Submit end-of-month report.", "deliverable": "May MPR final. End-of-month report.", "framework": "Reporting"},
 }
 
-# Daily Work Routine - Updated with 6:00 PM departure
+# Daily Work Routine - Updated with correct stand-up timing
 DAILY_ROUTINE = """
 | Time | Activity |
 |------|----------|
 | 10:00 AM | Report to university / IQAC cell |
-| 10:00-10:30 AM | Daily stand-up with Nodal Officer (IQAC Coordinator) |
-| 10:30 AM-1:00 PM | Data collection / meetings with departments |
+| 10:00-10:30 AM | Prepare for daily stand-up; review pending tasks |
+| 10:30-11:00 AM | **Daily stand-up with Nodal Officer & ICARE Team** |
+| 11:00 AM-1:00 PM | Data collection / meetings with departments |
 | 1:00-2:00 PM | Lunch |
 | 2:00-5:30 PM | Data validation, gap analysis, documentation |
 | 5:30-6:00 PM | Update daily tracker; email summary to ICARE Project Head |
 | 6:00 PM | Departure |
+"""
+
+# Saturday WFH Routine
+SATURDAY_WFH_ROUTINE = """
+| Time | Activity |
+|------|----------|
+| 10:00 AM | Log in remotely; check emails and messages |
+| 10:00-10:30 AM | Virtual stand-up with ICARE Team |
+| 10:30 AM-1:00 PM | WFH Tasks: Data digitization, analysis, documentation |
+| 1:00-2:00 PM | Lunch break |
+| 2:00-5:30 PM | Complete assigned WFH deliverables; data validation |
+| 5:30-6:00 PM | Update tracker; submit WFH completion report |
+| 6:00 PM | Sign off |
 """
 
 # Universities data
@@ -324,8 +363,8 @@ def hash_password(password):
 def authenticate_user(email, password):
     if email in USERS:
         if USERS[email]["password"] == hash_password(password):
-            return True, USERS[email]["role"], USERS[email]["name"]
-    return False, None, None
+            return True, USERS[email]["role"], USERS[email]["name"], USERS[email].get("permissions", "self")
+    return False, None, None, None
 
 def create_initial_progress_data():
     data = {}
@@ -336,6 +375,8 @@ def create_initial_progress_data():
                 "status": "pending",
                 "remarks": "",
                 "deliverable_submitted": False,
+                "task_description": NIRF_TASK_SCHEDULE[day]["task"],
+                "deliverable_description": NIRF_TASK_SCHEDULE[day]["deliverable"],
                 "updated_at": None,
                 "updated_by": None
             }
@@ -403,6 +444,17 @@ def update_task_status(university_code, day, status, remarks="", deliverable_sub
         return save_progress_data(data)
     return False
 
+def update_task_details(university_code, day, task_description, deliverable_description, updated_by=""):
+    """Project Lead function to modify task details"""
+    data = load_progress_data()
+    if university_code in data and str(day) in data[university_code]:
+        data[university_code][str(day)]["task_description"] = task_description
+        data[university_code][str(day)]["deliverable_description"] = deliverable_description
+        data[university_code][str(day)]["updated_at"] = datetime.now().isoformat()
+        data[university_code][str(day)]["updated_by"] = updated_by
+        return save_progress_data(data)
+    return False
+
 def get_university_progress(university_code):
     data = load_progress_data()
     if university_code not in data:
@@ -419,8 +471,8 @@ def get_university_progress(university_code):
             "Day Name": task_info["day_name"],
             "Day Type": task_info["day_type"],
             "Framework": task_info["framework"],
-            "Task": task_info["task"],
-            "Deliverable": task_info["deliverable"],
+            "Task": task_data.get("task_description", task_info["task"]),
+            "Deliverable": task_data.get("deliverable_description", task_info["deliverable"]),
             "Status": status.upper(),
             "Status_Code": status,
             "Deliverable Submitted": "✅" if task_data.get("deliverable_submitted", False) else "❌",
@@ -566,7 +618,7 @@ def show_sangam_info():
     - Project overview and MahaSTRIDE framework introduction
     - NIRF data collection methodology and standards
     - Role clarification for Institutional Coordinators
-    - IQAC collaboration and nodal officer engagement
+    - IQAC collaboration and ICARE Team engagement
     - Hands-on training on data templates and validation
     - Q&A and university-specific planning
     """)
@@ -630,6 +682,9 @@ def create_admin_dashboard():
     
     st.subheader("📋 Daily Work Routine")
     st.markdown(DAILY_ROUTINE)
+    
+    st.subheader("🏠 Saturday WFH Routine")
+    st.markdown(SATURDAY_WFH_ROUTINE)
     
     st.markdown("---")
     
@@ -765,7 +820,7 @@ def create_admin_dashboard():
                         "University": UNIVERSITIES[uni_code]["name"],
                         "Working Day": day,
                         "Date": NIRF_TASK_SCHEDULE[day]["date"],
-                        "Task": NIRF_TASK_SCHEDULE[day]["task"][:50] + "...",
+                        "Task": task_data.get("task_description", NIRF_TASK_SCHEDULE[day]["task"])[:50] + "...",
                         "Status": task_data.get("status", "").upper(),
                         "Updated By": task_data.get("updated_by", ""),
                         "Updated At": task_data["updated_at"]
@@ -795,8 +850,214 @@ def create_admin_dashboard():
             csv = summary_df.to_csv(index=False)
             st.download_button("Download CSV", csv, "nirf_summary_report.csv", "text/csv")
 
+def create_project_lead_dashboard(user_email):
+    """Project Lead (Dr Harshal Kotwal) Dashboard - can edit all coordinators' tasks"""
+    st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard - Dr. Harshal Kotwal</h2><p>Manage all coordinators, modify tasks, track progress</p></div>', unsafe_allow_html=True)
+    
+    st.info(f"⏰ **Working Hours:** {WORKING_HOURS} | {WORKING_HOURS_NOTE}")
+    
+    show_sangam_info()
+    
+    st.markdown("---")
+    
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.subheader("📊 Quick Stats")
+        summary_df = get_summary_stats()
+        if not summary_df.empty:
+            total_completed = summary_df["Completed"].sum()
+            total_possible = len([d for d in NIRF_TASK_SCHEDULE if NIRF_TASK_SCHEDULE[d]["framework"] != "Holiday"]) * len(UNIVERSITIES)
+            st.metric("Overall Progress", f"{(total_completed/total_possible*100):.1f}%")
+    
+    with col2:
+        st.subheader("📋 Daily Work Routine")
+        st.markdown(DAILY_ROUTINE)
+        st.markdown(SATURDAY_WFH_ROUTINE)
+    
+    st.markdown("---")
+    
+    # Select university to manage
+    selected_uni_code = st.selectbox(
+        "Select University to Manage",
+        list(UNIVERSITIES.keys()),
+        format_func=lambda x: f"{UNIVERSITIES[x]['name']} - Lead: {UNIVERSITIES[x]['coordinators']}"
+    )
+    
+    if selected_uni_code:
+        st.markdown(f"### 📋 Tasks for {UNIVERSITIES[selected_uni_code]['name']}")
+        
+        df = get_university_progress(selected_uni_code)
+        
+        if not df.empty:
+            working_days_df = df[df["Day Type"] != "Weekend (Off)"]
+            
+            col1, col2, col3, col4 = st.columns(4)
+            total_working = len(working_days_df)
+            completed = len(working_days_df[working_days_df["Status"] == "COMPLETED"])
+            in_progress = len(working_days_df[working_days_df["Status"] == "IN PROGRESS"])
+            
+            with col1:
+                st.metric("✅ Completed", completed)
+            with col2:
+                st.metric("🔄 In Progress", in_progress)
+            with col3:
+                st.metric("⏳ Pending", total_working - completed - in_progress)
+            with col4:
+                st.metric("📊 Progress", f"{(completed/total_working*100):.1f}%")
+            
+            st.progress(completed/total_working)
+            
+            st.markdown("---")
+            
+            # Two tabs: Update Status and Edit Tasks
+            tab1, tab2 = st.tabs(["📝 Update Task Status", "✏️ Modify Task Details"])
+            
+            with tab1:
+                st.subheader("Update Task Status for Coordinator")
+                
+                pending_tasks = working_days_df[working_days_df["Status_Code"].isin(["pending", "in_progress"])]
+                
+                if not pending_tasks.empty:
+                    selected_day = st.selectbox(
+                        "Select Task to Update",
+                        pending_tasks["Day"].tolist(),
+                        key="update_status_select",
+                        format_func=lambda x: f"Day {x}: {pending_tasks[pending_tasks['Day']==x]['Date'].iloc[0]} - {pending_tasks[pending_tasks['Day']==x]['Task'].iloc[0][:60]}..."
+                    )
+                    
+                    task_data = pending_tasks[pending_tasks["Day"] == selected_day].iloc[0]
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.info(f"**Current Status:** {task_data['Status']}")
+                    with col2:
+                        st.warning(f"**Date:** {task_data['Date']} ({task_data['Day Name']}) - {task_data['Day Type']}")
+                    
+                    st.markdown(f"**Task:** {task_data['Task']}")
+                    st.markdown(f"**Deliverable:** {task_data['Deliverable']}")
+                    
+                    new_status = st.radio(
+                        "Update Status To:",
+                        ["in_progress", "completed"],
+                        key="status_update_radio",
+                        format_func=lambda x: "🔄 In Progress" if x == "in_progress" else "✅ Completed"
+                    )
+                    
+                    deliverable_submitted = st.checkbox("Deliverable submitted?", key="deliverable_check")
+                    remarks = st.text_area("Remarks (for coordinator)", placeholder="Add instructions or feedback for the coordinator...")
+                    
+                    if st.button("🚀 Update Status", type="primary", use_container_width=True):
+                        if update_task_status(selected_uni_code, selected_day, new_status, remarks, deliverable_submitted, user_email):
+                            st.success(f"✅ Task status updated to {new_status.upper()} successfully!")
+                            st.balloons()
+                            st.rerun()
+                        else:
+                            st.error("❌ Failed to update status")
+                else:
+                    st.success("🎉 All tasks completed for this university!")
+            
+            with tab2:
+                st.subheader("✏️ Modify Task Details (Customize for Coordinator)")
+                st.markdown("As Project Lead, you can modify task descriptions and deliverables for any coordinator.")
+                
+                all_tasks = working_days_df[working_days_df["Day Type"] != "Off"]
+                
+                selected_day_edit = st.selectbox(
+                    "Select Task to Modify",
+                    all_tasks["Day"].tolist(),
+                    key="edit_task_select",
+                    format_func=lambda x: f"Day {x}: {all_tasks[all_tasks['Day']==x]['Date'].iloc[0]} - {all_tasks[all_tasks['Day']==x]['Task'].iloc[0][:50]}..."
+                )
+                
+                if selected_day_edit:
+                    task_data_edit = all_tasks[all_tasks["Day"] == selected_day_edit].iloc[0]
+                    
+                    with st.container():
+                        st.markdown('<div class="edit-task-card">', unsafe_allow_html=True)
+                        
+                        new_task_desc = st.text_area(
+                            "Task Description",
+                            value=task_data_edit["Task"],
+                            height=100,
+                            key="task_desc_edit"
+                        )
+                        
+                        new_deliverable = st.text_area(
+                            "Deliverable",
+                            value=task_data_edit["Deliverable"],
+                            height=80,
+                            key="deliverable_edit"
+                        )
+                        
+                        edit_remarks = st.text_area(
+                            "Modification Note (reason for change)",
+                            placeholder="Explain why this task is being modified...",
+                            key="edit_remarks"
+                        )
+                        
+                        if st.button("💾 Save Task Modifications", type="primary", use_container_width=True):
+                            if update_task_details(selected_uni_code, selected_day_edit, new_task_desc, new_deliverable, user_email):
+                                st.success(f"✅ Task details modified successfully for Day {selected_day_edit}!")
+                                if edit_remarks:
+                                    st.info(f"Note: {edit_remarks}")
+                                st.rerun()
+                            else:
+                                st.error("❌ Failed to save modifications")
+                        
+                        st.markdown('</div>', unsafe_allow_html=True)
+            
+            with st.expander("📋 View All Tasks"):
+                display_df = df[["Day", "Date", "Day Name", "Day Type", "Framework", "Task", "Deliverable", "Status", "Deliverable Submitted", "Remarks", "Updated By"]]
+                st.dataframe(display_df, use_container_width=True)
+        
+        st.markdown("---")
+        st.subheader("📎 Manage Assignments for this University")
+        
+        assignments = get_university_assignments(selected_uni_code)
+        
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            with st.form("create_assignment_form_lead"):
+                title = st.text_input("Assignment Title")
+                description = st.text_area("Description")
+                due_date = st.date_input("Due Date")
+                
+                if st.form_submit_button("Create Assignment"):
+                    if title:
+                        create_assignment(title, description, due_date.strftime("%Y-%m-%d"), [selected_uni_code], user_email)
+                        st.success("Assignment created successfully!")
+                        st.rerun()
+                    else:
+                        st.error("Please enter title")
+        
+        with col2:
+            if assignments:
+                for assignment in assignments:
+                    with st.container():
+                        st.markdown(f"""
+                        <div class="assignment-card">
+                            <strong>📌 {assignment['title']}</strong><br>
+                            <small>Due: {assignment['due_date']}</small><br>
+                            <small>{assignment['description']}</small><br>
+                            <small>Status: {assignment['submission_status'].upper()}</small>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        if assignment["submission_status"] != "completed":
+                            if st.button(f"Mark as Completed", key=f"lead_complete_{assignment['id']}"):
+                                update_assignment_submission(assignment["id"], selected_uni_code, "completed", "Marked complete by Project Lead", user_email)
+                                st.success("Assignment marked as completed!")
+                                st.rerun()
+            else:
+                st.info("No pending assignments for this university.")
+        
+        st.markdown("---")
+        st.subheader("📅 MPR Submission Reminder")
+        st.warning("📋 **Note:** As per SOP Section 1 & 2, approved attendance and MPR must reach PMU MahaSTRIDE by the 10th of each month. Ensure coordinators prepare MPR inputs.")
+
 def create_coordinator_dashboard(user_email, university_code):
-    st.markdown('<div class="info-card"><h2>📋 Institutional Coordinator Dashboard</h2><p>NIRF Data Collection Tasks</p></div>', unsafe_allow_html=True)
+    """Coordinator Dashboard - can only edit own tasks"""
+    st.markdown('<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>Your NIRF Data Collection Tasks</p></div>', unsafe_allow_html=True)
     
     st.info(f"🏛️ **University:** {UNIVERSITIES[university_code]['name']}")
     st.info(f"⏰ **Working Hours:** {WORKING_HOURS} | {WORKING_HOURS_NOTE}")
@@ -807,6 +1068,9 @@ def create_coordinator_dashboard(user_email, university_code):
     
     st.subheader("📋 Daily Work Routine")
     st.markdown(DAILY_ROUTINE)
+    
+    st.subheader("🏠 Saturday WFH Routine")
+    st.markdown(SATURDAY_WFH_ROUTINE)
     
     st.markdown("---")
     
@@ -832,7 +1096,7 @@ def create_coordinator_dashboard(user_email, university_code):
         st.progress(completed/total_working)
         
         st.markdown("---")
-        st.subheader("✏️ Update Task Status")
+        st.subheader("✏️ Update Your Task Status")
         
         pending_tasks = working_days_df[working_days_df["Status_Code"].isin(["pending", "in_progress"])]
         
@@ -849,7 +1113,7 @@ def create_coordinator_dashboard(user_email, university_code):
             with col1:
                 st.info(f"**Framework:** {task_data['Framework']}\n\n**Current Status:** {task_data['Status']}")
             with col2:
-                st.warning(f"**Due Date:** {task_data['Date']} ({task_data['Day Name']}) - {task_data['Day Type']}")
+                st.warning(f"**Date:** {task_data['Date']} ({task_data['Day Name']}) - {task_data['Day Type']}")
             
             st.markdown(f"**📝 Task:** {task_data['Task']}")
             st.markdown(f"**📎 Deliverable:** {task_data['Deliverable']}")
@@ -871,14 +1135,14 @@ def create_coordinator_dashboard(user_email, university_code):
                 else:
                     st.error("❌ Failed to update status")
         else:
-            st.success("🎉 Congratulations! All tasks for this university are completed!")
+            st.success("🎉 Congratulations! All tasks are completed!")
         
-        with st.expander("📋 View All Tasks"):
+        with st.expander("📋 View All Your Tasks"):
             display_df = df[["Day", "Date", "Day Name", "Day Type", "Framework", "Task", "Deliverable", "Status", "Deliverable Submitted", "Remarks"]]
             st.dataframe(display_df, use_container_width=True)
         
         st.markdown("---")
-        st.subheader("📎 Admin Assignments")
+        st.subheader("📎 Admin/Project Lead Assignments")
         
         assignments = get_university_assignments(university_code)
         
@@ -904,7 +1168,7 @@ def create_coordinator_dashboard(user_email, university_code):
                                 st.success("Assignment marked as completed!")
                                 st.rerun()
         else:
-            st.info("No pending assignments from admin.")
+            st.info("No pending assignments.")
         
         st.markdown("---")
         st.subheader("📅 MPR Submission Reminder")
@@ -917,13 +1181,14 @@ def create_coordinator_dashboard(user_email, university_code):
         - [ ] Daily tracker updated
         - [ ] Email summary sent to ICARE Project Head
         - [ ] All meetings attended and minutes recorded
-        - [ ] Tomorrow's schedule confirmed with Nodal Officer
+        - [ ] Tomorrow's schedule confirmed with Nodal Officer & ICARE Team
         """)
 
 def create_data_analyst_dashboard(user_email):
+    """Data Analyst Dashboard - monitoring only"""
     st.markdown('<div class="info-card"><h2>📊 Data Analyst Dashboard</h2><p>Monitor university progress</p></div>', unsafe_allow_html=True)
     
-    assigned_universities = [code for code, email in UNIVERSITY_ANALYST_MAPPING.items() if email == user_email]
+    assigned_universities = [code for code, email in UNIVERSITY_LEAD_MAPPING.items() if email == user_email]
     
     if not assigned_universities:
         st.warning("No universities assigned to you. Please contact admin.")
@@ -979,12 +1244,13 @@ def main():
                 
                 if st.button("Login", type="primary", use_container_width=True):
                     if email and password:
-                        success, role, name = authenticate_user(email, password)
+                        success, role, name, permissions = authenticate_user(email, password)
                         if success:
                             st.session_state["authenticated"] = True
                             st.session_state["user_email"] = email
                             st.session_state["user_role"] = role
                             st.session_state["user_name"] = name
+                            st.session_state["user_permissions"] = permissions
                             if role == "coordinator":
                                 st.session_state["user_university"] = USERS[email].get("university")
                             st.rerun()
@@ -997,8 +1263,8 @@ def main():
                 st.markdown("### Demo Credentials")
                 st.markdown("""
                 **Admin:** admin@mahastride.com / Admin@2026<br>
+                **Project Lead (Dr. Harshal Kotwal):** projectlead@mahastride.com / ProjectLead@2026<br>
                 **Coordinator (MU):** sneha@mu.edu / Coord@2026<br>
-                **Data Analyst:** dataanalyst@mahastride.com / Data@2026
                 """, unsafe_allow_html=True)
         return
     
@@ -1009,7 +1275,13 @@ def main():
     with st.sidebar:
         st.title("📊 mahaSTRIDE")
         st.markdown(f"**Welcome, {user_name}**")
-        st.markdown(f"*Role: {user_role.title()}*")
+        
+        if user_role == "project_lead":
+            st.markdown("*Role: Project Lead (Dr. Harshal Kotwal)*")
+            st.markdown("*Permissions: Can edit all coordinator tasks*")
+        else:
+            st.markdown(f"*Role: {user_role.title()}*")
+        
         st.markdown("---")
         
         current_working_day = get_current_working_day()
@@ -1020,8 +1292,10 @@ def main():
         
         if user_role == "admin":
             menu = st.radio("Navigation", ["Admin Dashboard", "Manage Assignments", "University Details", "About"])
+        elif user_role == "project_lead":
+            menu = st.radio("Navigation", ["Project Lead Dashboard", "Manage All Universities", "About"])
         elif user_role == "coordinator":
-            menu = st.radio("Navigation", ["My Dashboard", "Daily Tasks", "About"])
+            menu = st.radio("Navigation", ["My Dashboard", "My Tasks", "About"])
         else:
             menu = st.radio("Navigation", ["Analyst Dashboard", "University Progress", "About"])
         
@@ -1037,12 +1311,13 @@ def main():
         
         st.markdown("---")
         st.caption(f"⏰ Working Hours: {WORKING_HOURS}")
+        st.caption("🔄 Stand-up: 10:30-11:00 AM with Nodal Officer & ICARE Team")
         st.caption("🚪 Departure: 6:00 PM")
         
         st.markdown("---")
         
         if st.button("🚪 Logout", use_container_width=True):
-            for key in ["authenticated", "user_email", "user_role", "user_name", "user_university"]:
+            for key in ["authenticated", "user_email", "user_role", "user_name", "user_university", "user_permissions"]:
                 if key in st.session_state:
                     del st.session_state[key]
             st.rerun()
@@ -1051,7 +1326,7 @@ def main():
         if menu == "Admin Dashboard":
             create_admin_dashboard()
         elif menu == "Manage Assignments":
-            st.title("📝 Manage Daily Assignments")
+            st.title("📝 Manage Assignments")
             
             tab1, tab2, tab3 = st.tabs(["Create Assignment", "View Assignments", "Track Submissions"])
             
@@ -1105,7 +1380,7 @@ def main():
             st.markdown(f"""
             ### mahaSTRIDE NIRF Data Collection Tracker
             
-            **Project:** Comprehensive Data Collection for NIRF Framework  
+            **Project Lead:** Dr. Harshal Kotwal  
             **Sangam Orientation:** May 5-6, 2026  
             **Project Start:** May 7, 2026  
             
@@ -1114,55 +1389,86 @@ def main():
             - Saturday: Work from Home (10:00 AM - 6:00 PM)
             - Sunday: Weekly off
             
+            **Daily Stand-up:** 10:30 AM - 11:00 AM with Nodal Officer & ICARE Team
             **Daily Departure:** 6:00 PM
             
-            **Total Working Days in Phase 1:** {len([d for d in NIRF_TASK_SCHEDULE if NIRF_TASK_SCHEDULE[d]['framework'] != 'Holiday'])} days
+            **Roles:**
+            - **Admin:** Full system access
+            - **Project Lead (Dr. Harshal Kotwal):** Can modify tasks for any coordinator
+            - **Coordinators:** Update own tasks only
+            
+            ### Demo Credentials:
+            - **Admin:** admin@mahastride.com / Admin@2026
+            - **Project Lead:** projectlead@mahastride.com / ProjectLead@2026
+            - **Coordinator:** sneha@mu.edu / Coord@2026
+            """)
+    
+    elif user_role == "project_lead":
+        if menu == "Project Lead Dashboard":
+            create_project_lead_dashboard(user_email)
+        elif menu == "Manage All Universities":
+            st.title("🏛️ All Universities Progress")
+            summary_df = get_summary_stats()
+            if not summary_df.empty:
+                st.dataframe(summary_df, use_container_width=True)
+                
+                fig = px.bar(
+                    summary_df,
+                    x="University",
+                    y="Completion %",
+                    color="Completion %",
+                    text="Completion %",
+                    title="University-wise Progress"
+                )
+                fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.title("ℹ️ About")
+            st.markdown("""
+            ### Project Lead Dashboard - Dr. Harshal Kotwal
+            
+            **Your Permissions:**
+            - View progress of all universities
+            - Modify task descriptions and deliverables for any coordinator
+            - Update task status for any coordinator
+            - Create and manage assignments for all universities
+            - Override task completions if needed
             
             **Features:**
-            - Day-wise NIRF data collection task tracking
-            - Daily stand-up with Nodal Officer (IQAC Coordinator)
-            - Deliverable submission tracking
-            - Admin assignment management
-            - Real-time progress monitoring
-            - MPR submission reminders
-            - End of day checklist
-            
-            ### Admin Credentials:
-            - **Email:** admin@mahastride.com
-            - **Password:** Admin@2026
-            
-            ### Coordinator Credentials (Sample):
-            - **Email:** sneha@mu.edu
-            - **Password:** Coord@2026
+            - Edit Task Details tab allows you to customize tasks per university
+            - Create assignments for specific universities
+            - Track overall project progress
             """)
     
     elif user_role == "coordinator":
         university_code = st.session_state.get("user_university")
         if not university_code:
-            st.error("University not assigned to this coordinator. Please contact admin.")
+            st.error("University not assigned. Please contact admin.")
         else:
             if menu == "My Dashboard":
                 create_coordinator_dashboard(user_email, university_code)
-            elif menu == "Daily Tasks":
-                st.title("📋 Daily Tasks")
+            elif menu == "My Tasks":
+                st.title("📋 My Tasks")
                 df = get_university_progress(university_code)
                 if not df.empty:
                     display_df = df[["Day", "Date", "Day Name", "Day Type", "Framework", "Task", "Deliverable", "Status", "Deliverable Submitted"]]
                     st.dataframe(display_df, use_container_width=True)
             else:
                 st.title("ℹ️ About")
-                st.markdown("### Your Role as Institutional Coordinator")
-                st.markdown(f"""
+                st.markdown("""
+                ### Your Role as Institutional Coordinator
+                
                 **Responsibilities:**
-                - Work alongside Nodal Officer (IQAC Coordinator)
+                - Work alongside Nodal Officer & ICARE Team
                 - Collect NIRF-related data from various departments
                 - Validate and consolidate university data
                 - Submit daily task updates
                 - Prepare Monthly Progress Report (MPR)
                 
-                **Working Hours:** {WORKING_HOURS}
-                **Schedule:** {WORKING_HOURS_NOTE}
-                **Daily Departure:** 6:00 PM
+                **Daily Schedule:**
+                - 10:00 AM: Report to university
+                - 10:30-11:00 AM: Stand-up with Nodal Officer & ICARE Team
+                - 6:00 PM: Departure
                 """)
     
     else:  # data_analyst
