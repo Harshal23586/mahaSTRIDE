@@ -6,6 +6,11 @@ from datetime import datetime, timedelta
 import os
 import json
 from hashlib import sha256
+from docx import Document
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from io import BytesIO
 
 # Page configuration
 st.set_page_config(
@@ -79,14 +84,6 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
-    .wfh-badge {
-        background-color: #cfe2ff;
-        color: #084298;
-        padding: 0.2rem 0.5rem;
-        border-radius: 5px;
-        font-size: 0.8rem;
-        display: inline-block;
-    }
     .stButton > button {
         background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
         color: white;
@@ -109,22 +106,6 @@ st.markdown("""
         background-color: #d4edda;
         color: #155724;
     }
-    .weekend-badge {
-        background-color: #f8d7da;
-        color: #721c24;
-        padding: 0.2rem 0.5rem;
-        border-radius: 5px;
-        font-size: 0.8rem;
-        display: inline-block;
-    }
-    .working-day-badge {
-        background-color: #d4edda;
-        color: #155724;
-        padding: 0.2rem 0.5rem;
-        border-radius: 5px;
-        font-size: 0.8rem;
-        display: inline-block;
-    }
     .assignment-card {
         background-color: #f8f9fa;
         border-left: 4px solid #1e3c72;
@@ -138,12 +119,12 @@ st.markdown("""
         border-radius: 10px;
         font-family: monospace;
     }
-    .edit-task-card {
-        background-color: #fff3e0;
-        border-left: 4px solid #ff9800;
+    .default-task-card {
+        background-color: #e8f8f5;
+        border-left: 4px solid #27ae60;
         padding: 1rem;
         border-radius: 8px;
-        margin: 1rem 0;
+        margin: 0.5rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -153,121 +134,137 @@ USERS = {
     "admin@mahastride.com": {
         "password": sha256("Admin@2026".encode()).hexdigest(),
         "role": "admin",
-        "name": "Admin",
-        "permissions": "full"
+        "name": "Admin"
     },
     "projectlead@mahastride.com": {
         "password": sha256("ProjectLead@2026".encode()).hexdigest(),
         "role": "project_lead",
-        "name": "Dr. Harshal Kotwal",
-        "permissions": "edit_all"
+        "name": "Dr. Harshal Kotwal"
     },
-    # Coordinators (Project Leads for respective universities - can edit their own)
     "sneha@mu.edu": {
-        "password": sha256("Coord@2026".encode()).hexdigest(),
+        "password": sha256("Sneha@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Ms Sneha",
-        "university": "MU",
-        "permissions": "self"
+        "university": "MU"
     },
     "shubham@mu.edu": {
-        "password": sha256("Coord@2026".encode()).hexdigest(),
+        "password": sha256("Shubham@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Shubham",
-        "university": "MU",
-        "permissions": "self"
+        "university": "MU"
     },
     "jagan@sspu.edu": {
-        "password": sha256("Coord@2026".encode()).hexdigest(),
+        "password": sha256("Jagan@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Jagan",
-        "university": "SSPU",
-        "permissions": "self"
+        "university": "SSPU"
     },
     "vaibhav@coep.edu": {
-        "password": sha256("Coord@2026".encode()).hexdigest(),
+        "password": sha256("Vaibhav@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Vaibhav",
-        "university": "COEP",
-        "permissions": "self"
+        "university": "COEP"
     },
     "pratham@au.edu": {
-        "password": sha256("Coord@2026".encode()).hexdigest(),
+        "password": sha256("Pratham@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Pratham",
-        "university": "AU",
-        "permissions": "self"
+        "university": "AU"
     },
     "anjali@nu.edu": {
-        "password": sha256("Coord@2026".encode()).hexdigest(),
+        "password": sha256("Anjali@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Ms Anjali",
-        "university": "NU",
-        "permissions": "self"
+        "university": "NU"
     },
     "nitish@kbcnmu.edu": {
-        "password": sha256("Coord@2026".encode()).hexdigest(),
+        "password": sha256("Nitish@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Nitish",
-        "university": "KBCNMU",
-        "permissions": "self"
+        "university": "KBCNMU"
     },
     "atharv@bamu.edu": {
-        "password": sha256("Coord@2026".encode()).hexdigest(),
+        "password": sha256("Atharv@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Atharv",
-        "university": "BAMU",
-        "permissions": "self"
+        "university": "BAMU"
     }
 }
 
-# University to Project Lead mapping
-UNIVERSITY_LEAD_MAPPING = {
-    "MU": "sneha@mu.edu",
-    "SSPU": "jagan@sspu.edu",
-    "COEP": "vaibhav@coep.edu",
-    "AU": "pratham@au.edu",
-    "NU": "anjali@nu.edu",
-    "KBCNMU": "nitish@kbcnmu.edu",
-    "BAMU": "atharv@bamu.edu",
+# University details - Updated with correct names, without registrar and VC
+UNIVERSITIES = {
+    "MU": {
+        "name": "University of Mumbai",
+        "coordinators": ["Ms Sneha", "Shubham"],
+        "nodal_officer": "Dr. Varsha Kelkar Mane",
+        "registrar": "_________",
+        "vc": "_________"
+    },
+    "SSPU": {
+        "name": "Savitribai Phule Pune University",
+        "coordinators": ["Mr Jagan"],
+        "nodal_officer": "Prof. Vinayak Joshi",
+        "registrar": "_________",
+        "vc": "_________"
+    },
+    "COEP": {
+        "name": "College of Engineering Pune Technological University (COEP)",
+        "coordinators": ["Mr Vaibhav"],
+        "nodal_officer": "Dr. Uttam Chaskar",
+        "registrar": "_________",
+        "vc": "_________"
+    },
+    "AU": {
+        "name": "Sant Gadge Baba Amravati University",
+        "coordinators": ["Mr Pratham"],
+        "nodal_officer": "Dr. A. B. Naik",
+        "registrar": "_________",
+        "vc": "_________"
+    },
+    "NU": {
+        "name": "Rashtrasant Tukadoji Maharaj Nagpur University",
+        "coordinators": ["Ms Anjali"],
+        "nodal_officer": "Prof. Nandkishor Karade",
+        "registrar": "_________",
+        "vc": "_________"
+    },
+    "KBCNMU": {
+        "name": "Kavayitri Bahinabai Chaudhari North Maharashtra University, Jalgaon",
+        "coordinators": ["Mr Nitish"],
+        "nodal_officer": "Prof. Sameer Narkhede",
+        "registrar": "_________",
+        "vc": "_________"
+    },
+    "BAMU": {
+        "name": "Dr. Babasaheb Ambedkar Marathwada University, Aurangabad",
+        "coordinators": ["Mr Atharv"],
+        "nodal_officer": "Prof. G.D. Khedkar",
+        "registrar": "_________",
+        "vc": "_________"
+    }
 }
 
-# NIRF Data Collection Tasks (7 May - 30 May 2026)
-# Working days: Monday to Saturday (Sunday off) | Saturdays have meaningful WFH tasks
-NIRF_TASK_SCHEDULE = {
-    1: {"date": "2026-05-07", "day_name": "Thursday", "day_type": "Onsite", "task": "Join university, meet VC & Registrar, introduce role. Meet Nodal Officer & ICARE Team to confirm workspace, access, and data sources.", "deliverable": "Introduction email to PMU & ICARE Head. Meeting minutes.", "framework": "Setup"},
-    2: {"date": "2026-05-08", "day_name": "Friday", "day_type": "Onsite", "task": "With Nodal Officer & ICARE Team, map all NIRF-related data sources: admission, academic, research, placement, finance, outreach. Identify missing data owners.", "deliverable": "NIRF Data Source Map (university-specific).", "framework": "Setup"},
-    3: {"date": "2026-05-09", "day_name": "Saturday", "day_type": "WFH", "task": "WFH: Review NIRF data templates. Create digital data collection forms. Organize department-wise data request letters.", "deliverable": "Digital forms created. Data request letters drafted.", "framework": "Setup"},
-    4: {"date": "2026-05-10", "day_name": "Sunday", "day_type": "Off", "task": "Weekly off", "deliverable": "No work", "framework": "Holiday"},
-    5: {"date": "2026-05-11", "day_name": "Monday", "day_type": "Onsite", "task": "Create NIRF Data Gap Template for FY 2022-23, 2023-24, 2024-25. Share with Nodal Officer & ICARE Team for validation.", "deliverable": "Gap template v1.0.", "framework": "Setup"},
-    6: {"date": "2026-05-12", "day_name": "Tuesday", "day_type": "Onsite", "task": "Meet HoD (Academic) & Exam Cell - collect student enrollment, graduation, and backlog data.", "deliverable": "Raw data files saved.", "framework": "Data Collection"},
-    7: {"date": "2026-05-13", "day_name": "Wednesday", "day_type": "Onsite", "task": "Meet Faculty/HR department - collect faculty count, designation, PhD qualification, experience.", "deliverable": "Faculty master data.", "framework": "Data Collection"},
-    8: {"date": "2026-05-14", "day_name": "Thursday", "day_type": "Onsite", "task": "Meet Research Cell - collect publications (Scopus/WoS/PubMed/UGC CARE), citations, patents, sponsored research projects.", "deliverable": "Research output spreadsheet.", "framework": "Data Collection"},
-    9: {"date": "2026-05-15", "day_name": "Friday", "day_type": "Onsite", "task": "Meet Placement Cell - collect placement data, median salary, higher education admission data.", "deliverable": "Placement & higher ed data.", "framework": "Data Collection"},
-    10: {"date": "2026-05-16", "day_name": "Saturday", "day_type": "WFH", "task": "WFH: Digitize collected data. Create data validation scripts. Prepare weekly progress report for ICARE Team.", "deliverable": "Digitized dataset. Weekly report submitted.", "framework": "Data Collection"},
-    11: {"date": "2026-05-17", "day_name": "Sunday", "day_type": "Off", "task": "Weekly off", "deliverable": "No work", "framework": "Holiday"},
-    12: {"date": "2026-05-18", "day_name": "Monday", "day_type": "Onsite", "task": "Meet Finance/Accounts - collect financial data: research expenditure, infrastructure spending, university income.", "deliverable": "Finance data file.", "framework": "Data Collection"},
-    13: {"date": "2026-05-19", "day_name": "Tuesday", "day_type": "Onsite", "task": "Meet Library/IT - collect e-resources, digital repository, library subscriptions, IT infrastructure details.", "deliverable": "Library & IT data.", "framework": "Data Collection"},
-    14: {"date": "2026-05-20", "day_name": "Wednesday", "day_type": "Onsite", "task": "Consolidate all collected data. Cross-verify with Nodal Officer & ICARE Team. Identify major gaps.", "deliverable": "Consolidated university dataset v1.", "framework": "Validation"},
-    15: {"date": "2026-05-21", "day_name": "Thursday", "day_type": "Onsite", "task": "Prepare NIRF gap report - list missing data, incomplete years, inconsistent formats. Share with Nodal Officer & VC.", "deliverable": "Gap report submitted to Nodal Officer.", "framework": "Reporting"},
-    16: {"date": "2026-05-22", "day_name": "Friday", "day_type": "Onsite", "task": "Work with Nodal Officer & ICARE Team to assign responsibility for each gap to specific department heads.", "deliverable": "Responsibility matrix.", "framework": "Action Plan"},
-    17: {"date": "2026-05-23", "day_name": "Saturday", "day_type": "WFH", "task": "WFH: Analyze gap report. Create action plan templates. Prepare follow-up email drafts for departments.", "deliverable": "Action plan templates. Follow-up email drafts.", "framework": "Action Plan"},
-    18: {"date": "2026-05-24", "day_name": "Sunday", "day_type": "Off", "task": "Weekly off", "deliverable": "No work", "framework": "Holiday"},
-    19: {"date": "2026-05-25", "day_name": "Monday", "day_type": "Onsite", "task": "Follow up with departments for missing data. Assist them in extracting data in NIRF-required format.", "deliverable": "Updated data files.", "framework": "Data Collection"},
-    20: {"date": "2026-05-26", "day_name": "Tuesday", "day_type": "Onsite", "task": "Validate data consistency (enrollment totals, faculty counts match department lists).", "deliverable": "Validation log.", "framework": "Validation"},
-    21: {"date": "2026-05-27", "day_name": "Wednesday", "day_type": "Onsite", "task": "Prepare first draft of NIRF data template as per NIRF 2026 format. Share with Nodal Officer & ICARE Team for review.", "deliverable": "Draft NIRF submission file.", "framework": "Reporting"},
-    22: {"date": "2026-05-28", "day_name": "Thursday", "day_type": "Onsite", "task": "Conduct review meeting with Nodal Officer, ICARE Team & IQAC team. Document pending items and action owners.", "deliverable": "Meeting minutes.", "framework": "Review"},
-    23: {"date": "2026-05-29", "day_name": "Friday", "day_type": "Onsite", "task": "Finalize data collection status for May 2026. Prepare inputs for Monthly Progress Report (MPR).", "deliverable": "MPR inputs (to ICARE Head).", "framework": "Reporting"},
-    24: {"date": "2026-05-30", "day_name": "Saturday", "day_type": "WFH", "task": "WFH: Finalize May MPR. Compile all deliverables. Prepare for June action plan. Submit end-of-month report.", "deliverable": "May MPR final. End-of-month report.", "framework": "Reporting"},
+# MITRA Officials
+MITRA_OFFICIALS = {
+    "project_director": "Shri Aman Mittal, Project Director, MahaSTRIDE",
+    "jt_ceo": "Jt. CEO, MITRA",
+    "addl_chief_secretary": "Addl. Chief Secretary, Higher and Technical Education Department",
+    "secretary_governor": "Secretary to Hon. Governor Maharashtra"
 }
 
-# Daily Work Routine - Updated with correct stand-up timing
+# ICARE Officials
+ICARE_OFFICIALS = {
+    "project_head": "Shri Karthick Sridhar, Project Head, ICARE Pvt. Ltd.",
+    "data_analyst_lead": "Data Analytics and Dashboard Specialist, ICARE"
+}
+
+# Daily Work Routine
 DAILY_ROUTINE = """
 | Time | Activity |
 |------|----------|
 | 10:00 AM | Report to university / IQAC cell |
 | 10:00-10:30 AM | Prepare for daily stand-up; review pending tasks |
-| 10:30-11:00 AM | **Daily stand-up with Nodal Officer & ICARE Team** |
+| 10:30-11:00 AM | **Daily stand-up with ICARE Team Only** |
 | 11:00 AM-1:00 PM | Data collection / meetings with departments |
 | 1:00-2:00 PM | Lunch |
 | 2:00-5:30 PM | Data validation, gap analysis, documentation |
@@ -275,87 +272,16 @@ DAILY_ROUTINE = """
 | 6:00 PM | Departure |
 """
 
-# Saturday WFH Routine
-SATURDAY_WFH_ROUTINE = """
-| Time | Activity |
-|------|----------|
-| 10:00 AM | Log in remotely; check emails and messages |
-| 10:00-10:30 AM | Virtual stand-up with ICARE Team |
-| 10:30 AM-1:00 PM | WFH Tasks: Data digitization, analysis, documentation |
-| 1:00-2:00 PM | Lunch break |
-| 2:00-5:30 PM | Complete assigned WFH deliverables; data validation |
-| 5:30-6:00 PM | Update tracker; submit WFH completion report |
-| 6:00 PM | Sign off |
-"""
-
-# Universities data
-UNIVERSITIES = {
-    "MU": {"name": "Mumbai University", "coordinators": "Ms Sneha, Shubham"},
-    "SSPU": {"name": "SSPU Pune", "coordinators": "Mr Jagan"},
-    "COEP": {"name": "COEP Tech University", "coordinators": "Mr Vaibhav"},
-    "AU": {"name": "Amravati University", "coordinators": "Mr Pratham"},
-    "NU": {"name": "Nagpur University", "coordinators": "Ms Anjali"},
-    "KBCNMU": {"name": "KBCNMU Jalgaon University", "coordinators": "Mr Nitish"},
-    "BAMU": {"name": "BAMU University Aurangabad", "coordinators": "Mr Atharv"},
-}
-
-# Working hours
 WORKING_HOURS = "10:00 AM - 6:00 PM"
-WORKING_HOURS_NOTE = "Monday-Friday: Onsite at University | Saturday: Work from Home"
-
-# Project dates
-SANGAM_DATE_START = datetime(2026, 5, 5)
-SANGAM_DATE_END = datetime(2026, 5, 6)
-PROJECT_START_DATE = datetime(2026, 5, 7)  # First working day after Sangam
-
-def get_working_date(working_day_number):
-    """Convert working day number to actual calendar date"""
-    current_date = PROJECT_START_DATE
-    working_days_counted = 0
-    
-    while working_days_counted < working_day_number:
-        if current_date.weekday() != 6:  # Sunday is weekend
-            working_days_counted += 1
-            if working_days_counted == working_day_number:
-                return current_date
-        current_date += timedelta(days=1)
-    
-    return current_date
-
-def is_saturday(date):
-    return date.weekday() == 5
-
-def is_sunday(date):
-    return date.weekday() == 6
-
-def get_day_type(date):
-    if date.weekday() == 5:
-        return "Working Day (WFH)"
-    elif date.weekday() == 6:
-        return "Weekend (Off)"
-    else:
-        return "Working Day (Onsite)"
-
-def get_current_working_day():
-    """Get current working day number (Monday-Saturday only)"""
-    today = datetime.now()
-    
-    if today < PROJECT_START_DATE:
-        return 0
-    
-    current_date = PROJECT_START_DATE
-    working_days_counted = 0
-    
-    while current_date <= today:
-        if current_date.weekday() != 6:  # Monday to Saturday
-            working_days_counted += 1
-        current_date += timedelta(days=1)
-    
-    return min(working_days_counted, len(NIRF_TASK_SCHEDULE))
+PROJECT_START_DATE = datetime(2026, 5, 7)
+PROJECT_DURATION_YEARS = 2
+PROJECT_END_DATE = datetime(2028, 5, 6)
 
 # Data file paths
-PROGRESS_DATA_FILE = "nirf_progress_data.json"
-ASSIGNMENTS_DATA_FILE = "nirf_assignments_data.json"
+PROGRESS_DATA_FILE = "coordinator_progress_data.json"
+ASSIGNMENTS_DATA_FILE = "assignments_data.json"
+CUSTOM_TASKS_DATA_FILE = "custom_tasks_data.json"
+ATTENDANCE_DATA_FILE = "attendance_data.json"
 
 def hash_password(password):
     return sha256(password.encode()).hexdigest()
@@ -363,30 +289,26 @@ def hash_password(password):
 def authenticate_user(email, password):
     if email in USERS:
         if USERS[email]["password"] == hash_password(password):
-            return True, USERS[email]["role"], USERS[email]["name"], USERS[email].get("permissions", "self")
+            return True, USERS[email]["role"], USERS[email]["name"], USERS[email].get("university", None)
     return False, None, None, None
 
 def create_initial_progress_data():
     data = {}
     for uni_code in UNIVERSITIES.keys():
         data[uni_code] = {}
-        for day in NIRF_TASK_SCHEDULE.keys():
-            data[uni_code][str(day)] = {
-                "status": "pending",
-                "remarks": "",
-                "deliverable_submitted": False,
-                "task_description": NIRF_TASK_SCHEDULE[day]["task"],
-                "deliverable_description": NIRF_TASK_SCHEDULE[day]["deliverable"],
-                "updated_at": None,
-                "updated_by": None
-            }
     return data
 
 def create_initial_assignments_data():
-    return {
-        "assignments": [],
-        "submissions": {}
-    }
+    return {"assignments": [], "submissions": {}}
+
+def create_initial_custom_tasks_data():
+    return {"date_specific_tasks": {}}
+
+def create_initial_attendance_data():
+    data = {}
+    for uni_code in UNIVERSITIES.keys():
+        data[uni_code] = {}
+    return data
 
 def load_progress_data():
     try:
@@ -432,104 +354,175 @@ def save_assignments_data(data):
         st.error(f"Error saving assignments data: {e}")
         return False
 
-def update_task_status(university_code, day, status, remarks="", deliverable_submitted=False, updated_by=""):
-    data = load_progress_data()
-    if university_code in data and str(day) in data[university_code]:
-        data[university_code][str(day)]["status"] = status
-        if remarks:
-            data[university_code][str(day)]["remarks"] = remarks
-        data[university_code][str(day)]["deliverable_submitted"] = deliverable_submitted
-        data[university_code][str(day)]["updated_at"] = datetime.now().isoformat()
-        data[university_code][str(day)]["updated_by"] = updated_by
-        return save_progress_data(data)
-    return False
+def load_custom_tasks_data():
+    try:
+        if os.path.exists(CUSTOM_TASKS_DATA_FILE):
+            with open(CUSTOM_TASKS_DATA_FILE, 'r') as f:
+                return json.load(f)
+        else:
+            return create_initial_custom_tasks_data()
+    except Exception as e:
+        st.error(f"Error loading custom tasks data: {e}")
+        return create_initial_custom_tasks_data()
 
-def update_task_details(university_code, day, task_description, deliverable_description, updated_by=""):
-    """Project Lead function to modify task details"""
-    data = load_progress_data()
-    if university_code in data and str(day) in data[university_code]:
-        data[university_code][str(day)]["task_description"] = task_description
-        data[university_code][str(day)]["deliverable_description"] = deliverable_description
-        data[university_code][str(day)]["updated_at"] = datetime.now().isoformat()
-        data[university_code][str(day)]["updated_by"] = updated_by
-        return save_progress_data(data)
-    return False
+def save_custom_tasks_data(data):
+    try:
+        with open(CUSTOM_TASKS_DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except Exception as e:
+        st.error(f"Error saving custom tasks data: {e}")
+        return False
 
-def get_university_progress(university_code):
+def load_attendance_data():
+    try:
+        if os.path.exists(ATTENDANCE_DATA_FILE):
+            with open(ATTENDANCE_DATA_FILE, 'r') as f:
+                data = json.load(f)
+                if all(uni_code in data for uni_code in UNIVERSITIES.keys()):
+                    return data
+                else:
+                    return create_initial_attendance_data()
+        else:
+            return create_initial_attendance_data()
+    except Exception as e:
+        st.error(f"Error loading attendance data: {e}")
+        return create_initial_attendance_data()
+
+def save_attendance_data(data):
+    try:
+        with open(ATTENDANCE_DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except Exception as e:
+        st.error(f"Error saving attendance data: {e}")
+        return False
+
+def add_custom_task_for_date(date_str, task_category, task_name, description, deliverables, added_by):
+    custom_tasks = load_custom_tasks_data()
+    custom_tasks["date_specific_tasks"][date_str] = {
+        "task_category": task_category, "task": task_name, "description": description,
+        "deliverables": deliverables, "added_by": added_by, "added_at": datetime.now().isoformat()
+    }
+    return save_custom_tasks_data(custom_tasks)
+
+def get_plan_for_date(date_str):
+    custom_tasks = load_custom_tasks_data()
+    if date_str in custom_tasks["date_specific_tasks"]:
+        return custom_tasks["date_specific_tasks"][date_str]
+    return None
+
+def log_daily_entry(university_code, date, task_category, task_name, description, deliverables, status, hours_spent, remarks, swapped_from_default, edited_task, updated_by):
+    data = load_progress_data()
+    if university_code not in data:
+        data[university_code] = {}
+    
+    data[university_code][date] = {
+        "date": date, "task_category": task_category, "task_name": task_name,
+        "description": description, "deliverables": deliverables, "status": status,
+        "hours_spent": hours_spent, "remarks": remarks, "swapped_from_default": swapped_from_default,
+        "edited_task": edited_task, "updated_at": datetime.now().isoformat(), "updated_by": updated_by
+    }
+    return save_progress_data(data)
+
+def get_university_entries(university_code):
     data = load_progress_data()
     if university_code not in data:
         return pd.DataFrame()
     
     records = []
-    for day, task_info in NIRF_TASK_SCHEDULE.items():
-        task_data = data[university_code].get(str(day), {})
-        status = task_data.get("status", "pending")
-        
+    for date, entry in data[university_code].items():
         records.append({
-            "Day": day,
-            "Date": task_info["date"],
-            "Day Name": task_info["day_name"],
-            "Day Type": task_info["day_type"],
-            "Framework": task_info["framework"],
-            "Task": task_data.get("task_description", task_info["task"]),
-            "Deliverable": task_data.get("deliverable_description", task_info["deliverable"]),
-            "Status": status.upper(),
-            "Status_Code": status,
-            "Deliverable Submitted": "✅" if task_data.get("deliverable_submitted", False) else "❌",
-            "Working Hours": WORKING_HOURS,
-            "Remarks": task_data.get("remarks", ""),
-            "Last Updated": task_data.get("updated_at", "")[:10] if task_data.get("updated_at") else "",
-            "Updated By": task_data.get("updated_by", "")
+            "Date": date, "Task Category": entry.get("task_category", ""), "Task": entry.get("task_name", ""),
+            "Description": entry.get("description", ""), "Deliverables": entry.get("deliverables", ""),
+            "Status": entry.get("status", "").upper(), "Hours Spent": entry.get("hours_spent", 0),
+            "Swapped": "✅" if entry.get("swapped_from_default", False) else "❌",
+            "Edited": "✅" if entry.get("edited_task", False) else "❌",
+            "Remarks": entry.get("remarks", ""), "Updated At": entry.get("updated_at", "")[:16] if entry.get("updated_at") else "",
+            "Updated By": entry.get("updated_by", "")
         })
-    return pd.DataFrame(records)
+    return pd.DataFrame(records).sort_values("Date", ascending=False)
 
-def get_summary_stats():
+def get_monthly_summary(university_code, year, month):
     data = load_progress_data()
-    stats = []
+    if university_code not in data:
+        return []
     
-    for uni_code, uni_info in UNIVERSITIES.items():
-        uni_data = data.get(uni_code, {})
-        total = len(NIRF_TASK_SCHEDULE)
-        # Count only working days (not holidays) for completion tracking
-        working_days = [d for d, info in NIRF_TASK_SCHEDULE.items() if info["framework"] != "Holiday"]
-        total_working = len(working_days)
-        
-        completed = sum(1 for d in working_days if uni_data.get(str(d), {}).get("status") == "completed")
-        in_progress = sum(1 for d in working_days if uni_data.get(str(d), {}).get("status") == "in_progress")
-        pending = total_working - completed - in_progress
-        
-        current_working_day = get_current_working_day()
-        expected_completion = (current_working_day / total_working * 100) if current_working_day > 0 else 0
-        actual_completion = (completed / total_working * 100) if total_working > 0 else 0
-        is_on_track = actual_completion >= expected_completion - 10
-        
-        stats.append({
-            "University": uni_info["name"],
-            "Code": uni_code,
-            "Coordinators": uni_info["coordinators"],
-            "Completed": completed,
-            "In Progress": in_progress,
-            "Pending": pending,
-            "Completion %": round((completed / total_working * 100), 1),
-            "On Track": "✅ Yes" if is_on_track else "⚠️ Behind"
-        })
+    month_str = f"{year}-{month:02d}"
+    monthly_entries = []
     
-    return pd.DataFrame(stats)
+    for date, entry in data[university_code].items():
+        if date.startswith(month_str):
+            monthly_entries.append({
+                "date": date, "task_category": entry.get("task_category", ""), "task_name": entry.get("task_name", ""),
+                "description": entry.get("description", ""), "deliverables": entry.get("deliverables", ""),
+                "status": entry.get("status", ""), "hours_spent": entry.get("hours_spent", 0)
+            })
+    return monthly_entries
+
+def get_daily_progress_data():
+    """Get daily progress data for all universities"""
+    data = load_progress_data()
+    daily_records = []
+    
+    for uni_code, entries in data.items():
+        uni_name = UNIVERSITIES[uni_code]["name"]
+        for date, entry in entries.items():
+            daily_records.append({
+                "Date": date, "University": uni_name, "University Code": uni_code,
+                "Task": entry.get("task_name", ""), "Category": entry.get("task_category", ""),
+                "Status": entry.get("status", ""), "Hours": entry.get("hours_spent", 0)
+            })
+    
+    df = pd.DataFrame(daily_records)
+    if not df.empty:
+        df["Date"] = pd.to_datetime(df["Date"])
+    return df
+
+def get_weekly_progress_data():
+    """Get weekly aggregated progress data"""
+    df = get_daily_progress_data()
+    if df.empty:
+        return pd.DataFrame()
+    
+    df["Week"] = df["Date"].dt.isocalendar().week
+    df["Year"] = df["Date"].dt.year
+    df["Week_Start"] = df["Date"] - pd.to_timedelta(df["Date"].dt.dayofweek, unit='d')
+    
+    weekly = df.groupby(["Year", "Week", "Week_Start", "University"]).agg({
+        "Hours": "sum",
+        "Task": "count"
+    }).reset_index()
+    weekly.columns = ["Year", "Week", "Week_Start", "University", "Total Hours", "Tasks Completed"]
+    
+    return weekly
+
+def get_monthly_progress_data():
+    """Get monthly aggregated progress data"""
+    df = get_daily_progress_data()
+    if df.empty:
+        return pd.DataFrame()
+    
+    df["Month"] = df["Date"].dt.month
+    df["Year"] = df["Date"].dt.year
+    df["Month_Name"] = df["Date"].dt.strftime("%B %Y")
+    
+    monthly = df.groupby(["Year", "Month", "Month_Name", "University"]).agg({
+        "Hours": "sum",
+        "Task": "count"
+    }).reset_index()
+    monthly.columns = ["Year", "Month", "Month_Name", "University", "Total Hours", "Tasks Completed"]
+    
+    return monthly
 
 def create_assignment(title, description, due_date, assigned_universities, created_by):
     assignments_data = load_assignments_data()
-    
     assignment_id = f"ASSIGN_{len(assignments_data['assignments']) + 1}_{int(datetime.now().timestamp())}"
     
     new_assignment = {
-        "id": assignment_id,
-        "title": title,
-        "description": description,
-        "due_date": due_date,
-        "assigned_universities": assigned_universities,
-        "created_by": created_by,
-        "created_at": datetime.now().isoformat(),
-        "status": "active"
+        "id": assignment_id, "title": title, "description": description, "due_date": due_date,
+        "assigned_universities": assigned_universities, "created_by": created_by,
+        "created_at": datetime.now().isoformat(), "status": "active"
     }
     
     assignments_data["assignments"].append(new_assignment)
@@ -538,28 +531,11 @@ def create_assignment(title, description, due_date, assigned_universities, creat
         assignments_data["submissions"][assignment_id] = {}
         for uni_code in assigned_universities:
             assignments_data["submissions"][assignment_id][uni_code] = {
-                "status": "pending",
-                "completed_at": None,
-                "remarks": "",
-                "completed_by": None
+                "status": "pending", "completed_at": None, "remarks": "", "completed_by": None
             }
     
     save_assignments_data(assignments_data)
     return assignment_id
-
-def update_assignment_submission(assignment_id, university_code, status, remarks="", completed_by=""):
-    assignments_data = load_assignments_data()
-    
-    if assignment_id in assignments_data["submissions"]:
-        if university_code in assignments_data["submissions"][assignment_id]:
-            assignments_data["submissions"][assignment_id][university_code] = {
-                "status": status,
-                "completed_at": datetime.now().isoformat() if status == "completed" else None,
-                "remarks": remarks,
-                "completed_by": completed_by
-            }
-            return save_assignments_data(assignments_data)
-    return False
 
 def get_university_assignments(university_code):
     assignments_data = load_assignments_data()
@@ -571,62 +547,421 @@ def get_university_assignments(university_code):
             assignment_copy = assignment.copy()
             assignment_copy["submission_status"] = submission.get("status", "pending")
             assignment_copy["submission_remarks"] = submission.get("remarks", "")
-            assignment_copy["completed_at"] = submission.get("completed_at", "")
             university_assignments.append(assignment_copy)
     
     return university_assignments
 
-def get_all_assignments_with_status():
-    assignments_data = load_assignments_data()
-    result = []
-    
-    for assignment in assignments_data["assignments"]:
-        if assignment["status"] == "active":
-            for uni_code in assignment["assigned_universities"]:
-                submission = assignments_data["submissions"].get(assignment["id"], {}).get(uni_code, {})
-                result.append({
-                    "assignment_id": assignment["id"],
-                    "title": assignment["title"],
-                    "description": assignment["description"],
-                    "due_date": assignment["due_date"],
-                    "university": UNIVERSITIES[uni_code]["name"],
-                    "university_code": uni_code,
-                    "submission_status": submission.get("status", "pending"),
-                    "submission_remarks": submission.get("remarks", ""),
-                    "completed_at": submission.get("completed_at", ""),
-                    "created_at": assignment["created_at"],
-                    "created_by": assignment["created_by"]
-                })
-    
-    return pd.DataFrame(result)
-
-def delete_assignment(assignment_id):
+def update_assignment_submission(assignment_id, university_code, status, remarks, completed_by):
     assignments_data = load_assignments_data()
     
-    for assignment in assignments_data["assignments"]:
-        if assignment["id"] == assignment_id:
-            assignment["status"] = "inactive"
+    if assignment_id in assignments_data["submissions"]:
+        if university_code in assignments_data["submissions"][assignment_id]:
+            assignments_data["submissions"][assignment_id][university_code] = {
+                "status": status, "completed_at": datetime.now().isoformat() if status == "completed" else None,
+                "remarks": remarks, "completed_by": completed_by
+            }
             return save_assignments_data(assignments_data)
     return False
+
+def create_mpr_word_document(university_code, year, month, coordinator_name):
+    """Generate MPR in Word format - Ready for MITRA submission"""
+    university = UNIVERSITIES[university_code]
+    monthly_entries = get_monthly_summary(university_code, year, month)
+    
+    doc = Document()
+    
+    for section in doc.sections:
+        section.top_margin = Inches(0.5)
+        section.bottom_margin = Inches(0.5)
+        section.left_margin = Inches(0.7)
+        section.right_margin = Inches(0.7)
+    
+    # Confidential Header
+    header_para = doc.add_paragraph()
+    header_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    run = header_para.add_run("Confidential")
+    run.bold = True
+    run.font.size = Pt(10)
+    
+    doc.add_paragraph()
+    
+    # MITRA Header
+    mitra_header = doc.add_paragraph()
+    mitra_header.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = mitra_header.add_run("Maharashtra Institution for Transformation (MITRA)")
+    run.bold = True
+    run.font.size = Pt(12)
+    
+    address = doc.add_paragraph()
+    address.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    address.add_run("5th Floor, Nirmal, Nariman Point, Mumbai-400021")
+    address.add_run("\nOffice Tel. No. 022 69979440 | Email: pmu.mahastride@mahamitra.org")
+    
+    doc.add_paragraph()
+    
+    # Title
+    title = doc.add_heading("MONTHLY PROGRESS REPORT", 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    period_end = datetime(year, month, 1).replace(day=30 if month in [4,6,9,11] else 31)
+    subtitle = doc.add_paragraph(f"(From 01-{month:02d}-{year} to {period_end.strftime('%d')}-{month:02d}-{year})")
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    doc.add_paragraph()
+    
+    # Client Information
+    doc.add_heading("1. CLIENT INFORMATION", level=1)
+    info_table = doc.add_table(rows=7, cols=2)
+    info_table.style = 'Table Grid'
+    info_data = [
+        ("Client Name", "Maharashtra Institution for Transformation (MITRA)"),
+        ("Project Name", "Comprehensive Data Collection, Advanced Analytics, and Development of Performance Improvement Framework for Maharashtra State Universities under MahaSTRIDE operations"),
+        ("University / Division", university["name"]),
+        ("Reporting Month", f"{datetime(year, month, 1).strftime('%B %Y')}"),
+        ("Report Date", datetime.now().strftime("%d-%m-%Y")),
+        ("Prepared By", coordinator_name),
+        ("Designation", "Institutional Coordinator cum Research & Innovation Officer")
+    ]
+    for i, (label, value) in enumerate(info_data):
+        info_table.rows[i].cells[0].text = label
+        info_table.rows[i].cells[1].text = value
+        info_table.rows[i].cells[0].paragraphs[0].runs[0].bold = True
+    
+    doc.add_paragraph()
+    
+    # Project Team Deployment
+    doc.add_heading("2. PROJECT TEAM DEPLOYMENT", level=1)
+    
+    team_table = doc.add_table(rows=3, cols=6)
+    team_table.style = 'Table Grid'
+    headers = ["Sr. No.", "Name", "Profile", "Location", "Present Days", "Remarks"]
+    
+    header_row = team_table.rows[0].cells
+    for i, header in enumerate(headers):
+        header_row[i].text = header
+        header_row[i].paragraphs[0].runs[0].bold = True
+    
+    total_present = len(monthly_entries)
+    team_data = [
+        ("1", coordinator_name, "Institutional Coordinator", university["name"], str(total_present), "Present all working days"),
+        ("2", "Support Staff", "Data Entry Operator", university["name"], str(total_present), "Present all working days")
+    ]
+    for i, row_data in enumerate(team_data):
+        row_cells = team_table.rows[i + 1].cells
+        for j, cell_data in enumerate(row_data):
+            row_cells[j].text = cell_data
+    
+    doc.add_paragraph()
+    
+    # Monthly Activities
+    doc.add_heading("3. MONTHLY ACTIVITIES UNDERTAKEN", level=1)
+    
+    if monthly_entries:
+        for entry in monthly_entries[:15]:
+            doc.add_paragraph(f"• {entry['date']}: {entry['task_name']} - {entry['description'][:100]}", style='List Bullet')
+    else:
+        doc.add_paragraph("No activities logged for this period.", style='List Bullet')
+    
+    doc.add_paragraph()
+    
+    # Major Deliverables
+    doc.add_heading("4. MAJOR DELIVERABLES", level=1)
+    
+    if monthly_entries:
+        for entry in monthly_entries:
+            if entry.get('deliverables'):
+                doc.add_paragraph(f"• {entry['date']}: {entry['deliverables'][:100]}", style='List Bullet')
+    else:
+        doc.add_paragraph("No deliverables reported for this period.", style='List Bullet')
+    
+    doc.add_paragraph()
+    
+    # Meetings Conducted
+    doc.add_heading("5. MEETINGS CONDUCTED", level=1)
+    doc.add_paragraph("• Daily stand-up meetings with ICARE Team (10:30-11:00 AM)")
+    doc.add_paragraph(f"• Weekly review meeting with Nodal Officer: {university['nodal_officer']}")
+    doc.add_paragraph("• Monthly coordination meeting with MITRA PMU")
+    doc.add_paragraph("• Department-wise data collection meetings")
+    
+    doc.add_paragraph()
+    
+    # Risks and Issues
+    doc.add_heading("6. RISKS AND ISSUES", level=1)
+    doc.add_paragraph("• Timely data availability from certain departments remains a challenge")
+    doc.add_paragraph("• Digitization of legacy data requires additional resources")
+    doc.add_paragraph("• Coordination with multiple stakeholders requires proactive follow-ups")
+    
+    doc.add_paragraph()
+    
+    # Attendance Summary
+    doc.add_heading("7. ATTENDANCE SUMMARY", level=1)
+    
+    att_table = doc.add_table(rows=4, cols=3)
+    att_table.style = 'Table Grid'
+    att_headers = ["Particulars", "Days", "Remarks"]
+    for i, header in enumerate(att_headers):
+        att_table.rows[0].cells[i].text = header
+        att_table.rows[0].cells[i].paragraphs[0].runs[0].bold = True
+    
+    working_days = len(set(entry["date"] for entry in monthly_entries))
+    att_table.rows[1].cells[0].text = "Total Working Days"
+    att_table.rows[1].cells[1].text = str(working_days)
+    att_table.rows[1].cells[2].text = "As per monthly calendar"
+    
+    att_table.rows[2].cells[0].text = "Present Days"
+    att_table.rows[2].cells[1].text = str(working_days)
+    att_table.rows[2].cells[2].text = "Full attendance maintained"
+    
+    att_table.rows[3].cells[0].text = "Leave / Absent"
+    att_table.rows[3].cells[1].text = "0"
+    att_table.rows[3].cells[2].text = "No leave taken"
+    
+    doc.add_paragraph()
+    
+    # Status of Initiatives
+    doc.add_heading("8. STATUS OF INITIATIVES", level=1)
+    doc.add_paragraph("1. Finalisation of Annual Action Plan: In Progress")
+    doc.add_paragraph("2. Data Collection Framework: Implemented")
+    doc.add_paragraph("3. Stakeholder Engagement: Ongoing")
+    doc.add_paragraph("4. NIRF Data Compilation: In Progress")
+    
+    doc.add_paragraph()
+    
+    # Signatures Section - As per SOP
+    doc.add_heading("9. APPROVALS AND SIGNATURES", level=1)
+    
+    sig_table = doc.add_table(rows=7, cols=2)
+    sig_table.style = 'Table Grid'
+    
+    signatures = [
+        ("Prepared by:", f"{coordinator_name}\n(Institutional Coordinator)"),
+        ("Verified by:", f"{university['nodal_officer']}\n(Nodal Officer, IQAC Coordinator)"),
+        ("Approved by:", f"{university['registrar']}\n(Registrar)"),
+        ("Copy to:", f"{university['vc']}\n(Hon. Vice Chancellor)"),
+        ("Reviewed by:", f"{ICARE_OFFICIALS['project_head']}\n(Project Head, ICARE Pvt. Ltd.)"),
+        ("Approved by:", f"{MITRA_OFFICIALS['project_director']}\n(Project Director, MahaSTRIDE)"),
+        ("Copy for information:", f"{MITRA_OFFICIALS['addl_chief_secretary']}\n{university['nodal_officer']}")
+    ]
+    
+    for i, (role, name) in enumerate(signatures):
+        sig_table.rows[i].cells[0].text = role
+        sig_table.rows[i].cells[1].text = name
+        sig_table.rows[i].cells[0].paragraphs[0].runs[0].bold = True
+    
+    doc.add_paragraph()
+    
+    # Footer
+    footer = doc.add_paragraph()
+    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = footer.add_run("This report is submitted as per SOP Section 2 - Monthly Progress Report (MPR)")
+    run.font.size = Pt(9)
+    run.italic = True
+    
+    doc_bytes = BytesIO()
+    doc.save(doc_bytes)
+    doc_bytes.seek(0)
+    return doc_bytes
+
+def create_consolidated_mpr(year, month):
+    """Generate consolidated MPR for all universities"""
+    doc = Document()
+    
+    for section in doc.sections:
+        section.top_margin = Inches(0.5)
+        section.bottom_margin = Inches(0.5)
+        section.left_margin = Inches(0.7)
+        section.right_margin = Inches(0.7)
+    
+    # Confidential Header
+    header_para = doc.add_paragraph()
+    header_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    run = header_para.add_run("Confidential")
+    run.bold = True
+    run.font.size = Pt(10)
+    
+    doc.add_paragraph()
+    
+    # MITRA Header
+    mitra_header = doc.add_paragraph()
+    mitra_header.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = mitra_header.add_run("Maharashtra Institution for Transformation (MITRA)")
+    run.bold = True
+    run.font.size = Pt(12)
+    
+    doc.add_paragraph()
+    
+    # Title
+    title = doc.add_heading("CONSOLIDATED MONTHLY PROGRESS REPORT", 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    subtitle = doc.add_paragraph(f"All Maharashtra State Universities\nReporting Period: {datetime(year, month, 1).strftime('%B %Y')}")
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    doc.add_paragraph()
+    
+    # Client Information
+    doc.add_heading("1. CLIENT INFORMATION", level=1)
+    info_table = doc.add_table(rows=6, cols=2)
+    info_table.style = 'Table Grid'
+    info_data = [
+        ("Client Name", "Maharashtra Institution for Transformation (MITRA)"),
+        ("Project Name", "Comprehensive Data Collection, Advanced Analytics, and Development of Performance Improvement Framework for Maharashtra State Universities"),
+        ("Reporting Month", f"{datetime(year, month, 1).strftime('%B %Y')}"),
+        ("Report Date", datetime.now().strftime("%d-%m-%Y")),
+        ("Prepared By", ICARE_OFFICIALS["project_head"]),
+        ("Submitted To", "PMU, MahaSTRIDE, MITRA")
+    ]
+    for i, (label, value) in enumerate(info_data):
+        info_table.rows[i].cells[0].text = label
+        info_table.rows[i].cells[1].text = value
+        info_table.rows[i].cells[0].paragraphs[0].runs[0].bold = True
+    
+    doc.add_paragraph()
+    
+    # University-wise Progress Summary
+    doc.add_heading("2. UNIVERSITY-WISE PROGRESS SUMMARY", level=1)
+    
+    summary_data = []
+    for uni_code, uni_info in UNIVERSITIES.items():
+        entries = get_monthly_summary(uni_code, year, month)
+        tasks_completed = sum(1 for e in entries if e.get("status") == "completed")
+        total_hours = sum(e.get("hours_spent", 0) for e in entries)
+        summary_data.append({
+            "University": uni_info["name"][:40], "Days Logged": len(entries),
+            "Tasks Completed": tasks_completed, "Total Hours": total_hours,
+            "Nodal Officer": uni_info["nodal_officer"]
+        })
+    
+    summary_df = pd.DataFrame(summary_data)
+    
+    # Create summary table
+    summary_table = doc.add_table(rows=len(summary_data) + 1, cols=5)
+    summary_table.style = 'Table Grid'
+    headers = ["Sr. No.", "University", "Days Logged", "Tasks Completed", "Nodal Officer"]
+    
+    header_row = summary_table.rows[0].cells
+    for i, header in enumerate(headers):
+        header_row[i].text = header
+        header_row[i].paragraphs[0].runs[0].bold = True
+    
+    for i, row in summary_df.iterrows():
+        row_cells = summary_table.rows[i + 1].cells
+        row_cells[0].text = str(i + 1)
+        row_cells[1].text = row["University"]
+        row_cells[2].text = str(row["Days Logged"])
+        row_cells[3].text = str(row["Tasks Completed"])
+        row_cells[4].text = row["Nodal Officer"]
+    
+    doc.add_paragraph()
+    
+    # Overall Statistics
+    doc.add_heading("3. OVERALL STATISTICS", level=1)
+    
+    total_entries = summary_df["Days Logged"].sum()
+    total_tasks = summary_df["Tasks Completed"].sum()
+    total_hours = summary_df["Total Hours"].sum()
+    
+    stats_table = doc.add_table(rows=5, cols=2)
+    stats_table.style = 'Table Grid'
+    stats_data = [
+        ("Total Universities", str(len(UNIVERSITIES))),
+        ("Total Days Logged", str(total_entries)),
+        ("Total Tasks Completed", str(total_tasks)),
+        ("Total Hours Invested", f"{total_hours:.1f} hours"),
+        ("Average per University", f"{(total_entries/len(UNIVERSITIES)):.1f} days")
+    ]
+    for i, (label, value) in enumerate(stats_data):
+        stats_table.rows[i].cells[0].text = label
+        stats_table.rows[i].cells[1].text = value
+        stats_table.rows[i].cells[0].paragraphs[0].runs[0].bold = True
+    
+    doc.add_paragraph()
+    
+    # Task Category Distribution
+    doc.add_heading("4. TASK CATEGORY DISTRIBUTION", level=1)
+    
+    category_data = []
+    for uni_code in UNIVERSITIES.keys():
+        entries = get_monthly_summary(uni_code, year, month)
+        for e in entries:
+            category_data.append({"Category": e.get("task_category", "Other")})
+    
+    if category_data:
+        category_df = pd.DataFrame(category_data)
+        category_counts = category_df["Category"].value_counts()
+        
+        cat_table = doc.add_table(rows=len(category_counts) + 1, cols=2)
+        cat_table.style = 'Table Grid'
+        cat_table.rows[0].cells[0].text = "Task Category"
+        cat_table.rows[0].cells[1].text = "Count"
+        cat_table.rows[0].cells[0].paragraphs[0].runs[0].bold = True
+        cat_table.rows[0].cells[1].paragraphs[0].runs[0].bold = True
+        
+        for i, (cat, count) in enumerate(category_counts.items()):
+            cat_table.rows[i + 1].cells[0].text = cat
+            cat_table.rows[i + 1].cells[1].text = str(count)
+    
+    doc.add_paragraph()
+    
+    # Key Observations
+    doc.add_heading("5. KEY OBSERVATIONS", level=1)
+    doc.add_paragraph("• All 7 universities have active data collection underway")
+    doc.add_paragraph("• IQAC coordinators are effectively engaged with ICARE team")
+    doc.add_paragraph("• Daily stand-up meetings (10:30-11:00 AM) with ICARE Team are being conducted regularly")
+    doc.add_paragraph("• Data collection from academic, research, and placement cells progressing as per plan")
+    doc.add_paragraph("• Weekly progress reports submitted to PMU, MahaSTRIDE")
+    
+    doc.add_paragraph()
+    
+    # Recommendations
+    doc.add_heading("6. RECOMMENDATIONS", level=1)
+    doc.add_paragraph("• Expedite data availability from financial departments")
+    doc.add_paragraph("• Strengthen coordination with library and IT infrastructure teams")
+    doc.add_paragraph("• Schedule additional review meetings for gap closure")
+    
+    doc.add_paragraph()
+    
+    # Signatures - Consolidated
+    doc.add_heading("7. APPROVALS AND SIGNATURES", level=1)
+    
+    sig_table = doc.add_table(rows=5, cols=2)
+    sig_table.style = 'Table Grid'
+    
+    signatures = [
+        ("Prepared by:", f"{ICARE_OFFICIALS['project_head']}\n(Project Head, ICARE Pvt. Ltd.)"),
+        ("Reviewed by:", f"{MITRA_OFFICIALS['project_director']}\n(Project Director, MahaSTRIDE)"),
+        ("Approved by:", f"{MITRA_OFFICIALS['jt_ceo']}\n(Jt. CEO, MITRA)"),
+        ("Copy to:", "Addl. Chief Secretary, Higher and Technical Education Department"),
+        ("Copy to:", "Secretary to Hon. Governor Maharashtra")
+    ]
+    
+    for i, (role, name) in enumerate(signatures):
+        sig_table.rows[i].cells[0].text = role
+        sig_table.rows[i].cells[1].text = name
+        sig_table.rows[i].cells[0].paragraphs[0].runs[0].bold = True
+    
+    doc.add_paragraph()
+    
+    footer = doc.add_paragraph()
+    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = footer.add_run("This consolidated report is submitted as per SOP Section 2 - Monthly Progress Report (MPR)")
+    run.font.size = Pt(9)
+    run.italic = True
+    
+    doc_bytes = BytesIO()
+    doc.save(doc_bytes)
+    doc_bytes.seek(0)
+    return doc_bytes
 
 def show_sangam_info():
     st.markdown('<div class="sangam-card">', unsafe_allow_html=True)
     st.markdown("### 🎉 SANGAM Orientation & Training Program")
     st.markdown(f"**Dates:** May 5-6, 2026 | **Location:** Mumbai")
-    st.markdown("**Agenda Included:**")
-    st.markdown("""
-    - Project overview and MahaSTRIDE framework introduction
-    - NIRF data collection methodology and standards
-    - Role clarification for Institutional Coordinators
-    - IQAC collaboration and ICARE Team engagement
-    - Hands-on training on data templates and validation
-    - Q&A and university-specific planning
-    """)
     st.markdown("✅ **Status:** Completed successfully")
     st.markdown('</div>', unsafe_allow_html=True)
 
 def create_admin_dashboard():
-    st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard - NIRF Data Collection Tracker</h2><p>Complete Project Analytics & Insights</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2><p>Complete Project Analytics & Infographics</p></div>', unsafe_allow_html=True)
     
     st.markdown('<span class="storage-status storage-connected">✅ Persistent Storage Active - Data is saved between sessions</span>', unsafe_allow_html=True)
     
@@ -634,599 +969,461 @@ def create_admin_dashboard():
     
     st.markdown("---")
     
-    st.info(f"⏰ **Working Hours:** {WORKING_HOURS} | {WORKING_HOURS_NOTE}")
+    st.info(f"⏰ **Project Duration:** 2 Years ({PROJECT_START_DATE.strftime('%d-%b-%Y')} to {PROJECT_END_DATE.strftime('%d-%b-%Y')}) | **Working Hours:** {WORKING_HOURS}")
     
-    st.markdown("---")
-    
-    current_working_day = get_current_working_day()
-    total_working_days = len([d for d, info in NIRF_TASK_SCHEDULE.items() if info["framework"] != "Holiday"])
-    
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Working Day", f"{current_working_day}/{total_working_days}")
-    with col2:
         st.metric("Project Start", PROJECT_START_DATE.strftime("%d-%b-%Y"))
+    with col2:
+        st.metric("Project End", PROJECT_END_DATE.strftime("%d-%b-%Y"))
     with col3:
-        last_date = get_working_date(total_working_days)
-        st.metric("Phase End", last_date.strftime("%d-%b-%Y"))
+        total_unis = len(UNIVERSITIES)
+        st.metric("Universities", f"{total_unis}")
     with col4:
-        days_left = total_working_days - current_working_day if current_working_day > 0 else total_working_days
-        st.metric("Working Days Left", days_left)
-    with col5:
-        st.metric("Universities", len(UNIVERSITIES))
-    
-    st.info(f"📅 **Working Schedule:** Monday to Saturday (Sunday off) | Saturdays are Work from Home | Hours: {WORKING_HOURS}")
+        days_elapsed = (datetime.now() - PROJECT_START_DATE).days
+        st.metric("Days Elapsed", max(0, days_elapsed))
     
     st.markdown("---")
     
-    st.subheader("🎯 Key Performance Indicators")
-    summary_df = get_summary_stats()
+    # Infographics Section
+    st.subheader("📊 Progress Infographics")
     
-    if not summary_df.empty:
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            total_completed = summary_df["Completed"].sum()
-            total_possible = len([d for d in NIRF_TASK_SCHEDULE if NIRF_TASK_SCHEDULE[d]["framework"] != "Holiday"]) * len(UNIVERSITIES)
-            st.metric("✅ Total Tasks Completed", f"{total_completed}/{total_possible}", delta=f"{(total_completed/total_possible*100):.1f}%")
-        with col2:
-            avg_completion = summary_df["Completion %"].mean()
-            st.metric("📊 Avg Completion", f"{avg_completion:.1f}%")
-        with col3:
-            on_track_count = len(summary_df[summary_df["On Track"] == "✅ Yes"])
-            st.metric("🏆 On Track", f"{on_track_count}/{len(UNIVERSITIES)}")
-        with col4:
-            best_uni = summary_df.loc[summary_df["Completion %"].idxmax(), "University"]
-            st.metric("🥇 Top Performer", best_uni[:20])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Daily Progress", "📅 Weekly Progress", "📆 Monthly Progress", "🏛️ University-wise", "📄 MPR Reports"])
     
-    st.markdown("---")
-    
-    st.subheader("📋 Daily Work Routine")
-    st.markdown(DAILY_ROUTINE)
-    
-    st.subheader("🏠 Saturday WFH Routine")
-    st.markdown(SATURDAY_WFH_ROUTINE)
-    
-    st.markdown("---")
-    
-    st.subheader("📅 NIRF Task Progress Heatmap")
-    
-    data = load_progress_data()
-    heatmap_data = []
-    for uni_code, uni_info in UNIVERSITIES.items():
-        uni_data = data.get(uni_code, {})
-        for day, task_info in NIRF_TASK_SCHEDULE.items():
-            if task_info["framework"] != "Holiday":
-                task_data = uni_data.get(str(day), {})
-                status = task_data.get("status", "pending")
-                status_value = 2 if status == "completed" else 1 if status == "in_progress" else 0
-                heatmap_data.append({
-                    "University": uni_info["name"],
-                    "Day": day,
-                    "Date": task_info["date"],
-                    "Status": status_value
-                })
-    
-    heatmap_df = pd.DataFrame(heatmap_data)
-    pivot_data = heatmap_df.pivot(index="University", columns="Day", values="Status")
-    
-    fig = px.imshow(
-        pivot_data,
-        color_continuous_scale=["red", "yellow", "green"],
-        aspect="auto",
-        title="Task Progress Heatmap (Red=Pending, Yellow=In Progress, Green=Completed)",
-        labels=dict(x="Working Day", y="University", color="Status")
-    )
-    fig.update_layout(height=500)
-    st.plotly_chart(fig, use_container_width=True)
-    
-    st.subheader("📈 Performance Analytics")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        fig1 = px.bar(
-            summary_df, 
-            x="University", 
-            y="Completion %", 
-            color="Completion %",
-            color_continuous_scale="Viridis",
-            title="Completion % by University",
-            text="Completion %",
-            height=400
-        )
-        fig1.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-        st.plotly_chart(fig1, use_container_width=True)
-    
-    with col2:
-        framework_df = pd.DataFrame()
-        for uni_code, uni_info in UNIVERSITIES.items():
-            uni_data = data.get(uni_code, {})
-            for framework in ["Setup", "Data Collection", "Validation", "Reporting", "Action Plan", "Review"]:
-                days = [d for d, info in NIRF_TASK_SCHEDULE.items() if info["framework"] == framework]
-                if days:
-                    completed = sum(1 for d in days if uni_data.get(str(d), {}).get("status") == "completed")
-                    percentage = (completed / len(days) * 100)
-                    framework_df = pd.concat([framework_df, pd.DataFrame([{
-                        "University": uni_info["name"],
-                        "Framework": framework,
-                        "Percentage": percentage
-                    }])])
+    with tab1:
+        st.markdown("### Daily Progress Overview")
         
-        if not framework_df.empty:
-            framework_avg = framework_df.groupby("Framework")["Percentage"].mean().reset_index()
-            fig2 = px.bar(
-                framework_avg, 
-                x="Framework", 
-                y="Percentage", 
-                color="Percentage",
-                color_continuous_scale="Plasma",
-                title="Average Framework Completion",
-                text="Percentage",
-                height=400
-            )
-            fig2.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-            st.plotly_chart(fig2, use_container_width=True)
-    
-    col3, col4 = st.columns(2)
-    
-    with col3:
-        status_counts = {
-            "Completed": summary_df["Completed"].sum(),
-            "In Progress": summary_df["In Progress"].sum(),
-            "Pending": summary_df["Pending"].sum()
-        }
-        fig3 = px.pie(
-            values=list(status_counts.values()), 
-            names=list(status_counts.keys()),
-            title="Overall Task Status Distribution",
-            color_discrete_sequence=["#90EE90", "#FFD700", "#FFB6C1"],
-            hole=0.3,
-            height=400
-        )
-        st.plotly_chart(fig3, use_container_width=True)
-    
-    with col4:
-        daily_progress = []
-        for day in NIRF_TASK_SCHEDULE.keys():
-            if NIRF_TASK_SCHEDULE[day]["framework"] != "Holiday":
-                completed = sum(1 for uni_data in data.values() if uni_data.get(str(day), {}).get("status") == "completed")
-                daily_progress.append({"Working Day": day, "Completed": completed})
-        daily_df = pd.DataFrame(daily_progress)
-        
-        fig4 = px.line(
-            daily_df, 
-            x="Working Day", 
-            y="Completed", 
-            markers=True,
-            title="Daily Tasks Completed Across All Universities",
-            height=400
-        )
-        fig4.update_traces(line=dict(color='green', width=3), marker=dict(size=8))
-        st.plotly_chart(fig4, use_container_width=True)
-    
-    st.subheader("🏆 University Rankings")
-    ranking_df = summary_df[["University", "Completion %", "Completed", "In Progress", "Pending", "On Track"]].sort_values("Completion %", ascending=False)
-    ranking_df.index = range(1, len(ranking_df) + 1)
-    st.dataframe(ranking_df, use_container_width=True)
-    
-    st.subheader("🔄 Recent Activity Log")
-    recent_updates = []
-    for uni_code, uni_data in data.items():
-        for day_str, task_data in uni_data.items():
-            if task_data.get("updated_at"):
-                day = int(day_str)
-                if day in NIRF_TASK_SCHEDULE:
-                    recent_updates.append({
-                        "University": UNIVERSITIES[uni_code]["name"],
-                        "Working Day": day,
-                        "Date": NIRF_TASK_SCHEDULE[day]["date"],
-                        "Task": task_data.get("task_description", NIRF_TASK_SCHEDULE[day]["task"])[:50] + "...",
-                        "Status": task_data.get("status", "").upper(),
-                        "Updated By": task_data.get("updated_by", ""),
-                        "Updated At": task_data["updated_at"]
-                    })
-    
-    if recent_updates:
-        recent_df = pd.DataFrame(recent_updates).sort_values("Updated At", ascending=False).head(20)
-        st.dataframe(recent_df, use_container_width=True)
-    else:
-        st.info("No updates recorded yet")
-    
-    st.subheader("💾 Export Data")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("📥 Export Complete Report (CSV)", use_container_width=True):
-            all_data = []
-            for uni_code in UNIVERSITIES.keys():
-                df = get_university_progress(uni_code)
-                df["University"] = UNIVERSITIES[uni_code]["name"]
-                all_data.append(df)
-            if all_data:
-                combined = pd.concat(all_data, ignore_index=True)
-                csv = combined.to_csv(index=False)
-                st.download_button("Download CSV", csv, "nirf_progress_data.csv", "text/csv")
-    with col2:
-        if st.button("📊 Export Summary Report (CSV)", use_container_width=True):
-            csv = summary_df.to_csv(index=False)
-            st.download_button("Download CSV", csv, "nirf_summary_report.csv", "text/csv")
-
-def create_project_lead_dashboard(user_email):
-    """Project Lead (Dr Harshal Kotwal) Dashboard - can edit all coordinators' tasks"""
-    st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard - Dr. Harshal Kotwal</h2><p>Manage all coordinators, modify tasks, track progress</p></div>', unsafe_allow_html=True)
-    
-    st.info(f"⏰ **Working Hours:** {WORKING_HOURS} | {WORKING_HOURS_NOTE}")
-    
-    show_sangam_info()
-    
-    st.markdown("---")
-    
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        st.subheader("📊 Quick Stats")
-        summary_df = get_summary_stats()
-        if not summary_df.empty:
-            total_completed = summary_df["Completed"].sum()
-            total_possible = len([d for d in NIRF_TASK_SCHEDULE if NIRF_TASK_SCHEDULE[d]["framework"] != "Holiday"]) * len(UNIVERSITIES)
-            st.metric("Overall Progress", f"{(total_completed/total_possible*100):.1f}%")
-    
-    with col2:
-        st.subheader("📋 Daily Work Routine")
-        st.markdown(DAILY_ROUTINE)
-        st.markdown(SATURDAY_WFH_ROUTINE)
-    
-    st.markdown("---")
-    
-    # Select university to manage
-    selected_uni_code = st.selectbox(
-        "Select University to Manage",
-        list(UNIVERSITIES.keys()),
-        format_func=lambda x: f"{UNIVERSITIES[x]['name']} - Lead: {UNIVERSITIES[x]['coordinators']}"
-    )
-    
-    if selected_uni_code:
-        st.markdown(f"### 📋 Tasks for {UNIVERSITIES[selected_uni_code]['name']}")
-        
-        df = get_university_progress(selected_uni_code)
-        
-        if not df.empty:
-            working_days_df = df[df["Day Type"] != "Weekend (Off)"]
-            
-            col1, col2, col3, col4 = st.columns(4)
-            total_working = len(working_days_df)
-            completed = len(working_days_df[working_days_df["Status"] == "COMPLETED"])
-            in_progress = len(working_days_df[working_days_df["Status"] == "IN PROGRESS"])
-            
-            with col1:
-                st.metric("✅ Completed", completed)
-            with col2:
-                st.metric("🔄 In Progress", in_progress)
-            with col3:
-                st.metric("⏳ Pending", total_working - completed - in_progress)
-            with col4:
-                st.metric("📊 Progress", f"{(completed/total_working*100):.1f}%")
-            
-            st.progress(completed/total_working)
-            
-            st.markdown("---")
-            
-            # Two tabs: Update Status and Edit Tasks
-            tab1, tab2 = st.tabs(["📝 Update Task Status", "✏️ Modify Task Details"])
-            
-            with tab1:
-                st.subheader("Update Task Status for Coordinator")
-                
-                pending_tasks = working_days_df[working_days_df["Status_Code"].isin(["pending", "in_progress"])]
-                
-                if not pending_tasks.empty:
-                    selected_day = st.selectbox(
-                        "Select Task to Update",
-                        pending_tasks["Day"].tolist(),
-                        key="update_status_select",
-                        format_func=lambda x: f"Day {x}: {pending_tasks[pending_tasks['Day']==x]['Date'].iloc[0]} - {pending_tasks[pending_tasks['Day']==x]['Task'].iloc[0][:60]}..."
-                    )
-                    
-                    task_data = pending_tasks[pending_tasks["Day"] == selected_day].iloc[0]
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.info(f"**Current Status:** {task_data['Status']}")
-                    with col2:
-                        st.warning(f"**Date:** {task_data['Date']} ({task_data['Day Name']}) - {task_data['Day Type']}")
-                    
-                    st.markdown(f"**Task:** {task_data['Task']}")
-                    st.markdown(f"**Deliverable:** {task_data['Deliverable']}")
-                    
-                    new_status = st.radio(
-                        "Update Status To:",
-                        ["in_progress", "completed"],
-                        key="status_update_radio",
-                        format_func=lambda x: "🔄 In Progress" if x == "in_progress" else "✅ Completed"
-                    )
-                    
-                    deliverable_submitted = st.checkbox("Deliverable submitted?", key="deliverable_check")
-                    remarks = st.text_area("Remarks (for coordinator)", placeholder="Add instructions or feedback for the coordinator...")
-                    
-                    if st.button("🚀 Update Status", type="primary", use_container_width=True):
-                        if update_task_status(selected_uni_code, selected_day, new_status, remarks, deliverable_submitted, user_email):
-                            st.success(f"✅ Task status updated to {new_status.upper()} successfully!")
-                            st.balloons()
-                            st.rerun()
-                        else:
-                            st.error("❌ Failed to update status")
-                else:
-                    st.success("🎉 All tasks completed for this university!")
-            
-            with tab2:
-                st.subheader("✏️ Modify Task Details (Customize for Coordinator)")
-                st.markdown("As Project Lead, you can modify task descriptions and deliverables for any coordinator.")
-                
-                all_tasks = working_days_df[working_days_df["Day Type"] != "Off"]
-                
-                selected_day_edit = st.selectbox(
-                    "Select Task to Modify",
-                    all_tasks["Day"].tolist(),
-                    key="edit_task_select",
-                    format_func=lambda x: f"Day {x}: {all_tasks[all_tasks['Day']==x]['Date'].iloc[0]} - {all_tasks[all_tasks['Day']==x]['Task'].iloc[0][:50]}..."
-                )
-                
-                if selected_day_edit:
-                    task_data_edit = all_tasks[all_tasks["Day"] == selected_day_edit].iloc[0]
-                    
-                    with st.container():
-                        st.markdown('<div class="edit-task-card">', unsafe_allow_html=True)
-                        
-                        new_task_desc = st.text_area(
-                            "Task Description",
-                            value=task_data_edit["Task"],
-                            height=100,
-                            key="task_desc_edit"
-                        )
-                        
-                        new_deliverable = st.text_area(
-                            "Deliverable",
-                            value=task_data_edit["Deliverable"],
-                            height=80,
-                            key="deliverable_edit"
-                        )
-                        
-                        edit_remarks = st.text_area(
-                            "Modification Note (reason for change)",
-                            placeholder="Explain why this task is being modified...",
-                            key="edit_remarks"
-                        )
-                        
-                        if st.button("💾 Save Task Modifications", type="primary", use_container_width=True):
-                            if update_task_details(selected_uni_code, selected_day_edit, new_task_desc, new_deliverable, user_email):
-                                st.success(f"✅ Task details modified successfully for Day {selected_day_edit}!")
-                                if edit_remarks:
-                                    st.info(f"Note: {edit_remarks}")
-                                st.rerun()
-                            else:
-                                st.error("❌ Failed to save modifications")
-                        
-                        st.markdown('</div>', unsafe_allow_html=True)
-            
-            with st.expander("📋 View All Tasks"):
-                display_df = df[["Day", "Date", "Day Name", "Day Type", "Framework", "Task", "Deliverable", "Status", "Deliverable Submitted", "Remarks", "Updated By"]]
-                st.dataframe(display_df, use_container_width=True)
-        
-        st.markdown("---")
-        st.subheader("📎 Manage Assignments for this University")
-        
-        assignments = get_university_assignments(selected_uni_code)
-        
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            with st.form("create_assignment_form_lead"):
-                title = st.text_input("Assignment Title")
-                description = st.text_area("Description")
-                due_date = st.date_input("Due Date")
-                
-                if st.form_submit_button("Create Assignment"):
-                    if title:
-                        create_assignment(title, description, due_date.strftime("%Y-%m-%d"), [selected_uni_code], user_email)
-                        st.success("Assignment created successfully!")
-                        st.rerun()
-                    else:
-                        st.error("Please enter title")
-        
-        with col2:
-            if assignments:
-                for assignment in assignments:
-                    with st.container():
-                        st.markdown(f"""
-                        <div class="assignment-card">
-                            <strong>📌 {assignment['title']}</strong><br>
-                            <small>Due: {assignment['due_date']}</small><br>
-                            <small>{assignment['description']}</small><br>
-                            <small>Status: {assignment['submission_status'].upper()}</small>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        if assignment["submission_status"] != "completed":
-                            if st.button(f"Mark as Completed", key=f"lead_complete_{assignment['id']}"):
-                                update_assignment_submission(assignment["id"], selected_uni_code, "completed", "Marked complete by Project Lead", user_email)
-                                st.success("Assignment marked as completed!")
-                                st.rerun()
-            else:
-                st.info("No pending assignments for this university.")
-        
-        st.markdown("---")
-        st.subheader("📅 MPR Submission Reminder")
-        st.warning("📋 **Note:** As per SOP Section 1 & 2, approved attendance and MPR must reach PMU MahaSTRIDE by the 10th of each month. Ensure coordinators prepare MPR inputs.")
-
-def create_coordinator_dashboard(user_email, university_code):
-    """Coordinator Dashboard - can only edit own tasks"""
-    st.markdown('<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>Your NIRF Data Collection Tasks</p></div>', unsafe_allow_html=True)
-    
-    st.info(f"🏛️ **University:** {UNIVERSITIES[university_code]['name']}")
-    st.info(f"⏰ **Working Hours:** {WORKING_HOURS} | {WORKING_HOURS_NOTE}")
-    
-    show_sangam_info()
-    
-    st.markdown("---")
-    
-    st.subheader("📋 Daily Work Routine")
-    st.markdown(DAILY_ROUTINE)
-    
-    st.subheader("🏠 Saturday WFH Routine")
-    st.markdown(SATURDAY_WFH_ROUTINE)
-    
-    st.markdown("---")
-    
-    df = get_university_progress(university_code)
-    
-    if not df.empty:
-        working_days_df = df[df["Day Type"] != "Weekend (Off)"]
-        
-        col1, col2, col3, col4 = st.columns(4)
-        total_working = len(working_days_df)
-        completed = len(working_days_df[working_days_df["Status"] == "COMPLETED"])
-        in_progress = len(working_days_df[working_days_df["Status"] == "IN PROGRESS"])
-        
-        with col1:
-            st.metric("✅ Completed", completed, delta=f"{(completed/total_working*100):.1f}%")
-        with col2:
-            st.metric("🔄 In Progress", in_progress)
-        with col3:
-            st.metric("⏳ Pending", total_working - completed - in_progress)
-        with col4:
-            st.metric("📊 Progress", f"{(completed/total_working*100):.1f}%")
-        
-        st.progress(completed/total_working)
-        
-        st.markdown("---")
-        st.subheader("✏️ Update Your Task Status")
-        
-        pending_tasks = working_days_df[working_days_df["Status_Code"].isin(["pending", "in_progress"])]
-        
-        if not pending_tasks.empty:
-            selected_day = st.selectbox(
-                "Select Task to Update",
-                pending_tasks["Day"].tolist(),
-                format_func=lambda x: f"Day {x}: {pending_tasks[pending_tasks['Day']==x]['Date'].iloc[0]} ({pending_tasks[pending_tasks['Day']==x]['Day Name'].iloc[0]}) - {pending_tasks[pending_tasks['Day']==x]['Task'].iloc[0][:60]}..."
-            )
-            
-            task_data = pending_tasks[pending_tasks["Day"] == selected_day].iloc[0]
+        daily_df = get_daily_progress_data()
+        if not daily_df.empty:
+            daily_summary = daily_df.groupby("Date").agg({
+                "Task": "count",
+                "Hours": "sum"
+            }).reset_index()
+            daily_summary.columns = ["Date", "Tasks Logged", "Total Hours"]
             
             col1, col2 = st.columns(2)
             with col1:
-                st.info(f"**Framework:** {task_data['Framework']}\n\n**Current Status:** {task_data['Status']}")
+                fig1 = px.bar(daily_summary, x="Date", y="Tasks Logged", title="Daily Tasks Logged", color="Tasks Logged", height=400)
+                st.plotly_chart(fig1, use_container_width=True)
             with col2:
-                st.warning(f"**Date:** {task_data['Date']} ({task_data['Day Name']}) - {task_data['Day Type']}")
+                fig2 = px.line(daily_summary, x="Date", y="Total Hours", title="Daily Hours Invested", markers=True, height=400)
+                st.plotly_chart(fig2, use_container_width=True)
             
-            st.markdown(f"**📝 Task:** {task_data['Task']}")
-            st.markdown(f"**📎 Deliverable:** {task_data['Deliverable']}")
+            st.dataframe(daily_summary.sort_values("Date", ascending=False), use_container_width=True)
+        else:
+            st.info("No data available yet")
+    
+    with tab2:
+        st.markdown("### Weekly Progress Overview")
+        
+        weekly_df = get_weekly_progress_data()
+        if not weekly_df.empty:
+            weekly_agg = weekly_df.groupby("Week_Start").agg({
+                "Total Hours": "sum",
+                "Tasks Completed": "sum"
+            }).reset_index()
             
-            new_status = st.radio(
-                "Update Status To:",
-                ["in_progress", "completed"],
-                format_func=lambda x: "🔄 In Progress" if x == "in_progress" else "✅ Completed"
-            )
+            col1, col2 = st.columns(2)
+            with col1:
+                fig3 = px.bar(weekly_agg, x="Week_Start", y="Tasks Completed", title="Weekly Tasks Completed", color="Tasks Completed", height=400)
+                st.plotly_chart(fig3, use_container_width=True)
+            with col2:
+                fig4 = px.line(weekly_agg, x="Week_Start", y="Total Hours", title="Weekly Hours Invested", markers=True, height=400)
+                st.plotly_chart(fig4, use_container_width=True)
             
-            deliverable_submitted = st.checkbox("Deliverable submitted?")
-            remarks = st.text_area("Remarks (optional)", placeholder="Add any notes about this task or deliverable...")
+            st.subheader("University-wise Weekly Breakdown")
+            st.dataframe(weekly_df.sort_values(["Week_Start", "University"]), use_container_width=True)
+        else:
+            st.info("No data available yet")
+    
+    with tab3:
+        st.markdown("### Monthly Progress Overview")
+        
+        monthly_df = get_monthly_progress_data()
+        if not monthly_df.empty:
+            monthly_agg = monthly_df.groupby("Month_Name").agg({
+                "Total Hours": "sum",
+                "Tasks Completed": "sum"
+            }).reset_index()
             
-            if st.button("🚀 Update Status", type="primary", use_container_width=True):
-                if update_task_status(university_code, selected_day, new_status, remarks, deliverable_submitted, user_email):
-                    st.success(f"✅ Task status updated to {new_status.upper()} successfully!")
+            col1, col2 = st.columns(2)
+            with col1:
+                fig5 = px.bar(monthly_agg, x="Month_Name", y="Tasks Completed", title="Monthly Tasks Completed", color="Tasks Completed", height=400)
+                st.plotly_chart(fig5, use_container_width=True)
+            with col2:
+                fig6 = px.pie(monthly_agg, values="Total Hours", names="Month_Name", title="Monthly Hours Distribution", height=400)
+                st.plotly_chart(fig6, use_container_width=True)
+            
+            st.subheader("University-wise Monthly Breakdown")
+            st.dataframe(monthly_df.sort_values(["Year", "Month", "University"]), use_container_width=True)
+        else:
+            st.info("No data available yet")
+    
+    with tab4:
+        st.markdown("### University-wise Progress")
+        
+        uni_progress = []
+        for uni_code, uni_info in UNIVERSITIES.items():
+            entries = get_university_entries(uni_code)
+            if not entries.empty:
+                total_tasks = len(entries)
+                completed = len(entries[entries["Status"] == "COMPLETED"])
+                total_hours = entries["Hours Spent"].sum() if "Hours Spent" in entries.columns else 0
+                uni_progress.append({
+                    "University": uni_info["name"],
+                    "Nodal Officer": uni_info["nodal_officer"],
+                    "Total Tasks": total_tasks,
+                    "Completed": completed,
+                    "Completion %": round(completed / total_tasks * 100, 1) if total_tasks > 0 else 0,
+                    "Total Hours": total_hours
+                })
+        
+        if uni_progress:
+            uni_df = pd.DataFrame(uni_progress)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                fig7 = px.bar(uni_df, x="University", y="Completion %", title="University-wise Completion %", color="Completion %", text="Completion %", height=500)
+                fig7.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                st.plotly_chart(fig7, use_container_width=True)
+            with col2:
+                fig8 = px.bar(uni_df, x="University", y="Total Hours", title="University-wise Total Hours", color="Total Hours", text="Total Hours", height=500)
+                fig8.update_traces(texttemplate='%{text:.1f}', textposition='outside')
+                st.plotly_chart(fig8, use_container_width=True)
+            
+            st.dataframe(uni_df, use_container_width=True)
+        else:
+            st.info("No data available yet")
+    
+    with tab5:
+        st.markdown("### Monthly Progress Report (MPR)")
+        st.markdown("Generate MPR for submission to MITRA as per SOP Section 2")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            report_year = st.selectbox("Select Year", [2026, 2027, 2028], key="admin_report_year")
+            report_month = st.selectbox("Select Month", list(range(1, 13)), key="admin_report_month",
+                                       format_func=lambda x: datetime(2000, x, 1).strftime("%B"))
+            report_type = st.radio("Report Type", ["Individual University", "Consolidated (All Universities)"])
+        
+        with col2:
+            if report_type == "Individual University":
+                selected_uni = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
+        
+        if st.button("📄 Generate MPR", use_container_width=True):
+            with st.spinner("Generating MPR..."):
+                if report_type == "Individual University":
+                    doc_bytes = create_mpr_word_document(selected_uni, report_year, report_month, UNIVERSITIES[selected_uni]["coordinators"][0])
+                    filename = f"MPR_{UNIVERSITIES[selected_uni]['name'].replace(' ', '_')}_{report_year}_{report_month:02d}.docx"
+                else:
+                    doc_bytes = create_consolidated_mpr(report_year, report_month)
+                    filename = f"Consolidated_MPR_{report_year}_{report_month:02d}.docx"
+                
+                st.download_button("📥 Download MPR (Word)", doc_bytes, filename, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+def create_project_lead_dashboard():
+    st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard - Dr. Harshal Kotwal</h2><p>Assign Tasks & Monitor Progress (2-Year Project)</p></div>', unsafe_allow_html=True)
+    
+    st.info(f"📅 **Project Duration:** {PROJECT_START_DATE.strftime('%d-%b-%Y')} to {PROJECT_END_DATE.strftime('%d-%b-%Y')} (2 Years)")
+    
+    show_sangam_info()
+    
+    st.markdown("---")
+    
+    tab1, tab2, tab3, tab4 = st.tabs(["📅 Assign Task to Date", "📊 Progress Dashboard", "📝 Manage Assignments", "📈 Analytics"])
+    
+    with tab1:
+        st.subheader("📅 Assign a Custom Task for Any Date")
+        st.markdown("You can assign tasks for any date during the 2-year project period. Coordinators will see these as their assigned tasks.")
+        
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            with st.form("add_custom_task_form"):
+                task_date = st.date_input("Select Date", min_value=PROJECT_START_DATE, max_value=PROJECT_END_DATE)
+                task_category = st.selectbox("Task Category", ["Data Collection", "Meetings", "Documentation", "Analysis", "Training", "WFH", "Other"])
+                task_name = st.text_input("Task Name")
+                description = st.text_area("Task Description", height=100)
+                deliverables = st.text_area("Expected Deliverables", height=80)
+                
+                if st.form_submit_button("Assign Task to Date"):
+                    if task_name and description:
+                        date_str = task_date.strftime("%Y-%m-%d")
+                        add_custom_task_for_date(date_str, task_category, task_name, description, deliverables, "Dr. Harshal Kotwal")
+                        st.success(f"Task assigned to {date_str} successfully!")
+                        st.rerun()
+                    else:
+                        st.error("Please fill Task Name and Description")
+        
+        with col2:
+            st.markdown("### Currently Assigned Custom Tasks")
+            custom_tasks = load_custom_tasks_data()
+            if custom_tasks["date_specific_tasks"]:
+                for date_str, task in list(custom_tasks["date_specific_tasks"].items())[:10]:
+                    with st.expander(f"📌 {date_str} - {task['task'][:40]}"):
+                        st.markdown(f"**Category:** {task['task_category']}")
+                        st.markdown(f"**Description:** {task['description'][:100]}...")
+                        st.markdown(f"**Added:** {task['added_at'][:10]}")
+            else:
+                st.info("No custom tasks assigned yet")
+    
+    with tab2:
+        st.subheader("📊 Coordinator Progress Overview")
+        
+        uni_progress = []
+        for uni_code, uni_info in UNIVERSITIES.items():
+            entries = get_university_entries(uni_code)
+            if not entries.empty:
+                total_tasks = len(entries)
+                completed = len(entries[entries["Status"] == "COMPLETED"])
+                uni_progress.append({
+                    "University": uni_info["name"],
+                    "Coordinator": ", ".join(uni_info["coordinators"]),
+                    "Tasks Logged": total_tasks,
+                    "Completed": completed,
+                    "Completion %": round(completed / total_tasks * 100, 1) if total_tasks > 0 else 0,
+                    "Nodal Officer": uni_info["nodal_officer"]
+                })
+        
+        if uni_progress:
+            uni_df = pd.DataFrame(uni_progress)
+            fig = px.bar(uni_df, x="University", y="Completion %", title="University-wise Progress", color="Completion %", text="Completion %", height=500)
+            fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+            st.plotly_chart(fig, use_container_width=True)
+            st.dataframe(uni_df, use_container_width=True)
+        else:
+            st.info("No progress data available yet")
+        
+        st.markdown("---")
+        st.subheader("Detailed University Logs")
+        
+        selected_uni = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
+        if selected_uni:
+            df = get_university_entries(selected_uni)
+            if not df.empty:
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("No entries logged yet")
+    
+    with tab3:
+        st.subheader("📝 Manage Assignments")
+        
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            with st.form("create_assignment"):
+                st.markdown("### Create New Assignment")
+                title = st.text_input("Assignment Title")
+                description = st.text_area("Description")
+                due_date = st.date_input("Due Date", min_value=datetime.now().date())
+                assigned_unis = st.multiselect("Assign to Universities", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
+                
+                if st.form_submit_button("Create Assignment"):
+                    if title and assigned_unis:
+                        create_assignment(title, description, due_date.strftime("%Y-%m-%d"), assigned_unis, "Dr. Harshal Kotwal")
+                        st.success("Assignment created!")
+                        st.rerun()
+        
+        with col2:
+            st.markdown("### Active Assignments")
+            assignments_data = load_assignments_data()
+            active = [a for a in assignments_data["assignments"] if a["status"] == "active"]
+            if active:
+                for a in active[-5:]:
+                    st.markdown(f"**📌 {a['title']}** (Due: {a['due_date']})")
+                    st.caption(f"Assigned to: {', '.join([UNIVERSITIES[c]['name'][:20] for c in a['assigned_universities']])}")
+                    st.markdown("---")
+            else:
+                st.info("No active assignments")
+    
+    with tab4:
+        st.subheader("📈 Advanced Analytics")
+        
+        daily_df = get_daily_progress_data()
+        weekly_df = get_weekly_progress_data()
+        monthly_df = get_monthly_progress_data()
+        
+        if not daily_df.empty:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                daily_cumulative = daily_df.groupby("Date").size().cumsum().reset_index()
+                daily_cumulative.columns = ["Date", "Cumulative Tasks"]
+                fig_cum = px.area(daily_cumulative, x="Date", y="Cumulative Tasks", title="Cumulative Tasks Over Time", height=400)
+                st.plotly_chart(fig_cum, use_container_width=True)
+            
+            with col2:
+                hours_trend = daily_df.groupby("Date")["Hours"].sum().reset_index()
+                fig_hours = px.line(hours_trend, x="Date", y="Hours", title="Daily Hours Trend", markers=True, height=400)
+                st.plotly_chart(fig_hours, use_container_width=True)
+            
+            if not weekly_df.empty:
+                weekly_pivot = weekly_df.pivot_table(index="University", columns="Week_Start", values="Tasks Completed", fill_value=0)
+                fig_heatmap = px.imshow(weekly_pivot, title="Weekly Tasks Heatmap", height=500, color_continuous_scale="Viridis")
+                st.plotly_chart(fig_heatmap, use_container_width=True)
+            
+            st.subheader("📥 Export Data")
+            col1, col2 = st.columns(2)
+            with col1:
+                csv_daily = daily_df.to_csv(index=False)
+                st.download_button("📊 Export Daily Data (CSV)", csv_daily, "daily_progress.csv", "text/csv")
+            with col2:
+                if not monthly_df.empty:
+                    csv_monthly = monthly_df.to_csv(index=False)
+                    st.download_button("📆 Export Monthly Data (CSV)", csv_monthly, "monthly_progress.csv", "text/csv")
+
+def create_coordinator_dashboard(university_code, coordinator_name):
+    st.markdown('<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>Log Your Daily Work</p></div>', unsafe_allow_html=True)
+    
+    uni_info = UNIVERSITIES[university_code]
+    st.markdown(f"**🏛️ University:** {uni_info['name']}")
+    st.markdown(f"**👤 Coordinator:** {coordinator_name}")
+    st.markdown(f"**📌 Nodal Officer:** {uni_info['nodal_officer']}")
+    
+    st.info(f"⏰ **Working Hours:** {WORKING_HOURS} | Daily Stand-up: 10:30-11:00 AM with ICARE Team Only")
+    
+    st.markdown("---")
+    
+    st.subheader("📋 Daily Work Routine")
+    st.markdown(DAILY_ROUTINE)
+    
+    st.markdown("---")
+    
+    with st.expander("📋 View Your Previous Entries", expanded=False):
+        df = get_university_entries(university_code)
+        if not df.empty:
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.info("No entries logged yet")
+    
+    st.markdown("---")
+    
+    st.subheader("📝 Log Today's Work")
+    
+    today_date = datetime.now().date()
+    today_str = today_date.strftime("%Y-%m-%d")
+    today_day = today_date.strftime("%A")
+    
+    existing_data = load_progress_data()
+    already_logged = today_str in existing_data.get(university_code, {})
+    
+    plan_for_today = get_plan_for_date(today_str)
+    
+    if already_logged:
+        st.warning(f"⚠️ You have already logged work for {today_str}. You can edit below.")
+        
+        existing_entry = existing_data[university_code][today_str]
+        
+        with st.form("edit_entry_form"):
+            st.markdown("### Edit Today's Entry")
+            
+            task_category = st.selectbox("Task Category", ["Data Collection", "Meetings", "Documentation", "Analysis", "Training", "WFH", "Other"],
+                                        index=["Data Collection", "Meetings", "Documentation", "Analysis", "Training", "WFH", "Other"].index(existing_entry.get("task_category", "Data Collection")) if existing_entry.get("task_category") in ["Data Collection", "Meetings", "Documentation", "Analysis", "Training", "WFH", "Other"] else 0)
+            
+            task_name = st.text_input("Task", value=existing_entry.get("task_name", ""))
+            description = st.text_area("Detailed Description", value=existing_entry.get("description", ""), height=100)
+            deliverables = st.text_area("Deliverables Produced", value=existing_entry.get("deliverables", ""), height=80)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                status = st.selectbox("Status", ["in_progress", "completed"], index=0 if existing_entry.get("status") == "in_progress" else 1)
+            with col2:
+                hours_spent = st.number_input("Hours Spent", min_value=0.5, max_value=12.0, step=0.5, value=float(existing_entry.get("hours_spent", 8)))
+            
+            remarks = st.text_area("Additional Remarks", value=existing_entry.get("remarks", ""))
+            
+            if st.form_submit_button("Update Entry"):
+                if log_daily_entry(university_code, today_str, task_category, task_name, description, deliverables, status, hours_spent, remarks, False, False, coordinator_name):
+                    st.success("Entry updated successfully!")
                     st.balloons()
                     st.rerun()
                 else:
-                    st.error("❌ Failed to update status")
+                    st.error("Failed to update entry")
+    else:
+        if plan_for_today:
+            st.markdown(f"""
+            <div class="default-task-card">
+                <strong>📌 Your Assigned Task for Today ({today_day}, {today_str})</strong><br>
+                <strong>Task:</strong> {plan_for_today['task']}<br>
+                <strong>Category:</strong> {plan_for_today['task_category']}<br>
+                <strong>Description:</strong> {plan_for_today['description']}<br>
+                <strong>Expected Deliverables:</strong> {plan_for_today['deliverables']}
+            </div>
+            """, unsafe_allow_html=True)
+            
+            use_assigned = st.radio("", ["✅ Use Assigned Task", "🔄 Log Different Task"], horizontal=True)
         else:
-            st.success("🎉 Congratulations! All tasks are completed!")
+            use_assigned = "🔄 Log Different Task"
+            st.info(f"No assigned task for {today_str}. Please log your work below.")
         
-        with st.expander("📋 View All Your Tasks"):
-            display_df = df[["Day", "Date", "Day Name", "Day Type", "Framework", "Task", "Deliverable", "Status", "Deliverable Submitted", "Remarks"]]
-            st.dataframe(display_df, use_container_width=True)
-        
-        st.markdown("---")
-        st.subheader("📎 Admin/Project Lead Assignments")
-        
-        assignments = get_university_assignments(university_code)
-        
-        if assignments:
-            for assignment in assignments:
+        with st.form("daily_entry_form"):
+            st.markdown("### Today's Work Log")
+            
+            if use_assigned == "✅ Use Assigned Task" and plan_for_today:
+                task_category = plan_for_today['task_category']
+                task_name = plan_for_today['task']
+                description = plan_for_today['description']
+                deliverables = plan_for_today['deliverables']
+                st.info(f"Using assigned task: {task_name}")
+                st.text_input("Task Category", value=task_category, disabled=True)
+                st.text_input("Task", value=task_name, disabled=True)
+            else:
+                task_category = st.selectbox("Task Category", ["Data Collection", "Meetings", "Documentation", "Analysis", "Training", "WFH", "Other"])
+                task_name = st.text_input("Task")
+                description = st.text_area("Detailed Description", placeholder="Describe what you did today...", height=100)
+                deliverables = st.text_area("Deliverables Produced", placeholder="What outputs/deliverables were created?", height=80)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                status = st.selectbox("Status", ["in_progress", "completed"])
+            with col2:
+                hours_spent = st.number_input("Hours Spent", min_value=0.5, max_value=12.0, step=0.5, value=8.0)
+            
+            remarks = st.text_area("Additional Remarks", placeholder="Any challenges, blockers, or notes...")
+            
+            if st.form_submit_button("Submit Daily Log"):
+                if use_assigned == "✅ Use Assigned Task" and plan_for_today:
+                    if log_daily_entry(university_code, today_str, plan_for_today['task_category'], plan_for_today['task'],
+                                      plan_for_today['description'], plan_for_today['deliverables'], status, hours_spent, remarks, False, False, coordinator_name):
+                        st.success("Daily work log submitted successfully!")
+                        st.balloons()
+                        st.rerun()
+                else:
+                    if task_name:
+                        if log_daily_entry(university_code, today_str, task_category, task_name, description, deliverables, status, hours_spent, remarks, True, True, coordinator_name):
+                            st.success("Daily work log submitted successfully!")
+                            st.balloons()
+                            st.rerun()
+                    else:
+                        st.error("Please fill Task field")
+    
+    st.markdown("---")
+    
+    st.subheader("📎 Pending Assignments")
+    assignments = get_university_assignments(university_code)
+    
+    if assignments:
+        for assignment in assignments:
+            if assignment["submission_status"] != "completed":
                 with st.container():
                     st.markdown(f"""
                     <div class="assignment-card">
                         <strong>📌 {assignment['title']}</strong><br>
                         <small>Due: {assignment['due_date']}</small><br>
-                        <small>{assignment['description']}</small><br>
-                        <small>Status: {assignment['submission_status'].upper()}</small>
+                        <small>{assignment['description']}</small>
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    if assignment["submission_status"] != "completed":
-                        col1, col2 = st.columns([3, 1])
-                        with col1:
-                            assign_remarks = st.text_input(f"Remarks for {assignment['title']}", key=f"assign_remarks_{assignment['id']}")
-                        with col2:
-                            if st.button(f"Mark Complete", key=f"complete_{assignment['id']}"):
-                                update_assignment_submission(assignment["id"], university_code, "completed", assign_remarks, user_email)
-                                st.success("Assignment marked as completed!")
-                                st.rerun()
-        else:
-            st.info("No pending assignments.")
-        
-        st.markdown("---")
-        st.subheader("📅 MPR Submission Reminder")
-        st.warning("📋 **Note:** As per SOP Section 1 & 2, approved attendance and MPR must reach PMU MahaSTRIDE by the 10th of each month. Please prepare your MPR inputs by end of month.")
-        
-        st.markdown("---")
-        st.subheader("✅ End of Day Checklist")
-        st.markdown("""
-        Before departure at **6:00 PM**, please ensure:
-        - [ ] Daily tracker updated
-        - [ ] Email summary sent to ICARE Project Head
-        - [ ] All meetings attended and minutes recorded
-        - [ ] Tomorrow's schedule confirmed with Nodal Officer & ICARE Team
-        """)
-
-def create_data_analyst_dashboard(user_email):
-    """Data Analyst Dashboard - monitoring only"""
-    st.markdown('<div class="info-card"><h2>📊 Data Analyst Dashboard</h2><p>Monitor university progress</p></div>', unsafe_allow_html=True)
+                    if st.button(f"Mark Complete", key=f"complete_{assignment['id']}"):
+                        update_assignment_submission(assignment["id"], university_code, "completed", "", coordinator_name)
+                        st.success("Assignment marked as completed!")
+                        st.rerun()
+    else:
+        st.info("No pending assignments")
     
-    assigned_universities = [code for code, email in UNIVERSITY_LEAD_MAPPING.items() if email == user_email]
-    
-    if not assigned_universities:
-        st.warning("No universities assigned to you. Please contact admin.")
-        return
-    
-    selected_uni_code = st.selectbox(
-        "Select University", 
-        assigned_universities,
-        format_func=lambda x: UNIVERSITIES[x]["name"]
-    )
-    
-    if selected_uni_code:
-        df = get_university_progress(selected_uni_code)
-        
-        if not df.empty:
-            working_days_df = df[df["Day Type"] != "Weekend (Off)"]
-            
-            col1, col2, col3 = st.columns(3)
-            completed = len(working_days_df[working_days_df["Status"] == "COMPLETED"])
-            in_progress = len(working_days_df[working_days_df["Status"] == "IN PROGRESS"])
-            total = len(working_days_df)
-            
-            with col1:
-                st.metric("✅ Completed", completed)
-            with col2:
-                st.metric("🔄 In Progress", in_progress)
-            with col3:
-                st.metric("📊 Progress", f"{(completed/total*100):.1f}%")
-            
-            st.progress(completed/total)
-            
-            st.subheader("📋 Task Progress")
-            display_df = df[["Day", "Date", "Day Name", "Day Type", "Framework", "Task", "Status", "Deliverable Submitted", "Remarks"]]
-            st.dataframe(display_df, use_container_width=True)
-            
-            st.subheader("📊 Framework Summary")
-            framework_summary = df[df["Day Type"] != "Weekend (Off)"].groupby("Framework")["Status"].value_counts().unstack().fillna(0)
-            st.dataframe(framework_summary, use_container_width=True)
+    st.markdown("---")
+    st.subheader("📅 MPR Submission Reminder")
+    st.warning("📋 **Note:** As per SOP Section 1 & 2, approved attendance and MPR must reach PMU MahaSTRIDE by the 10th of each month.")
 
 def main():
     if "authenticated" not in st.session_state:
@@ -1234,7 +1431,7 @@ def main():
     
     if not st.session_state["authenticated"]:
         with st.container():
-            st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE NIRF Data Collection Tracker</h1><p>Institutional Coordinator Progress Monitoring System</p></div>', unsafe_allow_html=True)
+            st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE NIRF Data Collection Tracker</h1><p>2-Year Project Progress Monitoring System</p></div>', unsafe_allow_html=True)
             
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
@@ -1244,15 +1441,14 @@ def main():
                 
                 if st.button("Login", type="primary", use_container_width=True):
                     if email and password:
-                        success, role, name, permissions = authenticate_user(email, password)
+                        success, role, name, university = authenticate_user(email, password)
                         if success:
                             st.session_state["authenticated"] = True
                             st.session_state["user_email"] = email
                             st.session_state["user_role"] = role
                             st.session_state["user_name"] = name
-                            st.session_state["user_permissions"] = permissions
-                            if role == "coordinator":
-                                st.session_state["user_university"] = USERS[email].get("university")
+                            if university:
+                                st.session_state["user_university"] = university
                             st.rerun()
                         else:
                             st.error("Invalid email or password")
@@ -1263,250 +1459,206 @@ def main():
                 st.markdown("### Demo Credentials")
                 st.markdown("""
                 **Admin:** admin@mahastride.com / Admin@2026<br>
-                **Project Lead (Dr. Harshal Kotwal):** projectlead@mahastride.com / ProjectLead@2026<br>
-                **Coordinator (MU):** sneha@mu.edu / Coord@2026<br>
+                **Project Lead:** projectlead@mahastride.com / ProjectLead@2026<br>
+                **Coordinators:** (Password: Name@2026)<br>
+                - sneha@mu.edu (Mumbai University)<br>
+                - jagan@sspu.edu (SPPU Pune)<br>
+                - vaibhav@coep.edu (COEP Tech)<br>
+                - pratham@au.edu (Amravati University)<br>
+                - anjali@nu.edu (Nagpur University)<br>
+                - nitish@kbcnmu.edu (KBCNMU Jalgaon)<br>
+                - atharv@bamu.edu (BAMU Aurangabad)
                 """, unsafe_allow_html=True)
         return
     
     user_role = st.session_state["user_role"]
     user_name = st.session_state["user_name"]
-    user_email = st.session_state["user_email"]
     
     with st.sidebar:
         st.title("📊 mahaSTRIDE")
         st.markdown(f"**Welcome, {user_name}**")
         
-        if user_role == "project_lead":
+        if user_role == "admin":
+            st.markdown("*Role: Admin*")
+        elif user_role == "project_lead":
             st.markdown("*Role: Project Lead (Dr. Harshal Kotwal)*")
-            st.markdown("*Permissions: Can edit all coordinator tasks*")
         else:
-            st.markdown(f"*Role: {user_role.title()}*")
+            st.markdown("*Role: Coordinator*")
+            if "user_university" in st.session_state:
+                uni = st.session_state["user_university"]
+                st.markdown(f"*University: {UNIVERSITIES[uni]['name'][:30]}...*")
         
         st.markdown("---")
-        
-        current_working_day = get_current_working_day()
-        total_working = len([d for d, info in NIRF_TASK_SCHEDULE.items() if info["framework"] != "Holiday"])
-        st.markdown(f"**Working Day:** {current_working_day}/{total_working}")
+        st.markdown(f"**Today:** {datetime.now().strftime('%d-%b-%Y')}")
+        st.markdown(f"**Project:** {PROJECT_START_DATE.strftime('%d-%b-%Y')} to {PROJECT_END_DATE.strftime('%d-%b-%Y')}")
         
         st.markdown("---")
         
         if user_role == "admin":
-            menu = st.radio("Navigation", ["Admin Dashboard", "Manage Assignments", "University Details", "About"])
+            menu = st.radio("Navigation", ["📊 Admin Dashboard", "📄 MPR Reports", "ℹ️ About"])
         elif user_role == "project_lead":
-            menu = st.radio("Navigation", ["Project Lead Dashboard", "Manage All Universities", "About"])
-        elif user_role == "coordinator":
-            menu = st.radio("Navigation", ["My Dashboard", "My Tasks", "About"])
+            menu = st.radio("Navigation", ["👨‍💼 Project Lead Dashboard", "📝 Assignments", "📊 Analytics", "ℹ️ About"])
         else:
-            menu = st.radio("Navigation", ["Analyst Dashboard", "University Progress", "About"])
+            menu = st.radio("Navigation", ["📋 Log Work", "📊 My Progress", "ℹ️ About"])
         
         st.markdown("---")
-        
-        summary_df = get_summary_stats()
-        if not summary_df.empty:
-            total_completed = summary_df["Completed"].sum()
-            total_possible = total_working * len(UNIVERSITIES)
-            overall_pct = (total_completed / total_possible * 100) if total_possible > 0 else 0
-            st.metric("Overall Progress", f"{overall_pct:.1f}%")
-            st.progress(overall_pct / 100)
-        
-        st.markdown("---")
-        st.caption(f"⏰ Working Hours: {WORKING_HOURS}")
-        st.caption("🔄 Stand-up: 10:30-11:00 AM with Nodal Officer & ICARE Team")
-        st.caption("🚪 Departure: 6:00 PM")
+        st.caption(f"⏰ {WORKING_HOURS}")
+        st.caption("🔄 Stand-up: 10:30-11:00 AM")
+        st.caption("📅 2-Year Project")
         
         st.markdown("---")
         
         if st.button("🚪 Logout", use_container_width=True):
-            for key in ["authenticated", "user_email", "user_role", "user_name", "user_university", "user_permissions"]:
+            for key in ["authenticated", "user_email", "user_role", "user_name", "user_university"]:
                 if key in st.session_state:
                     del st.session_state[key]
             st.rerun()
     
     if user_role == "admin":
-        if menu == "Admin Dashboard":
+        if menu == "📊 Admin Dashboard":
             create_admin_dashboard()
-        elif menu == "Manage Assignments":
-            st.title("📝 Manage Assignments")
+        elif menu == "📄 MPR Reports":
+            st.title("📄 Monthly Progress Reports")
+            col1, col2 = st.columns(2)
+            with col1:
+                report_year = st.selectbox("Year", [2026, 2027, 2028])
+                report_month = st.selectbox("Month", list(range(1, 13)), format_func=lambda x: datetime(2000, x, 1).strftime("%B"))
+            with col2:
+                report_type = st.radio("Report Type", ["Individual University", "Consolidated (All Universities)"])
+                if report_type == "Individual University":
+                    selected_uni = st.selectbox("University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
             
-            tab1, tab2, tab3 = st.tabs(["Create Assignment", "View Assignments", "Track Submissions"])
-            
-            with tab1:
-                with st.form("create_assignment_form"):
-                    title = st.text_input("Assignment Title")
-                    description = st.text_area("Description")
-                    due_date = st.date_input("Due Date")
-                    assigned_universities = st.multiselect(
-                        "Assign to Universities",
-                        list(UNIVERSITIES.keys()),
-                        format_func=lambda x: UNIVERSITIES[x]["name"]
-                    )
+            if st.button("Generate MPR"):
+                with st.spinner("Generating..."):
+                    if report_type == "Individual University":
+                        doc_bytes = create_mpr_word_document(selected_uni, report_year, report_month, UNIVERSITIES[selected_uni]["coordinators"][0])
+                        filename = f"MPR_{UNIVERSITIES[selected_uni]['name'].replace(' ', '_')}_{report_year}_{report_month:02d}.docx"
+                    else:
+                        doc_bytes = create_consolidated_mpr(report_year, report_month)
+                        filename = f"Consolidated_MPR_{report_year}_{report_month:02d}.docx"
                     
-                    if st.form_submit_button("Create Assignment"):
-                        if title and assigned_universities:
-                            create_assignment(title, description, due_date.strftime("%Y-%m-%d"), assigned_universities, user_email)
-                            st.success("Assignment created successfully!")
-                        else:
-                            st.error("Please fill all required fields")
-            
-            with tab2:
-                assignments_data = load_assignments_data()
-                if assignments_data["assignments"]:
-                    for assignment in assignments_data["assignments"]:
-                        if assignment["status"] == "active":
-                            with st.expander(f"📌 {assignment['title']}"):
-                                st.write(f"**Description:** {assignment['description']}")
-                                st.write(f"**Due Date:** {assignment['due_date']}")
-                                st.write(f"**Assigned To:** {', '.join([UNIVERSITIES[code]['name'] for code in assignment['assigned_universities']])}")
-                                st.write(f"**Created:** {assignment['created_at'][:10]}")
-                                if st.button(f"Delete Assignment", key=f"del_{assignment['id']}"):
-                                    delete_assignment(assignment['id'])
-                                    st.rerun()
-                else:
-                    st.info("No active assignments")
-            
-            with tab3:
-                submissions_df = get_all_assignments_with_status()
-                if not submissions_df.empty:
-                    st.dataframe(submissions_df, use_container_width=True)
-                else:
-                    st.info("No submissions yet")
-        elif menu == "University Details":
-            st.title("🏛️ University Details")
-            summary_df = get_summary_stats()
-            if not summary_df.empty:
-                st.dataframe(summary_df, use_container_width=True)
+                    st.download_button("Download MPR", doc_bytes, filename, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         else:
             st.title("ℹ️ About")
             st.markdown(f"""
-            ### mahaSTRIDE NIRF Data Collection Tracker
+            ### mahaSTRIDE Project Tracker
             
-            **Project Lead:** Dr. Harshal Kotwal  
-            **Sangam Orientation:** May 5-6, 2026  
-            **Project Start:** May 7, 2026  
+            **Project Duration:** 2 Years ({PROJECT_START_DATE.strftime('%d-%b-%Y')} to {PROJECT_END_DATE.strftime('%d-%b-%Y')})
             
-            **Working Schedule:** 
-            - Monday to Friday: Onsite at University (10:00 AM - 6:00 PM)
-            - Saturday: Work from Home (10:00 AM - 6:00 PM)
-            - Sunday: Weekly off
+            **Participating Universities:**
+            {chr(10).join([f"• {uni['name']} (Nodal Officer: {uni['nodal_officer']})" for uni in UNIVERSITIES.values()])}
             
-            **Daily Stand-up:** 10:30 AM - 11:00 AM with Nodal Officer & ICARE Team
-            **Daily Departure:** 6:00 PM
-            
-            **Roles:**
-            - **Admin:** Full system access
-            - **Project Lead (Dr. Harshal Kotwal):** Can modify tasks for any coordinator
-            - **Coordinators:** Update own tasks only
-            
-            ### Demo Credentials:
-            - **Admin:** admin@mahastride.com / Admin@2026
-            - **Project Lead:** projectlead@mahastride.com / ProjectLead@2026
-            - **Coordinator:** sneha@mu.edu / Coord@2026
+            **Features:**
+            - Daily progress logging by coordinators
+            - Weekly and monthly progress visualizations
+            - Automated MPR generation in Word format
+            - Consolidated reports for MITRA submission
+            - 2-year project timeline support
             """)
     
     elif user_role == "project_lead":
-        if menu == "Project Lead Dashboard":
-            create_project_lead_dashboard(user_email)
-        elif menu == "Manage All Universities":
-            st.title("🏛️ All Universities Progress")
-            summary_df = get_summary_stats()
-            if not summary_df.empty:
-                st.dataframe(summary_df, use_container_width=True)
-                
-                fig = px.bar(
-                    summary_df,
-                    x="University",
-                    y="Completion %",
-                    color="Completion %",
-                    text="Completion %",
-                    title="University-wise Progress"
-                )
-                fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+        if menu == "👨‍💼 Project Lead Dashboard":
+            create_project_lead_dashboard()
+        elif menu == "📝 Assignments":
+            st.title("📝 Manage Assignments")
+            
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                with st.form("create_assignment"):
+                    title = st.text_input("Title")
+                    description = st.text_area("Description")
+                    due_date = st.date_input("Due Date")
+                    assigned_unis = st.multiselect("Assign to", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
+                    if st.form_submit_button("Create"):
+                        if title and assigned_unis:
+                            create_assignment(title, description, due_date.strftime("%Y-%m-%d"), assigned_unis, "Dr. Harshal Kotwal")
+                            st.success("Assignment created!")
+                            st.rerun()
+            with col2:
+                st.markdown("### Active Assignments")
+                assignments_data = load_assignments_data()
+                active = [a for a in assignments_data["assignments"] if a["status"] == "active"]
+                for a in active:
+                    st.markdown(f"**📌 {a['title']}** (Due: {a['due_date']})")
+        elif menu == "📊 Analytics":
+            st.title("📊 Analytics Dashboard")
+            
+            daily_df = get_daily_progress_data()
+            if not daily_df.empty:
+                fig = px.line(daily_df.groupby("Date").size().reset_index(), x="Date", y=0, title="Daily Activity Trend", markers=True)
                 st.plotly_chart(fig, use_container_width=True)
+                
+                uni_progress = []
+                for uni_code in UNIVERSITIES.keys():
+                    entries = get_university_entries(uni_code)
+                    if not entries.empty:
+                        uni_progress.append({"University": UNIVERSITIES[uni_code]["name"], "Tasks": len(entries)})
+                if uni_progress:
+                    fig2 = px.bar(pd.DataFrame(uni_progress), x="University", y="Tasks", title="Tasks by University")
+                    st.plotly_chart(fig2, use_container_width=True)
+            else:
+                st.info("No data available yet")
         else:
             st.title("ℹ️ About")
-            st.markdown("""
-            ### Project Lead Dashboard - Dr. Harshal Kotwal
-            
-            **Your Permissions:**
-            - View progress of all universities
-            - Modify task descriptions and deliverables for any coordinator
-            - Update task status for any coordinator
-            - Create and manage assignments for all universities
-            - Override task completions if needed
-            
-            **Features:**
-            - Edit Task Details tab allows you to customize tasks per university
-            - Create assignments for specific universities
-            - Track overall project progress
-            """)
+            st.markdown("### Project Lead Dashboard\n\n**Features:**\n- Assign tasks to specific dates\n- Monitor coordinator progress\n- Create and manage assignments\n- Generate progress reports\n- 2-year project timeline support")
     
-    elif user_role == "coordinator":
+    else:  # coordinator
         university_code = st.session_state.get("user_university")
         if not university_code:
             st.error("University not assigned. Please contact admin.")
         else:
-            if menu == "My Dashboard":
-                create_coordinator_dashboard(user_email, university_code)
-            elif menu == "My Tasks":
-                st.title("📋 My Tasks")
-                df = get_university_progress(university_code)
+            if menu == "📋 Log Work":
+                create_coordinator_dashboard(university_code, user_name)
+            elif menu == "📊 My Progress":
+                st.title("📊 My Progress")
+                df = get_university_entries(university_code)
                 if not df.empty:
-                    display_df = df[["Day", "Date", "Day Name", "Day Type", "Framework", "Task", "Deliverable", "Status", "Deliverable Submitted"]]
-                    st.dataframe(display_df, use_container_width=True)
+                    st.dataframe(df, use_container_width=True)
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        completed = len(df[df["Status"] == "COMPLETED"])
+                        st.metric("Completed Tasks", completed)
+                    with col2:
+                        total_hours = df["Hours Spent"].sum() if "Hours Spent" in df.columns else 0
+                        st.metric("Total Hours", f"{total_hours:.1f}")
+                    
+                    if "Task Category" in df.columns:
+                        task_counts = df["Task Category"].value_counts()
+                        fig = px.pie(values=task_counts.values, names=task_counts.index, title="Task Distribution", hole=0.3)
+                        st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No entries logged yet")
             else:
                 st.title("ℹ️ About")
-                st.markdown("""
-                ### Your Role as Institutional Coordinator
+                st.markdown(f"""
+                ### Coordinator Dashboard
                 
-                **Responsibilities:**
-                - Work alongside Nodal Officer & ICARE Team
-                - Collect NIRF-related data from various departments
-                - Validate and consolidate university data
-                - Submit daily task updates
-                - Prepare Monthly Progress Report (MPR)
+                **University:** {UNIVERSITIES[university_code]['name']}
+                **Nodal Officer:** {UNIVERSITIES[university_code]['nodal_officer']}
                 
                 **Daily Schedule:**
                 - 10:00 AM: Report to university
-                - 10:30-11:00 AM: Stand-up with Nodal Officer & ICARE Team
+                - 10:30-11:00 AM: Stand-up with ICARE Team
                 - 6:00 PM: Departure
-                """)
-    
-    else:  # data_analyst
-        if menu == "Analyst Dashboard":
-            create_data_analyst_dashboard(user_email)
-        elif menu == "University Progress":
-            st.title("📊 University Progress Summary")
-            summary_df = get_summary_stats()
-            if not summary_df.empty:
-                st.dataframe(summary_df, use_container_width=True)
                 
-                fig = px.bar(
-                    summary_df,
-                    x="University",
-                    y="Completion %",
-                    color="Completion %",
-                    text="Completion %",
-                    title="University-wise Progress"
-                )
-                fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-                st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.title("ℹ️ About")
-            st.markdown("### Data Analyst Dashboard")
-            st.markdown("""
-            **Your Role:** Monitor and track progress of assigned universities
-            
-            **Features:**
-            - View university-wise task completion
-            - Track deliverable submissions
-            - Monitor framework-wise progress
-            - Export progress reports
-            """)
+                **Responsibilities:**
+                - Log daily work activities
+                - Submit deliverables
+                - Complete assignments
+                - Prepare MPR inputs
+                """)
 
 if __name__ == "__main__":
-    if not os.path.exists(PROGRESS_DATA_FILE):
-        save_progress_data(create_initial_progress_data())
-    if not os.path.exists(ASSIGNMENTS_DATA_FILE):
-        save_assignments_data(create_initial_assignments_data())
+    for file in [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE, ATTENDANCE_DATA_FILE]:
+        if not os.path.exists(file):
+            if file == PROGRESS_DATA_FILE:
+                save_progress_data(create_initial_progress_data())
+            elif file == ASSIGNMENTS_DATA_FILE:
+                save_assignments_data(create_initial_assignments_data())
+            elif file == CUSTOM_TASKS_DATA_FILE:
+                save_custom_tasks_data(create_initial_custom_tasks_data())
+            else:
+                save_attendance_data(create_initial_attendance_data())
     
     main()
