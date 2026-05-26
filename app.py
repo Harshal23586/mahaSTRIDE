@@ -115,11 +115,16 @@ st.markdown("""
         font-family: monospace;
     }
     .default-task-card {
-        background-color: #e8f8f5;
+        background: linear-gradient(135deg, #e8f8f5 0%, #d4efdf 100%);
         border-left: 4px solid #27ae60;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
+        padding: 1.2rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .planned-task {
+        color: #1e8449;
+        font-weight: bold;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -571,8 +576,13 @@ def save_custom_tasks_data(data):
         return False
 
 def get_default_plan_for_date(date_str):
-    """Get default plan for a specific date"""
+    """Get default plan for a specific date from DEFAULT_PLAN"""
     return DEFAULT_PLAN.get(date_str, None)
+
+def get_custom_task_for_date(date_str):
+    """Get custom task for a specific date"""
+    custom_tasks = load_custom_tasks_data()
+    return custom_tasks["date_specific_tasks"].get(date_str, None)
 
 def add_custom_task_for_date(date_str, task_category, task_name, description, deliverables, added_by):
     """Add a custom task that overrides the default plan for a specific date"""
@@ -588,13 +598,6 @@ def add_custom_task_for_date(date_str, task_category, task_name, description, de
     }
     return save_custom_tasks_data(custom_tasks)
 
-def get_plan_for_date(date_str):
-    """Get plan for a specific date - custom task if exists, otherwise default"""
-    custom_tasks = load_custom_tasks_data()
-    if date_str in custom_tasks["date_specific_tasks"]:
-        return custom_tasks["date_specific_tasks"][date_str]
-    return get_default_plan_for_date(date_str)
-
 def remove_custom_task_for_date(date_str):
     """Remove custom task for a date (revert to default)"""
     custom_tasks = load_custom_tasks_data()
@@ -602,6 +605,15 @@ def remove_custom_task_for_date(date_str):
         del custom_tasks["date_specific_tasks"][date_str]
         return save_custom_tasks_data(custom_tasks)
     return False
+
+def get_plan_for_date(date_str):
+    """Get plan for a specific date - custom task if exists, otherwise default"""
+    # First check if there's a custom task
+    custom_task = get_custom_task_for_date(date_str)
+    if custom_task:
+        return custom_task
+    # Otherwise return default plan
+    return get_default_plan_for_date(date_str)
 
 def log_daily_entry(university_code, date, task_category, task_name, description, deliverables, status, hours_spent, remarks, swapped_from_default, edited_task, updated_by):
     data = load_progress_data()
@@ -989,13 +1001,14 @@ def create_project_lead_dashboard():
                 st.info("No custom tasks assigned. Using default plan for all dates.")
         
         st.markdown("---")
-        st.markdown("### Default Plan Preview")
-        preview_date = st.selectbox("Select Date to View Default Plan", list(DEFAULT_PLAN.keys())[:10])
+        st.markdown("### Default Plan Preview (Phase 1: May 7-30, 2026)")
+        preview_dates = list(DEFAULT_PLAN.keys())
+        preview_date = st.selectbox("Select Date to View Default Plan", preview_dates)
         if preview_date:
             plan = DEFAULT_PLAN.get(preview_date, {})
             st.markdown(f"""
             <div class="default-task-card">
-                <strong>📌 Default Plan for {preview_date}</strong><br>
+                <strong>📌 Default Plan for {preview_date}</strong><br><br>
                 <strong>Task:</strong> {plan.get('task', 'N/A')}<br>
                 <strong>Category:</strong> {plan.get('task_category', 'N/A')}<br>
                 <strong>Description:</strong> {plan.get('description', 'N/A')}<br>
@@ -1117,7 +1130,23 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     existing_data = load_progress_data()
     already_logged = today_str in existing_data.get(university_code, {})
     
+    # Get the plan for today - first check custom tasks, then default plan
     plan_for_today = get_plan_for_date(today_str)
+    
+    # Show if today has a planned task
+    if plan_for_today and not already_logged:
+        st.markdown(f"""
+        <div class="default-task-card">
+            <strong>📋 YOUR PLANNED TASK FOR TODAY</strong><br>
+            <strong>Date:</strong> {today_day}, {today_str}<br><br>
+            <strong>🎯 Task:</strong> <span class="planned-task">{plan_for_today['task']}</span><br>
+            <strong>📂 Category:</strong> {plan_for_today['task_category']}<br>
+            <strong>📝 Description:</strong> {plan_for_today['description']}<br>
+            <strong>📎 Expected Deliverables:</strong> {plan_for_today['deliverables']}
+        </div>
+        """, unsafe_allow_html=True)
+    elif not plan_for_today and not already_logged:
+        st.info(f"📋 No planned task for {today_day}, {today_str}. Please log your work below.")
     
     if already_logged:
         st.warning(f"⚠️ You have already logged work for {today_str}. You can edit below.")
@@ -1150,36 +1179,48 @@ def create_coordinator_dashboard(university_code, coordinator_name):
                 else:
                     st.error("Failed to update entry")
     else:
+        # Show options for logging
         if plan_for_today:
-            st.markdown(f"""
-            <div class="default-task-card">
-                <strong>📌 Your Planned Task for Today ({today_day}, {today_str})</strong><br>
-                <strong>Task:</strong> {plan_for_today['task']}<br>
-                <strong>Category:</strong> {plan_for_today['task_category']}<br>
-                <strong>Description:</strong> {plan_for_today['description']}<br>
-                <strong>Expected Deliverables:</strong> {plan_for_today['deliverables']}
-            </div>
-            """, unsafe_allow_html=True)
-            
-            use_planned = st.radio("", ["✅ Yes, I completed the planned task", "🔄 No, I want to log a different task"], horizontal=True)
+            use_planned = st.radio(
+                "Did you complete the planned task today?",
+                ["✅ Yes, I completed the planned task", "🔄 No, I want to log a different task"],
+                horizontal=True,
+                help="Select 'Yes' to use the planned task details, or 'No' to log something different"
+            )
         else:
             use_planned = "🔄 No, I want to log a different task"
-            st.info(f"No planned task for {today_str}. Please log your work below.")
         
         with st.form("daily_entry_form"):
             st.markdown("### Today's Work Log")
             
             if use_planned == "✅ Yes, I completed the planned task" and plan_for_today:
+                # Use the planned task
                 task_category = plan_for_today['task_category']
                 task_name = plan_for_today['task']
                 description = plan_for_today['description']
                 deliverables = plan_for_today['deliverables']
-                st.info(f"Using planned task: {task_name}")
+                
+                st.success(f"✅ Using planned task: **{task_name}**")
+                st.info("The task details have been pre-filled. Review and submit.")
+                
                 st.text_input("Task Category", value=task_category, disabled=True)
                 st.text_input("Task", value=task_name, disabled=True)
+                st.text_area("Description", value=description, disabled=True, height=80)
+                st.text_area("Expected Deliverables", value=deliverables, disabled=True, height=60)
+                
             else:
+                # Allow custom task selection
                 task_category = st.selectbox("Task Category", list(TASK_CATEGORIES.keys()))
-                task_name = st.text_input("Task")
+                
+                # Show suggested tasks based on category
+                suggested_tasks = TASK_CATEGORIES.get(task_category, [])
+                if suggested_tasks:
+                    task_name = st.selectbox("Select Task", ["-- Type or select --"] + suggested_tasks)
+                    if task_name == "-- Type or select --":
+                        task_name = st.text_input("Or type custom task")
+                else:
+                    task_name = st.text_input("Task")
+                
                 description = st.text_area("Detailed Description", placeholder="Describe what you did today...", height=100)
                 deliverables = st.text_area("Deliverables Produced", placeholder="What outputs/deliverables were created?", height=80)
             
@@ -1193,15 +1234,21 @@ def create_coordinator_dashboard(university_code, coordinator_name):
             
             if st.form_submit_button("Submit Daily Log"):
                 if use_planned == "✅ Yes, I completed the planned task" and plan_for_today:
+                    # Submit using planned task
                     if log_daily_entry(university_code, today_str, plan_for_today['task_category'], plan_for_today['task'],
-                                      plan_for_today['description'], plan_for_today['deliverables'], status, hours_spent, remarks, False, False, coordinator_name):
-                        st.success("Daily work log submitted successfully!")
+                                      plan_for_today['description'], plan_for_today['deliverables'], 
+                                      status, hours_spent, remarks, False, False, coordinator_name):
+                        st.success("✅ Daily work log submitted successfully! You used the planned task.")
                         st.balloons()
                         st.rerun()
+                    else:
+                        st.error("Failed to submit entry")
                 else:
-                    if task_name:
-                        if log_daily_entry(university_code, today_str, task_category, task_name, description, deliverables, status, hours_spent, remarks, True, True, coordinator_name):
-                            st.success("Daily work log submitted successfully!")
+                    # Submit custom task
+                    if task_name and task_name != "-- Type or select --":
+                        if log_daily_entry(university_code, today_str, task_category, task_name, description, 
+                                          deliverables, status, hours_spent, remarks, True, True, coordinator_name):
+                            st.success("✅ Daily work log submitted successfully! (Custom task logged)")
                             st.balloons()
                             st.rerun()
                     else:
@@ -1269,7 +1316,7 @@ def main():
                 st.markdown("### Demo Credentials")
                 st.markdown("""
                 **Admin:** admin@mahastride.com / Admin@2026<br>
-                **Project Lead:** projectlead@mahastride.com / ProjectLead@2026<br>
+                **Project Lead:** projectlead@mahastride.com / ProjectLead@2026<br><br>
                 **Coordinators:** (Password: Name@2026)<br>
                 - sneha@mu.edu (Mumbai University)<br>
                 - jagan@sspu.edu (SPPU Pune)<br>
@@ -1414,10 +1461,10 @@ def main():
                 - 6:00 PM: Departure
                 
                 **How to Log Work:**
-                1. You'll see your planned task for the day
-                2. If you completed it, just confirm and submit
-                3. If you did something different, select "Log Different Task"
-                4. Add description, deliverables, and hours spent
+                1. You'll see your planned task for the day (if available)
+                2. If you completed it, select "Yes" and submit
+                3. If you did something different, select "No" and enter custom details
+                4. Add hours spent and status
                 
                 **Phase 1 (May 7-30, 2026) has default planned tasks.**
                 After Phase 1, Project Lead will assign tasks as needed.
