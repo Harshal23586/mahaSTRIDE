@@ -239,6 +239,215 @@ UNIVERSITIES = {
     }
 }
 
+# Default daily plan for Phase 1 (May 7 - May 30, 2026)
+DEFAULT_PLAN = {
+    "2026-05-07": {
+        "task_category": "Setup",
+        "task": "University Onboarding & Role Introduction",
+        "description": "Join university, meet VC & Registrar, introduce role. Meet Nodal Officer & ICARE Team to confirm workspace, access, and data sources.",
+        "deliverables": "Introduction email to PMU & ICARE Head. Meeting minutes.",
+        "framework": "Setup"
+    },
+    "2026-05-08": {
+        "task_category": "Setup",
+        "task": "NIRF Data Source Mapping",
+        "description": "With Nodal Officer & ICARE Team, map all NIRF-related data sources: admission, academic, research, placement, finance, outreach. Identify missing data owners.",
+        "deliverables": "NIRF Data Source Map (university-specific).",
+        "framework": "Setup"
+    },
+    "2026-05-09": {
+        "task_category": "WFH",
+        "task": "WFH: Digital Forms & Data Requests",
+        "description": "WFH: Review NIRF data templates. Create digital data collection forms. Organize department-wise data request letters.",
+        "deliverables": "Digital forms created. Data request letters drafted.",
+        "framework": "Setup"
+    },
+    "2026-05-11": {
+        "task_category": "Documentation",
+        "task": "NIRF Data Gap Template",
+        "description": "Create NIRF Data Gap Template for FY 2022-23, 2023-24, 2024-25. Share with Nodal Officer & ICARE Team for validation.",
+        "deliverables": "Gap template v1.0.",
+        "framework": "Setup"
+    },
+    "2026-05-12": {
+        "task_category": "Data Collection",
+        "task": "Student Data Collection",
+        "description": "Meet HoD (Academic) & Exam Cell - collect student enrollment, graduation, and backlog data.",
+        "deliverables": "Raw data files saved.",
+        "framework": "Data Collection"
+    },
+    "2026-05-13": {
+        "task_category": "Data Collection",
+        "task": "Faculty Data Collection",
+        "description": "Meet Faculty/HR department - collect faculty count, designation, PhD qualification, experience.",
+        "deliverables": "Faculty master data.",
+        "framework": "Data Collection"
+    },
+    "2026-05-14": {
+        "task_category": "Data Collection",
+        "task": "Research Data Collection",
+        "description": "Meet Research Cell - collect publications (Scopus/WoS/PubMed/UGC CARE), citations, patents, sponsored research projects.",
+        "deliverables": "Research output spreadsheet.",
+        "framework": "Data Collection"
+    },
+    "2026-05-15": {
+        "task_category": "Data Collection",
+        "task": "Placement Data Collection",
+        "description": "Meet Placement Cell - collect placement data, median salary, higher education admission data.",
+        "deliverables": "Placement & higher ed data.",
+        "framework": "Data Collection"
+    },
+    "2026-05-16": {
+        "task_category": "WFH",
+        "task": "WFH: Data Digitization & Weekly Report",
+        "description": "WFH: Digitize collected data. Create data validation scripts. Prepare weekly progress report for ICARE Team.",
+        "deliverables": "Digitized dataset. Weekly report submitted.",
+        "framework": "Data Collection"
+    },
+    "2026-05-18": {
+        "task_category": "Data Collection",
+        "task": "Financial Data Collection",
+        "description": "Meet Finance/Accounts - collect financial data: research expenditure, infrastructure spending, university income.",
+        "deliverables": "Finance data file.",
+        "framework": "Data Collection"
+    },
+    "2026-05-19": {
+        "task_category": "Data Collection",
+        "task": "Library & IT Data Collection",
+        "description": "Meet Library/IT - collect e-resources, digital repository, library subscriptions, IT infrastructure details.",
+        "deliverables": "Library & IT data.",
+        "framework": "Data Collection"
+    },
+    "2026-05-20": {
+        "task_category": "Analysis",
+        "task": "Data Consolidation & Gap Identification",
+        "description": "Consolidate all collected data. Cross-verify with Nodal Officer & ICARE Team. Identify major gaps.",
+        "deliverables": "Consolidated university dataset v1.",
+        "framework": "Validation"
+    },
+    "2026-05-21": {
+        "task_category": "Reporting",
+        "task": "NIRF Gap Report",
+        "description": "Prepare NIRF gap report - list missing data, incomplete years, inconsistent formats. Share with Nodal Officer & VC.",
+        "deliverables": "Gap report submitted to Nodal Officer.",
+        "framework": "Reporting"
+    },
+    "2026-05-22": {
+        "task_category": "Meetings",
+        "task": "Responsibility Assignment",
+        "description": "Work with Nodal Officer & ICARE Team to assign responsibility for each gap to specific department heads.",
+        "deliverables": "Responsibility matrix.",
+        "framework": "Action Plan"
+    },
+    "2026-05-23": {
+        "task_category": "WFH",
+        "task": "WFH: Action Plan & Follow-ups",
+        "description": "WFH: Analyze gap report. Create action plan templates. Prepare follow-up email drafts for departments.",
+        "deliverables": "Action plan templates. Follow-up email drafts.",
+        "framework": "Action Plan"
+    },
+    "2026-05-25": {
+        "task_category": "Data Collection",
+        "task": "Missing Data Follow-up",
+        "description": "Follow up with departments for missing data. Assist them in extracting data in NIRF-required format.",
+        "deliverables": "Updated data files.",
+        "framework": "Data Collection"
+    },
+    "2026-05-26": {
+        "task_category": "Analysis",
+        "task": "Data Consistency Validation",
+        "description": "Validate data consistency (enrollment totals, faculty counts match department lists).",
+        "deliverables": "Validation log.",
+        "framework": "Validation"
+    },
+    "2026-05-27": {
+        "task_category": "Documentation",
+        "task": "NIRF Draft Template",
+        "description": "Prepare first draft of NIRF data template as per NIRF 2026 format. Share with Nodal Officer & ICARE Team for review.",
+        "deliverables": "Draft NIRF submission file.",
+        "framework": "Reporting"
+    },
+    "2026-05-28": {
+        "task_category": "Meetings",
+        "task": "Review Meeting with ICARE Team",
+        "description": "Conduct review meeting with Nodal Officer, ICARE Team & IQAC team. Document pending items and action owners.",
+        "deliverables": "Meeting minutes.",
+        "framework": "Review"
+    },
+    "2026-05-29": {
+        "task_category": "Reporting",
+        "task": "May MPR Preparation",
+        "description": "Finalize data collection status for May 2026. Prepare inputs for Monthly Progress Report (MPR).",
+        "deliverables": "MPR inputs (to ICARE Head).",
+        "framework": "Reporting"
+    },
+    "2026-05-30": {
+        "task_category": "WFH",
+        "task": "WFH: Finalize May MPR",
+        "description": "WFH: Finalize May MPR. Compile all deliverables. Prepare for June action plan. Submit end-of-month report.",
+        "deliverables": "May MPR final. End-of-month report.",
+        "framework": "Reporting"
+    }
+}
+
+# Pre-defined task categories for swapping/editing
+TASK_CATEGORIES = {
+    "Data Collection": [
+        "Student enrollment data collection",
+        "Faculty roster collection",
+        "Research publications data",
+        "Placement data collection",
+        "Financial records collection",
+        "Infrastructure data collection",
+        "Library resources data",
+        "Patent/IPR documentation",
+        "Missing data follow-up",
+        "Data validation"
+    ],
+    "Meetings": [
+        "Meeting with Nodal Officer",
+        "Meeting with VC/Registrar",
+        "Meeting with ICARE Team",
+        "Stakeholder consultation",
+        "Department head coordination",
+        "IQAC team meeting",
+        "Review meeting"
+    ],
+    "Documentation": [
+        "NIRF data template preparation",
+        "Gap analysis report",
+        "MPR preparation",
+        "Weekly progress report",
+        "Meeting minutes documentation",
+        "Data request letters"
+    ],
+    "Analysis": [
+        "Data consolidation",
+        "Cross-verification of data",
+        "Quality check",
+        "Trend analysis",
+        "Data validation"
+    ],
+    "Training": [
+        "IQAC team training",
+        "Department staff orientation",
+        "Data entry training"
+    ],
+    "WFH": [
+        "Data digitization",
+        "Report compilation",
+        "Email communications",
+        "Documentation review",
+        "Action plan preparation"
+    ],
+    "Other": [
+        "Admin tasks",
+        "Follow-up emails",
+        "Document review",
+        "Report generation"
+    ]
+}
+
 # MITRA Officials
 MITRA_OFFICIALS = {
     "project_director": "Shri Aman Mittal, Project Director, MahaSTRIDE",
@@ -361,19 +570,38 @@ def save_custom_tasks_data(data):
         st.error(f"Error saving custom tasks data: {e}")
         return False
 
+def get_default_plan_for_date(date_str):
+    """Get default plan for a specific date"""
+    return DEFAULT_PLAN.get(date_str, None)
+
 def add_custom_task_for_date(date_str, task_category, task_name, description, deliverables, added_by):
+    """Add a custom task that overrides the default plan for a specific date"""
     custom_tasks = load_custom_tasks_data()
     custom_tasks["date_specific_tasks"][date_str] = {
-        "task_category": task_category, "task": task_name, "description": description,
-        "deliverables": deliverables, "added_by": added_by, "added_at": datetime.now().isoformat()
+        "task_category": task_category, 
+        "task": task_name, 
+        "description": description,
+        "deliverables": deliverables, 
+        "added_by": added_by, 
+        "added_at": datetime.now().isoformat(),
+        "is_custom": True
     }
     return save_custom_tasks_data(custom_tasks)
 
 def get_plan_for_date(date_str):
+    """Get plan for a specific date - custom task if exists, otherwise default"""
     custom_tasks = load_custom_tasks_data()
     if date_str in custom_tasks["date_specific_tasks"]:
         return custom_tasks["date_specific_tasks"][date_str]
-    return None
+    return get_default_plan_for_date(date_str)
+
+def remove_custom_task_for_date(date_str):
+    """Remove custom task for a date (revert to default)"""
+    custom_tasks = load_custom_tasks_data()
+    if date_str in custom_tasks["date_specific_tasks"]:
+        del custom_tasks["date_specific_tasks"][date_str]
+        return save_custom_tasks_data(custom_tasks)
+    return False
 
 def log_daily_entry(university_code, date, task_category, task_name, description, deliverables, status, hours_spent, remarks, swapped_from_default, edited_task, updated_by):
     data = load_progress_data()
@@ -381,10 +609,18 @@ def log_daily_entry(university_code, date, task_category, task_name, description
         data[university_code] = {}
     
     data[university_code][date] = {
-        "date": date, "task_category": task_category, "task_name": task_name,
-        "description": description, "deliverables": deliverables, "status": status,
-        "hours_spent": hours_spent, "remarks": remarks, "swapped_from_default": swapped_from_default,
-        "edited_task": edited_task, "updated_at": datetime.now().isoformat(), "updated_by": updated_by
+        "date": date, 
+        "task_category": task_category, 
+        "task_name": task_name,
+        "description": description, 
+        "deliverables": deliverables, 
+        "status": status,
+        "hours_spent": hours_spent, 
+        "remarks": remarks, 
+        "swapped_from_default": swapped_from_default,
+        "edited_task": edited_task, 
+        "updated_at": datetime.now().isoformat(), 
+        "updated_by": updated_by
     }
     return save_progress_data(data)
 
@@ -426,9 +662,13 @@ def get_monthly_summary(university_code, year, month):
     for date, entry in data[university_code].items():
         if date.startswith(month_str):
             monthly_entries.append({
-                "date": date, "task_category": entry.get("task_category", ""), "task_name": entry.get("task_name", ""),
-                "description": entry.get("description", ""), "deliverables": entry.get("deliverables", ""),
-                "status": entry.get("status", ""), "hours_spent": entry.get("hours_spent", 0)
+                "date": date, 
+                "task_category": entry.get("task_category", ""), 
+                "task_name": entry.get("task_name", ""),
+                "description": entry.get("description", ""), 
+                "deliverables": entry.get("deliverables", ""),
+                "status": entry.get("status", ""), 
+                "hours_spent": entry.get("hours_spent", 0)
             })
     return monthly_entries
 
@@ -440,9 +680,13 @@ def get_daily_progress_data():
         uni_name = UNIVERSITIES[uni_code]["name"]
         for date, entry in entries.items():
             daily_records.append({
-                "Date": date, "University": uni_name, "University Code": uni_code,
-                "Task": entry.get("task_name", ""), "Category": entry.get("task_category", ""),
-                "Status": entry.get("status", ""), "Hours": entry.get("hours_spent", 0)
+                "Date": date, 
+                "University": uni_name, 
+                "University Code": uni_code,
+                "Task": entry.get("task_name", ""), 
+                "Category": entry.get("task_category", ""),
+                "Status": entry.get("status", ""), 
+                "Hours": entry.get("hours_spent", 0)
             })
     
     df = pd.DataFrame(daily_records)
@@ -489,9 +733,14 @@ def create_assignment(title, description, due_date, assigned_universities, creat
     assignment_id = f"ASSIGN_{len(assignments_data['assignments']) + 1}_{int(datetime.now().timestamp())}"
     
     new_assignment = {
-        "id": assignment_id, "title": title, "description": description, "due_date": due_date,
-        "assigned_universities": assigned_universities, "created_by": created_by,
-        "created_at": datetime.now().isoformat(), "status": "active"
+        "id": assignment_id, 
+        "title": title, 
+        "description": description, 
+        "due_date": due_date,
+        "assigned_universities": assigned_universities, 
+        "created_by": created_by,
+        "created_at": datetime.now().isoformat(), 
+        "status": "active"
     }
     
     assignments_data["assignments"].append(new_assignment)
@@ -500,7 +749,10 @@ def create_assignment(title, description, due_date, assigned_universities, creat
         assignments_data["submissions"][assignment_id] = {}
         for uni_code in assigned_universities:
             assignments_data["submissions"][assignment_id][uni_code] = {
-                "status": "pending", "completed_at": None, "remarks": "", "completed_by": None
+                "status": "pending", 
+                "completed_at": None, 
+                "remarks": "", 
+                "completed_by": None
             }
     
     save_assignments_data(assignments_data)
@@ -526,8 +778,10 @@ def update_assignment_submission(assignment_id, university_code, status, remarks
     if assignment_id in assignments_data["submissions"]:
         if university_code in assignments_data["submissions"][assignment_id]:
             assignments_data["submissions"][assignment_id][university_code] = {
-                "status": status, "completed_at": datetime.now().isoformat() if status == "completed" else None,
-                "remarks": remarks, "completed_by": completed_by
+                "status": status, 
+                "completed_at": datetime.now().isoformat() if status == "completed" else None,
+                "remarks": remarks, 
+                "completed_by": completed_by
             }
             return save_assignments_data(assignments_data)
     return False
@@ -698,14 +952,14 @@ def create_project_lead_dashboard():
     
     with tab1:
         st.subheader("📅 Assign a Custom Task for Any Date")
-        st.markdown("You can assign tasks for any date during the 2-year project period. Coordinators will see these as their assigned tasks.")
+        st.markdown("Assign tasks that override the default plan for specific dates. Coordinators will see these as their assigned tasks.")
         
         col1, col2 = st.columns([1, 1])
         
         with col1:
             with st.form("add_custom_task_form"):
                 task_date = st.date_input("Select Date", min_value=PROJECT_START_DATE, max_value=PROJECT_END_DATE)
-                task_category = st.selectbox("Task Category", ["Data Collection", "Meetings", "Documentation", "Analysis", "Training", "WFH", "Other"])
+                task_category = st.selectbox("Task Category", list(TASK_CATEGORIES.keys()))
                 task_name = st.text_input("Task Name")
                 description = st.text_area("Task Description", height=100)
                 deliverables = st.text_area("Expected Deliverables", height=80)
@@ -728,8 +982,26 @@ def create_project_lead_dashboard():
                         st.markdown(f"**Category:** {task['task_category']}")
                         st.markdown(f"**Description:** {task['description'][:100]}...")
                         st.markdown(f"**Added:** {task['added_at'][:10]}")
+                        if st.button(f"Remove", key=f"remove_{date_str}"):
+                            remove_custom_task_for_date(date_str)
+                            st.rerun()
             else:
-                st.info("No custom tasks assigned yet")
+                st.info("No custom tasks assigned. Using default plan for all dates.")
+        
+        st.markdown("---")
+        st.markdown("### Default Plan Preview")
+        preview_date = st.selectbox("Select Date to View Default Plan", list(DEFAULT_PLAN.keys())[:10])
+        if preview_date:
+            plan = DEFAULT_PLAN.get(preview_date, {})
+            st.markdown(f"""
+            <div class="default-task-card">
+                <strong>📌 Default Plan for {preview_date}</strong><br>
+                <strong>Task:</strong> {plan.get('task', 'N/A')}<br>
+                <strong>Category:</strong> {plan.get('task_category', 'N/A')}<br>
+                <strong>Description:</strong> {plan.get('description', 'N/A')}<br>
+                <strong>Deliverables:</strong> {plan.get('deliverables', 'N/A')}
+            </div>
+            """, unsafe_allow_html=True)
     
     with tab2:
         st.subheader("📊 Coordinator Progress Overview")
@@ -855,8 +1127,8 @@ def create_coordinator_dashboard(university_code, coordinator_name):
         with st.form("edit_entry_form"):
             st.markdown("### Edit Today's Entry")
             
-            task_category = st.selectbox("Task Category", ["Data Collection", "Meetings", "Documentation", "Analysis", "Training", "WFH", "Other"],
-                                        index=["Data Collection", "Meetings", "Documentation", "Analysis", "Training", "WFH", "Other"].index(existing_entry.get("task_category", "Data Collection")) if existing_entry.get("task_category") in ["Data Collection", "Meetings", "Documentation", "Analysis", "Training", "WFH", "Other"] else 0)
+            task_category = st.selectbox("Task Category", list(TASK_CATEGORIES.keys()),
+                                        index=list(TASK_CATEGORIES.keys()).index(existing_entry.get("task_category", "Data Collection")) if existing_entry.get("task_category") in TASK_CATEGORIES else 0)
             
             task_name = st.text_input("Task", value=existing_entry.get("task_name", ""))
             description = st.text_area("Detailed Description", value=existing_entry.get("description", ""), height=100)
@@ -881,7 +1153,7 @@ def create_coordinator_dashboard(university_code, coordinator_name):
         if plan_for_today:
             st.markdown(f"""
             <div class="default-task-card">
-                <strong>📌 Your Assigned Task for Today ({today_day}, {today_str})</strong><br>
+                <strong>📌 Your Planned Task for Today ({today_day}, {today_str})</strong><br>
                 <strong>Task:</strong> {plan_for_today['task']}<br>
                 <strong>Category:</strong> {plan_for_today['task_category']}<br>
                 <strong>Description:</strong> {plan_for_today['description']}<br>
@@ -889,24 +1161,24 @@ def create_coordinator_dashboard(university_code, coordinator_name):
             </div>
             """, unsafe_allow_html=True)
             
-            use_assigned = st.radio("", ["✅ Use Assigned Task", "🔄 Log Different Task"], horizontal=True)
+            use_planned = st.radio("", ["✅ Yes, I completed the planned task", "🔄 No, I want to log a different task"], horizontal=True)
         else:
-            use_assigned = "🔄 Log Different Task"
-            st.info(f"No assigned task for {today_str}. Please log your work below.")
+            use_planned = "🔄 No, I want to log a different task"
+            st.info(f"No planned task for {today_str}. Please log your work below.")
         
         with st.form("daily_entry_form"):
             st.markdown("### Today's Work Log")
             
-            if use_assigned == "✅ Use Assigned Task" and plan_for_today:
+            if use_planned == "✅ Yes, I completed the planned task" and plan_for_today:
                 task_category = plan_for_today['task_category']
                 task_name = plan_for_today['task']
                 description = plan_for_today['description']
                 deliverables = plan_for_today['deliverables']
-                st.info(f"Using assigned task: {task_name}")
+                st.info(f"Using planned task: {task_name}")
                 st.text_input("Task Category", value=task_category, disabled=True)
                 st.text_input("Task", value=task_name, disabled=True)
             else:
-                task_category = st.selectbox("Task Category", ["Data Collection", "Meetings", "Documentation", "Analysis", "Training", "WFH", "Other"])
+                task_category = st.selectbox("Task Category", list(TASK_CATEGORIES.keys()))
                 task_name = st.text_input("Task")
                 description = st.text_area("Detailed Description", placeholder="Describe what you did today...", height=100)
                 deliverables = st.text_area("Deliverables Produced", placeholder="What outputs/deliverables were created?", height=80)
@@ -920,7 +1192,7 @@ def create_coordinator_dashboard(university_code, coordinator_name):
             remarks = st.text_area("Additional Remarks", placeholder="Any challenges, blockers, or notes...")
             
             if st.form_submit_button("Submit Daily Log"):
-                if use_assigned == "✅ Use Assigned Task" and plan_for_today:
+                if use_planned == "✅ Yes, I completed the planned task" and plan_for_today:
                     if log_daily_entry(university_code, today_str, plan_for_today['task_category'], plan_for_today['task'],
                                       plan_for_today['description'], plan_for_today['deliverables'], status, hours_spent, remarks, False, False, coordinator_name):
                         st.success("Daily work log submitted successfully!")
@@ -1068,6 +1340,8 @@ def main():
             **Features:**
             - Daily progress logging by coordinators
             - Weekly and monthly progress visualizations
+            - Default planned tasks for Phase 1 (May 7-30, 2026)
+            - Custom task assignment by Project Lead
             - 2-year project timeline support
             """)
     
@@ -1097,7 +1371,7 @@ def main():
                     st.markdown(f"**📌 {a['title']}** (Due: {a['due_date']})")
         else:
             st.title("ℹ️ About")
-            st.markdown("### Project Lead Dashboard\n\n**Features:**\n- Assign tasks to specific dates\n- Monitor coordinator progress\n- Create and manage assignments\n- 2-year project timeline support")
+            st.markdown("### Project Lead Dashboard\n\n**Features:**\n- Assign custom tasks to specific dates (overrides default plan)\n- Monitor coordinator progress\n- Create and manage assignments\n- View default plan for Phase 1\n- 2-year project timeline support")
     
     else:  # coordinator
         university_code = st.session_state.get("user_university")
@@ -1139,10 +1413,14 @@ def main():
                 - 10:30-11:00 AM: Stand-up with ICARE Team
                 - 6:00 PM: Departure
                 
-                **Responsibilities:**
-                - Log daily work activities
-                - Submit deliverables
-                - Complete assignments
+                **How to Log Work:**
+                1. You'll see your planned task for the day
+                2. If you completed it, just confirm and submit
+                3. If you did something different, select "Log Different Task"
+                4. Add description, deliverables, and hours spent
+                
+                **Phase 1 (May 7-30, 2026) has default planned tasks.**
+                After Phase 1, Project Lead will assign tasks as needed.
                 """)
 
 if __name__ == "__main__":
