@@ -124,19 +124,12 @@ st.markdown("""
         margin: 1rem 0;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .pending-task-card {
-        background-color: #fff3cd;
-        border-left: 4px solid #ffc107;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-    }
-    .completed-task-card {
-        background-color: #d4edda;
-        border-left: 4px solid #28a745;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
+    .report-container {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        font-family: 'Times New Roman', serif;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -206,7 +199,7 @@ USERS = {
 # University details
 UNIVERSITIES = {
     "MU": {
-        "name": "University of Mumbai",
+        "name": "Mumbai University",
         "coordinators": ["Ms Sneha", "Shubham"],
         "nodal_officer": "Dr. Varsha Kelkar Mane",
         "registrar": "_________",
@@ -292,156 +285,32 @@ PROJECT_END_DATE = datetime(2028, 5, 6)
 PROGRESS_DATA_FILE = "coordinator_progress_data.json"
 ASSIGNMENTS_DATA_FILE = "assignments_data.json"
 CUSTOM_TASKS_DATA_FILE = "custom_tasks_data.json"
+TEAM_ATTENDANCE_FILE = "team_attendance.json"
+MPR_DATA_FILE = "mpr_data.json"
 
-# Default daily plan for May 7-31, 2026 (with Training sessions included)
+# Default daily plan for May 7-31, 2026
 DEFAULT_PLAN = {
-    "2026-05-07": {
-        "task_category": "Setup",
-        "task": "University Onboarding & Role Introduction",
-        "description": "Join university, meet VC & Registrar, introduce role. Meet Nodal Officer & ICARE Team to confirm workspace, access, and data sources.",
-        "deliverables": "Introduction email to PMU & ICARE Head. Meeting minutes.",
-        "framework": "Setup"
-    },
-    "2026-05-08": {
-        "task_category": "Setup",
-        "task": "NIRF Data Source Mapping",
-        "description": "With Nodal Officer & ICARE Team, map all NIRF-related data sources across the university.",
-        "deliverables": "NIRF Data Source Map (university-specific).",
-        "framework": "Setup"
-    },
-    "2026-05-09": {
-        "task_category": "WFH",
-        "task": "WFH: Digital Forms & Data Requests",
-        "description": "WFH: Review NIRF data templates. Create digital data collection forms. Organize department-wise data request letters.",
-        "deliverables": "Digital forms created. Data request letters drafted.",
-        "framework": "Setup"
-    },
-    "2026-05-11": {
-        "task_category": "Documentation",
-        "task": "NIRF Data Gap Template",
-        "description": "Create NIRF Data Gap Template for FY 2022-23, 2023-24, 2024-25. Share with Nodal Officer & ICARE Team for validation.",
-        "deliverables": "Gap template v1.0.",
-        "framework": "Setup"
-    },
-    "2026-05-12": {
-        "task_category": "Training",
-        "task": "Training: NIRF Framework & Formula Interpretation",
-        "description": "Training session on NIRF framework structure, architecture, and category-specific indicators.",
-        "deliverables": "Training completion report. Attendance sheet.",
-        "framework": "Training"
-    },
-    "2026-05-13": {
-        "task_category": "Training",
-        "task": "Training: Teaching, Learning & Resources (TLR) Parameter",
-        "description": "Detailed training on TLR indicators: Student Strength (SS), Faculty-Student Ratio (FSR), Faculty Qualifications (FQE), Financial Resources (FRU).",
-        "deliverables": "Training materials. Exercise solutions.",
-        "framework": "Training"
-    },
-    "2026-05-14": {
-        "task_category": "Training",
-        "task": "Training: Research & Professional Practice (RP) Parameter",
-        "description": "Training on bibliometric indicators, research productivity, citation analysis, IPR, patents.",
-        "deliverables": "Research metrics training completion.",
-        "framework": "Training"
-    },
-    "2026-05-15": {
-        "task_category": "Training",
-        "task": "Training: Graduation Outcomes (GO) & Outreach (OI) Parameters",
-        "description": "Training on graduation rates, placement statistics, median salary, gender representation.",
-        "deliverables": "Training completion report.",
-        "framework": "Training"
-    },
-    "2026-05-16": {
-        "task_category": "WFH",
-        "task": "WFH: Data Digitization & Training Review",
-        "description": "WFH: Digitize collected data. Review training materials. Prepare training feedback summary.",
-        "deliverables": "Digitized dataset. Training feedback report.",
-        "framework": "Training Review"
-    },
-    "2026-05-18": {
-        "task_category": "Data Collection",
-        "task": "Student Enrollment & Faculty Data Collection",
-        "description": "Collect student enrollment, graduation data and faculty details including PhD qualifications.",
-        "deliverables": "Student and faculty data files.",
-        "framework": "Data Collection"
-    },
-    "2026-05-19": {
-        "task_category": "Data Collection",
-        "task": "Research & Placement Data Collection",
-        "description": "Collect research publications, citations, patents data and placement statistics.",
-        "deliverables": "Research and placement data files.",
-        "framework": "Data Collection"
-    },
-    "2026-05-20": {
-        "task_category": "Data Collection",
-        "task": "Financial & Infrastructure Data Collection",
-        "description": "Collect financial records, library resources, and IT infrastructure details.",
-        "deliverables": "Financial and infrastructure data files.",
-        "framework": "Data Collection"
-    },
-    "2026-05-21": {
-        "task_category": "Analysis",
-        "task": "Data Consolidation & Validation",
-        "description": "Consolidate all collected data. Cross-verify with source documents. Identify gaps.",
-        "deliverables": "Consolidated dataset v1. Gap analysis report.",
-        "framework": "Analysis"
-    },
-    "2026-05-22": {
-        "task_category": "Meetings",
-        "task": "Stakeholder Consultation Meeting",
-        "description": "Conduct meeting with department heads to discuss data gaps and way forward.",
-        "deliverables": "Meeting minutes with decisions and action items.",
-        "framework": "Coordination"
-    },
-    "2026-05-23": {
-        "task_category": "WFH",
-        "task": "WFH: Report Preparation",
-        "description": "WFH: Prepare draft Diagnostic Assessment report. Compile SWOT analysis.",
-        "deliverables": "Draft Diagnostic Assessment report.",
-        "framework": "Reporting"
-    },
-    "2026-05-25": {
-        "task_category": "Data Collection",
-        "task": "Missing Data Follow-up",
-        "description": "Follow up with departments for missing data. Assist in data extraction.",
-        "deliverables": "Updated data files for missing parameters.",
-        "framework": "Data Collection"
-    },
-    "2026-05-26": {
-        "task_category": "Analysis",
-        "task": "NIRF Data Template Preparation",
-        "description": "Prepare first draft of NIRF data template as per NIRF 2026 format.",
-        "deliverables": "Draft NIRF submission file.",
-        "framework": "Reporting"
-    },
-    "2026-05-27": {
-        "task_category": "Documentation",
-        "task": "SWOT Analysis & Gap Report Finalization",
-        "description": "Finalize university-specific SWOT analysis and gap identification report.",
-        "deliverables": "SWOT analysis report. Final gap report.",
-        "framework": "Reporting"
-    },
-    "2026-05-28": {
-        "task_category": "Meetings",
-        "task": "Review Meeting with ICARE Team",
-        "description": "Conduct review meeting with Nodal Officer, ICARE Team & IQAC team.",
-        "deliverables": "Meeting minutes with action items.",
-        "framework": "Coordination"
-    },
-    "2026-05-29": {
-        "task_category": "Reporting",
-        "task": "May MPR Preparation",
-        "description": "Finalize data collection status for May 2026. Prepare Monthly Progress Report (MPR).",
-        "deliverables": "May MPR ready for submission.",
-        "framework": "Reporting"
-    },
-    "2026-05-30": {
-        "task_category": "WFH",
-        "task": "WFH: Finalize May Report",
-        "description": "WFH: Finalize May MPR. Compile all deliverables. Submit end-of-month report.",
-        "deliverables": "May MPR final version.",
-        "framework": "Reporting"
-    }
+    "2026-05-07": {"task_category": "Setup", "task": "University Onboarding & Role Introduction", "description": "Join university, meet VC & Registrar, introduce role. Meet Nodal Officer & ICARE Team to confirm workspace, access, and data sources.", "deliverables": "Introduction email to PMU & ICARE Head. Meeting minutes.", "framework": "Setup"},
+    "2026-05-08": {"task_category": "Setup", "task": "NIRF Data Source Mapping", "description": "With Nodal Officer & ICARE Team, map all NIRF-related data sources across the university.", "deliverables": "NIRF Data Source Map (university-specific).", "framework": "Setup"},
+    "2026-05-09": {"task_category": "WFH", "task": "WFH: Digital Forms & Data Requests", "description": "WFH: Review NIRF data templates. Create digital data collection forms. Organize department-wise data request letters.", "deliverables": "Digital forms created. Data request letters drafted.", "framework": "Setup"},
+    "2026-05-11": {"task_category": "Documentation", "task": "NIRF Data Gap Template", "description": "Create NIRF Data Gap Template for FY 2022-23, 2023-24, 2024-25. Share with Nodal Officer & ICARE Team for validation.", "deliverables": "Gap template v1.0.", "framework": "Setup"},
+    "2026-05-12": {"task_category": "Training", "task": "Training: NIRF Framework & Formula Interpretation", "description": "Training session on NIRF framework structure, architecture, and category-specific indicators.", "deliverables": "Training completion report. Attendance sheet.", "framework": "Training"},
+    "2026-05-13": {"task_category": "Training", "task": "Training: Teaching, Learning & Resources (TLR) Parameter", "description": "Detailed training on TLR indicators: Student Strength (SS), Faculty-Student Ratio (FSR), Faculty Qualifications (FQE), Financial Resources (FRU).", "deliverables": "Training materials. Exercise solutions.", "framework": "Training"},
+    "2026-05-14": {"task_category": "Training", "task": "Training: Research & Professional Practice (RP) Parameter", "description": "Training on bibliometric indicators, research productivity, citation analysis, IPR, patents.", "deliverables": "Research metrics training completion.", "framework": "Training"},
+    "2026-05-15": {"task_category": "Training", "task": "Training: Graduation Outcomes (GO) & Outreach (OI) Parameters", "description": "Training on graduation rates, placement statistics, median salary, gender representation.", "deliverables": "Training completion report.", "framework": "Training"},
+    "2026-05-16": {"task_category": "WFH", "task": "WFH: Data Digitization & Training Review", "description": "WFH: Digitize collected data. Review training materials. Prepare training feedback summary.", "deliverables": "Digitized dataset. Training feedback report.", "framework": "Training Review"},
+    "2026-05-18": {"task_category": "Data Collection", "task": "Student Enrollment & Faculty Data Collection", "description": "Collect student enrollment, graduation data and faculty details including PhD qualifications.", "deliverables": "Student and faculty data files.", "framework": "Data Collection"},
+    "2026-05-19": {"task_category": "Data Collection", "task": "Research & Placement Data Collection", "description": "Collect research publications, citations, patents data and placement statistics.", "deliverables": "Research and placement data files.", "framework": "Data Collection"},
+    "2026-05-20": {"task_category": "Data Collection", "task": "Financial & Infrastructure Data Collection", "description": "Collect financial records, library resources, and IT infrastructure details.", "deliverables": "Financial and infrastructure data files.", "framework": "Data Collection"},
+    "2026-05-21": {"task_category": "Analysis", "task": "Data Consolidation & Validation", "description": "Consolidate all collected data. Cross-verify with source documents. Identify gaps.", "deliverables": "Consolidated dataset v1. Gap analysis report.", "framework": "Analysis"},
+    "2026-05-22": {"task_category": "Meetings", "task": "Stakeholder Consultation Meeting", "description": "Conduct meeting with department heads to discuss data gaps and way forward.", "deliverables": "Meeting minutes with decisions and action items.", "framework": "Coordination"},
+    "2026-05-23": {"task_category": "WFH", "task": "WFH: Report Preparation", "description": "WFH: Prepare draft Diagnostic Assessment report. Compile SWOT analysis.", "deliverables": "Draft Diagnostic Assessment report.", "framework": "Reporting"},
+    "2026-05-25": {"task_category": "Data Collection", "task": "Missing Data Follow-up", "description": "Follow up with departments for missing data. Assist in data extraction.", "deliverables": "Updated data files for missing parameters.", "framework": "Data Collection"},
+    "2026-05-26": {"task_category": "Analysis", "task": "NIRF Data Template Preparation", "description": "Prepare first draft of NIRF data template as per NIRF 2026 format.", "deliverables": "Draft NIRF submission file.", "framework": "Reporting"},
+    "2026-05-27": {"task_category": "Documentation", "task": "SWOT Analysis & Gap Report Finalization", "description": "Finalize university-specific SWOT analysis and gap identification report.", "deliverables": "SWOT analysis report. Final gap report.", "framework": "Reporting"},
+    "2026-05-28": {"task_category": "Meetings", "task": "Review Meeting with ICARE Team", "description": "Conduct review meeting with Nodal Officer, ICARE Team & IQAC team.", "deliverables": "Meeting minutes with action items.", "framework": "Coordination"},
+    "2026-05-29": {"task_category": "Reporting", "task": "May MPR Preparation", "description": "Finalize data collection status for May 2026. Prepare Monthly Progress Report (MPR).", "deliverables": "May MPR ready for submission.", "framework": "Reporting"},
+    "2026-05-30": {"task_category": "WFH", "task": "WFH: Finalize May Report", "description": "WFH: Finalize May MPR. Compile all deliverables. Submit end-of-month report.", "deliverables": "May MPR final version.", "framework": "Reporting"}
 }
 
 # Pre-defined task categories
@@ -456,6 +325,26 @@ TASK_CATEGORIES = {
     "Coordination": ["Department follow-up", "Email communications", "Action item tracking"]
 }
 
+# Team attendance data structure
+TEAM_MEMBERS = {
+    "MITRA": [
+        {"name": "Shri Aman Mittal", "profile": "Project Director, MahaSTRIDE", "location": "MITRA, Mumbai"},
+        {"name": "Shri Karthick Sridhar", "profile": "Project Head, ICARE", "location": "MITRA, Mumbai"},
+        {"name": "Data Analytics Specialist", "profile": "Data Analytics and Dashboard Specialist", "location": "MITRA, Mumbai"}
+    ],
+    "MU": [
+        {"name": "Ms Sneha", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"},
+        {"name": "Shubham", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"},
+        {"name": "Statistician", "profile": "Statistician & Program Designer", "location": "Mumbai University"}
+    ],
+    "SSPU": [{"name": "Mr Jagan", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Savitribai Phule Pune University"}],
+    "COEP": [{"name": "Mr Vaibhav", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "COEP Technological University"}],
+    "AU": [{"name": "Mr Pratham", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Sant Gadge Baba Amravati University"}],
+    "NU": [{"name": "Ms Anjali", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Rashtrasant Tukadoji Maharaj Nagpur University"}],
+    "KBCNMU": [{"name": "Mr Nitish", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "KBCNMU Jalgaon University"}],
+    "BAMU": [{"name": "Mr Atharv", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "BAMU Aurangabad"}]
+}
+
 def hash_password(password):
     return sha256(password.encode()).hexdigest()
 
@@ -465,48 +354,51 @@ def authenticate_user(email, password):
             return True, USERS[email]["role"], USERS[email]["name"], USERS[email].get("university", None)
     return False, None, None, None
 
+# Data management functions
 def create_initial_progress_data():
-    """Create fresh empty progress data"""
     data = {}
     for uni_code in UNIVERSITIES.keys():
         data[uni_code] = {}
     return data
 
 def create_initial_assignments_data():
-    """Create fresh empty assignments data"""
     return {"assignments": [], "submissions": {}}
 
 def create_initial_custom_tasks_data():
-    """Create fresh empty custom tasks data"""
     return {"date_specific_tasks": {}}
 
-def reset_all_data():
-    """Delete all data files and recreate fresh ones"""
-    files_to_reset = [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE]
-    for file in files_to_reset:
-        if os.path.exists(file):
-            os.remove(file)
-    
-    # Create fresh data
-    save_progress_data(create_initial_progress_data())
-    save_assignments_data(create_initial_assignments_data())
-    save_custom_tasks_data(create_initial_custom_tasks_data())
-    return True
+def create_initial_team_attendance():
+    data = {}
+    for uni_code in UNIVERSITIES.keys():
+        data[uni_code] = {}
+    data["MITRA"] = {}
+    return data
+
+def create_initial_mpr_data():
+    return {
+        "work_order_ref": "MITRA/Research/MahaSTRIDE/EduRFP/49/2025",
+        "work_order_date": "11-05-2026",
+        "period_start": "2026-05-07",
+        "period_end": "2026-05-31",
+        "major_activities": [],
+        "meetings": [],
+        "deliverables": [],
+        "risks": [],
+        "initiatives": []
+    }
 
 def load_progress_data():
     try:
         if os.path.exists(PROGRESS_DATA_FILE):
             with open(PROGRESS_DATA_FILE, 'r') as f:
                 data = json.load(f)
-                # Ensure all universities exist in data
                 for uni_code in UNIVERSITIES.keys():
                     if uni_code not in data:
                         data[uni_code] = {}
                 return data
         else:
             return create_initial_progress_data()
-    except Exception as e:
-        st.error(f"Error loading progress data: {e}")
+    except:
         return create_initial_progress_data()
 
 def save_progress_data(data):
@@ -514,8 +406,7 @@ def save_progress_data(data):
         with open(PROGRESS_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
         return True
-    except Exception as e:
-        st.error(f"Error saving progress data: {e}")
+    except:
         return False
 
 def load_assignments_data():
@@ -525,8 +416,7 @@ def load_assignments_data():
                 return json.load(f)
         else:
             return create_initial_assignments_data()
-    except Exception as e:
-        st.error(f"Error loading assignments data: {e}")
+    except:
         return create_initial_assignments_data()
 
 def save_assignments_data(data):
@@ -534,8 +424,7 @@ def save_assignments_data(data):
         with open(ASSIGNMENTS_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
         return True
-    except Exception as e:
-        st.error(f"Error saving assignments data: {e}")
+    except:
         return False
 
 def load_custom_tasks_data():
@@ -545,8 +434,7 @@ def load_custom_tasks_data():
                 return json.load(f)
         else:
             return create_initial_custom_tasks_data()
-    except Exception as e:
-        st.error(f"Error loading custom tasks data: {e}")
+    except:
         return create_initial_custom_tasks_data()
 
 def save_custom_tasks_data(data):
@@ -554,9 +442,57 @@ def save_custom_tasks_data(data):
         with open(CUSTOM_TASKS_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
         return True
-    except Exception as e:
-        st.error(f"Error saving custom tasks data: {e}")
+    except:
         return False
+
+def load_team_attendance():
+    try:
+        if os.path.exists(TEAM_ATTENDANCE_FILE):
+            with open(TEAM_ATTENDANCE_FILE, 'r') as f:
+                return json.load(f)
+        else:
+            return create_initial_team_attendance()
+    except:
+        return create_initial_team_attendance()
+
+def save_team_attendance(data):
+    try:
+        with open(TEAM_ATTENDANCE_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except:
+        return False
+
+def load_mpr_data():
+    try:
+        if os.path.exists(MPR_DATA_FILE):
+            with open(MPR_DATA_FILE, 'r') as f:
+                return json.load(f)
+        else:
+            return create_initial_mpr_data()
+    except:
+        return create_initial_mpr_data()
+
+def save_mpr_data(data):
+    try:
+        with open(MPR_DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except:
+        return False
+
+def update_team_attendance(team_type, member_name, present_days, absent_days, holidays):
+    attendance = load_team_attendance()
+    if team_type not in attendance:
+        attendance[team_type] = {}
+    attendance[team_type][member_name] = {
+        "present_days": present_days,
+        "absent_days": absent_days,
+        "holidays": holidays,
+        "total_working_days": present_days + absent_days + holidays,
+        "updated_at": datetime.now().isoformat()
+    }
+    return save_team_attendance(attendance)
 
 def get_plan_for_date(date_str):
     custom_tasks = load_custom_tasks_data()
@@ -587,66 +523,16 @@ def get_pending_tasks_for_coordinator(university_code):
                 })
     return pending_dates
 
-def get_completed_tasks_count(university_code):
-    """Get number of completed tasks for a university"""
-    data = load_progress_data()
-    entries = data.get(university_code, {})
-    return len(entries)
-
-def get_deliverable_progress(university_code):
-    """Calculate progress for each major deliverable based on actual logged tasks"""
-    completed_count = get_completed_tasks_count(university_code)
-    total_planned = len(get_all_planned_dates())
-    
-    if total_planned == 0:
-        return 0
-    return round((completed_count / total_planned) * 100, 1)
-
-def get_deliverable_status(percentage):
-    """Get status text based on completion percentage"""
-    if percentage >= 100:
-        return "Completed"
-    elif percentage >= 75:
-        return "Substantially Complete"
-    elif percentage >= 50:
-        return "Partially Complete"
-    elif percentage >= 25:
-        return "In Progress"
-    elif percentage > 0:
-        return "Initiated"
-    else:
-        return "Not Started"
-
-def get_deliverable_date_status(percentage, due_date):
-    """Get status with date info"""
-    current_date = datetime.now()
-    due_date_obj = datetime.strptime(due_date, "%B %d, %Y")
-    
-    if percentage >= 100:
-        return "Completed"
-    elif current_date > due_date_obj and percentage < 100:
-        return f"Behind Schedule ({percentage}% Complete)"
-    else:
-        return f"In Progress ({percentage}% Complete)"
-
 def log_daily_entry(university_code, date, task_category, task_name, description, deliverables, status, hours_spent, remarks, swapped_from_default, edited_task, updated_by):
     data = load_progress_data()
     if university_code not in data:
         data[university_code] = {}
     
     data[university_code][date] = {
-        "date": date, 
-        "task_category": task_category, 
-        "task_name": task_name,
-        "description": description, 
-        "deliverables": deliverables, 
-        "status": status,
-        "hours_spent": hours_spent, 
-        "remarks": remarks, 
-        "swapped_from_default": swapped_from_default,
-        "edited_task": edited_task, 
-        "updated_at": datetime.now().isoformat(), 
-        "updated_by": updated_by
+        "date": date, "task_category": task_category, "task_name": task_name,
+        "description": description, "deliverables": deliverables, "status": status,
+        "hours_spent": hours_spent, "remarks": remarks, "swapped_from_default": swapped_from_default,
+        "edited_task": edited_task, "updated_at": datetime.now().isoformat(), "updated_by": updated_by
     }
     return save_progress_data(data)
 
@@ -658,45 +544,17 @@ def get_university_entries(university_code):
     records = []
     for date, entry in data[university_code].items():
         records.append({
-            "Date": date, 
-            "Task Category": entry.get("task_category", ""), 
-            "Task": entry.get("task_name", ""),
-            "Description": entry.get("description", ""), 
-            "Deliverables": entry.get("deliverables", ""),
-            "Status": entry.get("status", "").upper(), 
-            "Hours Spent": entry.get("hours_spent", 0),
+            "Date": date, "Task Category": entry.get("task_category", ""), "Task": entry.get("task_name", ""),
+            "Description": entry.get("description", ""), "Deliverables": entry.get("deliverables", ""),
+            "Status": entry.get("status", "").upper(), "Hours Spent": entry.get("hours_spent", 0),
             "Swapped": "✅" if entry.get("swapped_from_default", False) else "❌",
-            "Remarks": entry.get("remarks", ""), 
-            "Updated At": entry.get("updated_at", "")[:16] if entry.get("updated_at") else "",
+            "Remarks": entry.get("remarks", ""), "Updated At": entry.get("updated_at", "")[:16] if entry.get("updated_at") else "",
             "Updated By": entry.get("updated_by", "")
         })
     
     if not records:
         return pd.DataFrame()
-    
     return pd.DataFrame(records).sort_values("Date", ascending=False)
-
-def get_daily_progress_data():
-    data = load_progress_data()
-    daily_records = []
-    
-    for uni_code, entries in data.items():
-        uni_name = UNIVERSITIES[uni_code]["name"]
-        for date, entry in entries.items():
-            daily_records.append({
-                "Date": date, 
-                "University": uni_name, 
-                "University Code": uni_code,
-                "Task": entry.get("task_name", ""), 
-                "Category": entry.get("task_category", ""),
-                "Status": entry.get("status", ""), 
-                "Hours": entry.get("hours_spent", 0)
-            })
-    
-    df = pd.DataFrame(daily_records)
-    if not df.empty:
-        df["Date"] = pd.to_datetime(df["Date"])
-    return df
 
 def get_summary_stats():
     data = load_progress_data()
@@ -707,6 +565,7 @@ def get_summary_stats():
         total_planned = len(get_all_planned_dates())
         completed = sum(1 for e in entries.values() if e.get("status") == "completed")
         total_hours = sum(e.get("hours_spent", 0) for e in entries.values())
+        pending = total_planned - completed
         
         stats.append({
             "University": uni_info["name"],
@@ -714,95 +573,67 @@ def get_summary_stats():
             "Coordinators": uni_info["coordinators"],
             "Nodal Officer": uni_info["nodal_officer"],
             "Planned Tasks": total_planned,
-            "Completed": completed,
-            "Pending": total_planned - completed,
-            "Total Hours": round(total_hours, 1),
-            "Completion %": round((completed / total_planned * 100), 1) if total_planned > 0 else 0
+            "Completed Tasks": completed,
+            "Pending Tasks": pending,
+            "Total Hours Invested": round(total_hours, 1),
+            "Status": "On Track" if pending <= 5 else "Needs Attention" if pending <= 10 else "Behind Schedule"
         })
-    
     return pd.DataFrame(stats)
 
-def create_assignment(title, description, due_date, assigned_universities, created_by):
-    assignments_data = load_assignments_data()
-    assignment_id = f"ASSIGN_{len(assignments_data['assignments']) + 1}_{int(datetime.now().timestamp())}"
-    
-    new_assignment = {
-        "id": assignment_id, 
-        "title": title, 
-        "description": description, 
-        "due_date": due_date,
-        "assigned_universities": assigned_universities, 
-        "created_by": created_by,
-        "created_at": datetime.now().isoformat(), 
-        "status": "active"
-    }
-    
-    assignments_data["assignments"].append(new_assignment)
-    
-    if assignment_id not in assignments_data["submissions"]:
-        assignments_data["submissions"][assignment_id] = {}
-        for uni_code in assigned_universities:
-            assignments_data["submissions"][assignment_id][uni_code] = {
-                "status": "pending", 
-                "completed_at": None, 
-                "remarks": "", 
-                "completed_by": None
-            }
-    
-    save_assignments_data(assignments_data)
-    return assignment_id
+def get_daily_progress_data():
+    """Aggregate progress data across all universities for daily charts"""
+    data = load_progress_data()
+    all_records = []
+    for uni_code, entries in data.items():
+        for date, entry in entries.items():
+            if entry.get("status") == "completed":
+                all_records.append({
+                    "Date": date,
+                    "University": uni_code,
+                    "Task": entry.get("task_name", ""),
+                    "Hours": entry.get("hours_spent", 0)
+                })
+    if not all_records:
+        return pd.DataFrame()
+    df = pd.DataFrame(all_records)
+    df["Date"] = pd.to_datetime(df["Date"])
+    return df.sort_values("Date")
 
-def get_university_assignments(university_code):
-    assignments_data = load_assignments_data()
-    university_assignments = []
-    
-    for assignment in assignments_data["assignments"]:
-        if assignment["status"] == "active" and university_code in assignment["assigned_universities"]:
-            submission = assignments_data["submissions"].get(assignment["id"], {}).get(university_code, {})
-            assignment_copy = assignment.copy()
-            assignment_copy["submission_status"] = submission.get("status", "pending")
-            assignment_copy["submission_remarks"] = submission.get("remarks", "")
-            university_assignments.append(assignment_copy)
-    
-    return university_assignments
+def reset_all_data():
+    files_to_reset = [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE, TEAM_ATTENDANCE_FILE, MPR_DATA_FILE]
+    for file in files_to_reset:
+        if os.path.exists(file):
+            os.remove(file)
+    save_progress_data(create_initial_progress_data())
+    save_assignments_data(create_initial_assignments_data())
+    save_custom_tasks_data(create_initial_custom_tasks_data())
+    save_team_attendance(create_initial_team_attendance())
+    save_mpr_data(create_initial_mpr_data())
+    return True
 
-def update_assignment_submission(assignment_id, university_code, status, remarks, completed_by):
-    assignments_data = load_assignments_data()
-    
-    if assignment_id in assignments_data["submissions"]:
-        if university_code in assignments_data["submissions"][assignment_id]:
-            assignments_data["submissions"][assignment_id][university_code] = {
-                "status": status, 
-                "completed_at": datetime.now().isoformat() if status == "completed" else None,
-                "remarks": remarks, 
-                "completed_by": completed_by
-            }
-            return save_assignments_data(assignments_data)
-    return False
-
-def show_sangam_info():
-    st.markdown('<div class="sangam-card">', unsafe_allow_html=True)
-    st.markdown("### 🎉 SANGAM Orientation & Training Program")
-    st.markdown(f"**Dates:** May 5-6, 2026 | **Location:** Mumbai")
-    st.markdown("✅ **Status:** Completed successfully")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-def generate_university_report_html(university_code):
-    """Generate detailed HTML report with dynamic status based on actual logged data"""
+def generate_complete_mpr_html(university_code):
+    """Generate complete MPR as per Annexure C format"""
     uni_info = UNIVERSITIES[university_code]
     entries_df = get_university_entries(university_code)
+    attendance_data = load_team_attendance()
+    mpr_data = load_mpr_data()
+    
     completed_count = len(entries_df) if not entries_df.empty else 0
     total_planned = len(get_all_planned_dates())
-    completion_pct = round((completed_count / total_planned * 100), 1) if total_planned > 0 else 0
+    total_hours = entries_df["Hours Spent"].sum() if not entries_df.empty else 0
     
-    # Calculate deliverable-specific progress
-    deliverable_progress = {
-        "Inception Report": min(100, round((completed_count / total_planned) * 100, 1)),
-        "Diagnostic Assessment Reports": min(100, round((completed_count / total_planned) * 70, 1)),
-        "Institutional Development Plans (IDPs)": min(100, round((completed_count / total_planned) * 30, 1)),
-        "GRDAUs Establishment": min(100, round((completed_count / total_planned) * 25, 1)),
-        "Monthly Progress Report (May 2026)": min(100, round((completed_count / total_planned) * 80, 1))
-    }
+    period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-07"), "%Y-%m-%d")
+    period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-31"), "%Y-%m-%d")
+    
+    # Determine status labels based on completed tasks
+    if completed_count == total_planned:
+        activity_status = "Completed"
+    elif completed_count >= total_planned * 0.5:
+        activity_status = "In Progress (50% or more done)"
+    elif completed_count > 0:
+        activity_status = "Initiated"
+    else:
+        activity_status = "Not Started"
     
     html = f"""
     <!DOCTYPE html>
@@ -813,7 +644,7 @@ def generate_university_report_html(university_code):
         <style>
             body {{
                 font-family: 'Times New Roman', serif;
-                margin: 1in;
+                margin: 0.7in;
                 font-size: 11pt;
                 line-height: 1.2;
             }}
@@ -822,27 +653,26 @@ def generate_university_report_html(university_code):
                 margin-bottom: 20px;
             }}
             .mitra-title {{
-                font-size: 14pt;
+                font-size: 12pt;
                 font-weight: bold;
             }}
             .confidential {{
                 text-align: right;
                 font-weight: bold;
                 margin-bottom: 20px;
+                font-size: 10pt;
             }}
             .report-title {{
-                font-size: 16pt;
+                font-size: 14pt;
                 font-weight: bold;
                 text-align: center;
                 margin: 15px 0;
             }}
             .section-title {{
-                font-size: 13pt;
+                font-size: 12pt;
                 font-weight: bold;
-                margin-top: 20px;
-                margin-bottom: 10px;
-                background-color: #f0f0f0;
-                padding: 5px;
+                margin-top: 15px;
+                margin-bottom: 8px;
             }}
             table {{
                 width: 100%;
@@ -852,7 +682,7 @@ def generate_university_report_html(university_code):
             }}
             th, td {{
                 border: 1px solid #000;
-                padding: 6px;
+                padding: 5px;
                 vertical-align: top;
             }}
             th {{
@@ -860,17 +690,9 @@ def generate_university_report_html(university_code):
                 font-weight: bold;
                 text-align: center;
             }}
-            .progress-bar {{
-                background-color: #e0e0e0;
-                border-radius: 5px;
-                height: 10px;
-                width: 100%;
-            }}
-            .progress-fill {{
-                background-color: #4CAF50;
-                border-radius: 5px;
-                height: 10px;
-                width: {completion_pct}%;
+            .sub-header {{
+                background-color: #d0d0d0;
+                font-weight: bold;
             }}
             .footer {{
                 text-align: center;
@@ -878,11 +700,14 @@ def generate_university_report_html(university_code):
                 font-style: italic;
                 margin-top: 30px;
             }}
+            .signature-table td {{
+                border: none;
+                padding: 5px;
+            }}
         </style>
     </head>
     <body>
         <div class="confidential">Confidential</div>
-        
         <div class="header">
             <div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div>
             <div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div>
@@ -890,80 +715,99 @@ def generate_university_report_html(university_code):
         </div>
         
         <div class="report-title">MONTHLY PROGRESS REPORT</div>
-        <div style="text-align: center;">(From 07-05-2026 to 31-05-2026)</div>
-        <div style="text-align: center;"><strong>University:</strong> {uni_info['name']}</div>
-        <div style="text-align: center;"><strong>Reporting Date:</strong> {datetime.now().strftime('%d-%b-%Y')}</div>
+        <div style="text-align: center;">(From {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')})</div>
         
-        <!-- Overall Progress -->
-        <div class="section-title">Overall Project Progress</div>
-        <div style="margin: 10px 0;">
-            <strong>Overall Completion: {completion_pct}%</strong>
-            <div class="progress-bar"><div class="progress-fill"></div></div>
-            <div>Tasks Completed: {completed_count} / {total_planned}</div>
-        </div>
+        <table>
+            <tr><td style="width:30%"><strong>Work Order Reference</strong></td><td>{mpr_data.get('work_order_ref', 'MITRA/Research/MahaSTRIDE/EduRFP/49/2025')}<br>dated {mpr_data.get('work_order_date', '11-05-2026')}</td><td style="width:30%"><strong>University / Division</strong></td><td>{uni_info['name']}</td></tr>
+            <tr><td><strong>Work Order Start Date</strong></td><td>{period_start.strftime('%d-%b-%Y')}</td><td><strong>Work Order End Date</strong></td><td>{period_end.strftime('%d-%b-%Y')}</td></tr>
+            <tr><td><strong>Project Start Date</strong></td><td>07-May-2026</td><td><strong>Project End Date</strong></td><td>06-May-2028</td></tr>
+        </table>
         
-        <!-- C. Major Deliverables (As committed under Contract) -->
+        <div class="section-title">Project Team Deployment</div>
+        <table>
+            <tr class="sub-header"><th>Sr. No.</th><th>Name of the Key Professional</th><th>Profile as per contract</th><th>Location</th><th>Present Days</th><th>Absent Days</th><th>Holidays</th></tr>
+    """
+    
+    sr_no = 1
+    # MITRA Level
+    html += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></td></tr>'
+    for member in TEAM_MEMBERS.get("MITRA", []):
+        att = attendance_data.get("MITRA", {}).get(member["name"], {})
+        html += f"""
+        <tr>
+            <td>{sr_no}</td><td>{member['name']}</td><td>{member['profile']}</td><td>{member['location']}</td>
+            <td>{att.get('present_days', 0)}</td><td>{att.get('absent_days', 0)}</td><td>{att.get('holidays', 0)}</td>
+        </tr>"""
+        sr_no += 1
+    
+    # University Level
+    for uni_code, uni_info_loop in UNIVERSITIES.items():
+        html += f'<tr class="sub-header"><td colspan="7"><strong>{uni_info_loop["name"]}</strong></td></tr>'
+        for member in TEAM_MEMBERS.get(uni_code, []):
+            att = attendance_data.get(uni_code, {}).get(member["name"], {})
+            html += f"""
+            <tr>
+                <td>{sr_no}</td><td>{member['name']}</td><td>{member['profile']}</td><td>{member['location']}</td>
+                <td>{att.get('present_days', 0)}</td><td>{att.get('absent_days', 0)}</td><td>{att.get('holidays', 0)}</td>
+            </tr>"""
+            sr_no += 1
+    
+    html += """
+        </table>
+        
+        <div class="section-title">A. Major Activities</div>
+        <table>
+            <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member Name</th><th>Activity Status</th><th>Date of Submission</th></tr>
+            <tr><td>1</td><td>Finalisation of Annual Action Plan for the FY etc</td><td>All Coordinators</td><td>In Progress</td><td>-</td></tr>
+            <tr><td>2</td><td>Coordination with Universities / MITRA for data collection & reporting etc</td><td>All Coordinators</td><td>Ongoing</td><td>Daily</td></tr>
+            <tr><td>3</td><td>Conducted Stakeholder Consultation with institutions etc</td><td>ICARE Team</td><td>Completed</td><td>May 2026</td></tr>
+            <tr><td>4</td><td>NIRF Framework Training Programs</td><td>All Coordinators</td><td>Completed</td><td>May 12-15, 2026</td></tr>
+            <tr><td>5</td><td>NIRF Data Collection Initiation</td><td>All Coordinators</td><td>{activity_status}</td><td>-</td></tr>
+        </table>
+        
+        <div class="section-title">B. Minutes of Meetings Conducted</div>
+        <table>
+            <tr><th>Sr. No.</th><th>Date</th><th>Chairperson + Key Participants</th><th>Agenda</th><th>Decision / Way Forward</th><th>Responsibility</th></tr>
+            <tr><td>1</td><td>May 7, 2026</td><td>ICARE Team + Nodal Officer</td><td>Project Kick-off and data source mapping</td><td>Data collection initiated</td><td>Coordinators</td></tr>
+            <tr><td>2</td><td>May 12-15, 2026</td><td>ICARE Team</td><td>NIRF Framework Training</td><td>Training completed</td><td>All Coordinators</td></tr>
+            <tr><td>3</td><td>May 22, 2026</td><td>ICARE Team + Nodal Officer</td><td>Data gap review and action plan</td><td>Departments to submit pending data</td><td>Coordinators</td></tr>
+            <tr><td>4</td><td>May 28, 2026</td><td>ICARE Team + IQAC Team</td><td>Review of May progress</td><td>MPR preparation initiated</td><td>Coordinators</td></tr>
+        </table>
+        
         <div class="section-title">C. Major Deliverables (As committed under Contract)</div>
         <table>
             <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Team Member Name</th><th>Activity Status</th><th>Date of Submission</th></tr>
-    """
-    
-    deliverables = [
-        (1, "Inception Report and Deployment Plan", deliverable_progress["Inception Report"], "Due June 6, 2026"),
-        (2, "Diagnostic Assessment Reports", deliverable_progress["Diagnostic Assessment Reports"], "Due July 6, 2026"),
-        (3, "Institutional Development Plans (IDPs)", deliverable_progress["Institutional Development Plans (IDPs)"], "Due August 15, 2026"),
-        (4, "GRDAUs Establishment", deliverable_progress["GRDAUs Establishment"], "Due July 6, 2026"),
-        (5, "Monthly Progress Report (May 2026)", deliverable_progress["Monthly Progress Report (May 2026)"], "Due June 10, 2026"),
-    ]
-    
-    for sr, deliverable, pct, due_date in deliverables:
-        if pct >= 100:
-            status = "Completed"
-            submission_date = "Submitted"
-        elif pct >= 70:
-            status = f"Substantially Complete ({pct}%)"
-            submission_date = "In Progress"
-        elif pct >= 40:
-            status = f"Partially Complete ({pct}%)"
-            submission_date = "In Progress"
-        elif pct >= 10:
-            status = f"Initiated ({pct}%)"
-            submission_date = "In Progress"
-        else:
-            status = "Not Started"
-            submission_date = due_date
-        
-        html += f"""
-        <tr>
-            <td>{sr}</td>
-            <td>{deliverable}</td>
-            <td>{', '.join(uni_info['coordinators'])}</td>
-            <td>{status}</td>
-            <td>{submission_date}</td>
-        </tr>
-        """
-    
-    html += f"""
+            <tr><td>1</td><td>Inception Report and Deployment Plan</td><td>{', '.join(uni_info['coordinators'])}</td><td>{'Completed' if completed_count >= total_planned else 'In Progress'}</td><td>Due June 6, 2026</td></tr>
+            <tr><td>2</td><td>Diagnostic Assessment Reports</td><td>{', '.join(uni_info['coordinators'])}</td><td>In Progress</td><td>Due July 6, 2026</td></tr>
+            <tr><td>3</td><td>Institutional Development Plans (IDPs)</td><td>{', '.join(uni_info['coordinators'])}</td><td>Not Started</td><td>Due August 15, 2026</td></tr>
+            <tr><td>4</td><td>GRDAUs Establishment</td><td>{', '.join(uni_info['coordinators'])}</td><td>Planning Phase</td><td>Due July 6, 2026</td></tr>
+            <tr><td>5</td><td>Monthly Progress Report (May 2026)</td><td>{', '.join(uni_info['coordinators'])}</td><td>In Progress</td><td>Due June 10, 2026</td></tr>
         </table>
         
-        <!-- A. Major Activities -->
-        <div class="section-title">A. Major Activities Undertaken</div>
+        <div class="section-title">D. Administration & Risk Management</div>
         <table>
-            <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member Name</th><th>Activity Status</th><th>Remarks</th></tr>
-    """
-    
-    major_activities = [
-        ("1", "Finalisation of Annual Action Plan for the FY etc", ", ".join(uni_info['coordinators']), "In Progress", "Framework defined"),
-        ("2", "Coordination with Universities / MITRA for data collection", ", ".join(uni_info['coordinators']), "Ongoing", "Daily stand-up meetings conducted"),
-        ("3", "Conducted Stakeholder Consultation with institutions", ", ".join(uni_info['coordinators']), "Completed", "Meetings held"),
-        ("4", "NIRF Framework Training Programs", ", ".join(uni_info['coordinators']), "Completed" if completed_count >= 5 else "In Progress", "Training conducted May 12-15"),
-        ("5", "NIRF Data Collection Initiation", ", ".join(uni_info['coordinators']), "In Progress", f"{completed_count}/{total_planned} tasks completed"),
-    ]
-    
-    for sr, activity, member, status, remark in major_activities:
-        html += f"<tr><td>{sr}</td><td>{activity}</td><td>{member}</td><td>{status}</td><td>{remark}</td></tr>"
-    
-    html += f"""
+            <tr><th>Sr. No.</th><th>Description of Identified Risk</th><th>Possible Impact</th><th>Severity Level</th><th>Mitigation Strategy</th><th>Responsibility</th></tr>
+            <tr><td>1</td><td>Delay in data availability from departments</td><td>Incomplete NIRF submission</td><td>Medium</td><td>Regular follow-ups with Nodal Officer</td><td>Coordinator</td></tr>
+            <tr><td>2</td><td>Inconsistent data formats across departments</td><td>Data validation challenges</td><td>Low</td><td>Standardized templates provided</td><td>Coordinator</td></tr>
+            <tr><td>3</td><td>Staff turnover in key departments</td><td>Loss of data continuity</td><td>Medium</td><td>Documentation of processes</td><td>ICARE Team</td></tr>
+        </table>
+        
+        <div class="section-title">E. Status of Initiatives under the Project and Other Works</div>
+        <table>
+            <tr><th>Sr. No.</th><th>Sub-Sector</th><th>Objective</th><th>Specific Intervention</th><th>Current Status</th><th>Way Forward / Actionable</th></tr>
+            <tr><td>1</td><td>NIRF Data Collection</td><td>Complete baseline data</td><td>Student, Faculty, Research, Placement data</td><td>In Progress</td><td>Complete by June 15</td></tr>
+            <tr><td>2</td><td>Capacity Building</td><td>Train coordinators</td><td>NIRF Framework Training</td><td>Completed</td><td>Reinforcement sessions in June</td></tr>
+            <tr><td>3</td><td>GRDAU Setup</td><td>Establish Data Analytics Unit</td><td>Team identification, role definition</td><td>Planning Phase</td><td>Finalize by June 30</td></tr>
+            <tr><td>4</td><td>Diagnostic Assessment</td><td>Identify gaps and SWOT</td><td>Data gap analysis</td><td>In Progress</td><td>Draft by June 15</td></tr>
+        </table>
+        
+        <div class="section-title">Approvals and Signatures</div>
+        <table style="border: none;">
+            <tr><td style="border: none; width: 30%;"><strong>Prepared by:</strong></td><td style="border: none;">{', '.join(uni_info['coordinators'])}<br>(Institutional Coordinators)</td></tr>
+            <tr><td style="border: none;"><strong>Verified by:</strong></td><td style="border: none;">{uni_info['nodal_officer']}<br>(Nodal Officer, IQAC Coordinator)</td></tr>
+            <tr><td style="border: none;"><strong>Approved by:</strong></td><td style="border: none;">{uni_info['registrar']}<br>(Registrar)</td></tr>
+            <tr><td style="border: none;"><strong>Reviewed by:</strong></td><td style="border: none;">{ICARE_OFFICIALS['project_head']}<br>(Project Head, ICARE Pvt. Ltd.)</td></tr>
+            <tr><td style="border: none;"><strong>Approved by:</strong></td><td style="border: none;">{MITRA_OFFICIALS['project_director']}<br>(Project Director, MahaSTRIDE)</td></tr>
         </table>
         
         <div class="footer">
@@ -973,16 +817,30 @@ def generate_university_report_html(university_code):
     </body>
     </html>
     """
-    
     return html
 
-def generate_consolidated_report_html():
-    """Generate consolidated HTML report for all universities"""
+def generate_consolidated_mpr_html():
+    """Generate consolidated MPR for all universities"""
     summary_df = get_summary_stats()
+    attendance_data = load_team_attendance()
+    mpr_data = load_mpr_data()
+    
     total_planned = len(get_all_planned_dates()) * len(UNIVERSITIES)
-    total_completed = summary_df["Completed"].sum() if not summary_df.empty else 0
-    total_hours = summary_df["Total Hours"].sum() if not summary_df.empty else 0
-    overall_pct = round(total_completed / total_planned * 100, 1) if total_planned > 0 else 0
+    total_completed = summary_df["Completed Tasks"].sum() if not summary_df.empty else 0
+    total_hours = summary_df["Total Hours Invested"].sum() if not summary_df.empty else 0
+    
+    period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-07"), "%Y-%m-%d")
+    period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-31"), "%Y-%m-%d")
+    
+    # Determine overall status
+    if total_completed == total_planned:
+        overall_status = "Fully Completed"
+    elif total_completed >= total_planned * 0.5:
+        overall_status = "Substantially Complete"
+    elif total_completed > 0:
+        overall_status = "Initiated"
+    else:
+        overall_status = "Not Started"
     
     html = f"""
     <!DOCTYPE html>
@@ -993,76 +851,23 @@ def generate_consolidated_report_html():
         <style>
             body {{
                 font-family: 'Times New Roman', serif;
-                margin: 1in;
+                margin: 0.7in;
                 font-size: 11pt;
                 line-height: 1.2;
             }}
-            .header {{
-                text-align: center;
-                margin-bottom: 20px;
-            }}
-            .mitra-title {{
-                font-size: 14pt;
-                font-weight: bold;
-            }}
-            .confidential {{
-                text-align: right;
-                font-weight: bold;
-                margin-bottom: 20px;
-            }}
-            .report-title {{
-                font-size: 16pt;
-                font-weight: bold;
-                text-align: center;
-                margin: 15px 0;
-            }}
-            .section-title {{
-                font-size: 13pt;
-                font-weight: bold;
-                margin-top: 20px;
-                margin-bottom: 10px;
-                background-color: #f0f0f0;
-                padding: 5px;
-            }}
-            table {{
-                width: 100%;
-                border-collapse: collapse;
-                margin: 10px 0;
-                font-size: 10pt;
-            }}
-            th, td {{
-                border: 1px solid #000;
-                padding: 6px;
-                vertical-align: top;
-            }}
-            th {{
-                background-color: #e8e8e8;
-                font-weight: bold;
-                text-align: center;
-            }}
-            .progress-bar {{
-                background-color: #e0e0e0;
-                border-radius: 5px;
-                height: 15px;
-                width: 100%;
-            }}
-            .progress-fill {{
-                background-color: #4CAF50;
-                border-radius: 5px;
-                height: 15px;
-                width: {overall_pct}%;
-            }}
-            .footer {{
-                text-align: center;
-                font-size: 9pt;
-                font-style: italic;
-                margin-top: 30px;
-            }}
+            .header {{ text-align: center; margin-bottom: 20px; }}
+            .mitra-title {{ font-size: 12pt; font-weight: bold; }}
+            .confidential {{ text-align: right; font-weight: bold; margin-bottom: 20px; }}
+            .report-title {{ font-size: 14pt; font-weight: bold; text-align: center; margin: 15px 0; }}
+            .section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; background-color: #f0f0f0; padding: 5px; }}
+            table {{ width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10pt; }}
+            th, td {{ border: 1px solid #000; padding: 5px; vertical-align: top; }}
+            th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
+            .footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
         </style>
     </head>
     <body>
         <div class="confidential">Confidential</div>
-        
         <div class="header">
             <div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div>
             <div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div>
@@ -1071,64 +876,36 @@ def generate_consolidated_report_html():
         
         <div class="report-title">CONSOLIDATED MONTHLY PROGRESS REPORT</div>
         <div style="text-align: center;">All Maharashtra State Universities</div>
-        <div style="text-align: center;">Reporting Period: 07-05-2026 to 31-05-2026</div>
-        <div style="text-align: center;"><strong>Report Date:</strong> {datetime.now().strftime('%d-%b-%Y')}</div>
+        <div style="text-align: center;">Reporting Period: {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')}</div>
         
-        <!-- Overall Progress -->
         <div class="section-title">Overall Project Progress</div>
         <div style="margin: 10px 0;">
-            <strong>Overall Completion: {overall_pct}%</strong>
-            <div class="progress-bar"><div class="progress-fill"></div></div>
-            <div>Tasks Completed: {total_completed} / {total_planned}</div>
-            <div>Total Hours Invested: {total_hours:.1f} hours</div>
+            <strong>Overall Status: {overall_status}</strong><br>
+            <strong>Tasks Completed:</strong> {total_completed} / {total_planned}<br>
+            <strong>Total Hours Invested:</strong> {total_hours:.1f} hours
         </div>
         
-        <!-- University-wise Progress Summary -->
         <div class="section-title">University-wise Progress Summary</div>
         <table>
-            <tr><th>Sr. No.</th><th>University</th><th>Nodal Officer</th><th>Tasks Completed</th><th>Tasks Pending</th><th>Completion %</th><th>Hours Invested</th></tr>
+            <tr><th>Sr. No.</th><th>University</th><th>Nodal Officer</th><th>Tasks Completed</th><th>Tasks Pending</th><th>Status</th><th>Hours</th></tr>
     """
     
     for i, (_, row) in enumerate(summary_df.iterrows()):
-        html += f"""
-        <tr>
-            <td>{i+1}</td>
-            <td>{row['University']}</td>
-            <td>{row['Nodal Officer']}</td>
-            <td>{row['Completed']}</td>
-            <td>{row['Pending']}</td>
-            <td>{row['Completion %']}%</td>
-            <td>{row['Total Hours']}</td>
-        </tr>
-        """
+        html += f"<tr><td>{i+1}</td><td>{row['University']}</td><td>{row['Nodal Officer']}</td><td>{row['Completed Tasks']}</td><td>{row['Pending Tasks']}</td><td>{row['Status']}</td><td>{row['Total Hours Invested']}</td></tr>"
     
     html += f"""
         </table>
         
-        <!-- Major Deliverables Status -->
         <div class="section-title">Major Deliverables Status</div>
         <table>
             <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Status</th><th>Due Date</th></tr>
-    """
-    
-    # Calculate average progress for each deliverable across universities
-    avg_completion = summary_df["Completion %"].mean() if not summary_df.empty else 0
-    
-    deliverables = [
-        (1, "Inception Report and Deployment Plan", f"{min(100, round(avg_completion, 1))}% Complete", "June 6, 2026"),
-        (2, "Diagnostic Assessment Reports", f"{min(100, round(avg_completion * 0.7, 1))}% Complete", "July 6, 2026"),
-        (3, "Institutional Development Plans (IDPs)", f"{min(100, round(avg_completion * 0.3, 1))}% Complete", "August 15, 2026"),
-        (4, "GRDAUs Establishment", f"{min(100, round(avg_completion * 0.25, 1))}% Complete", "July 6, 2026"),
-        (5, "Monthly Progress Report (May 2026)", f"{min(100, round(avg_completion * 0.8, 1))}% Complete", "June 10, 2026"),
-    ]
-    
-    for sr, deliverable, status, due_date in deliverables:
-        html += f"<tr><td>{sr}</td><td>{deliverable}</td><td>{status}</td><td>{due_date}</td></tr>"
-    
-    html += f"""
+            <tr><td>1</td><td>Inception Report and Deployment Plan</td><td>{'Completed' if total_completed >= total_planned * 0.6 else 'In Progress'}</td><td>June 6, 2026</td></tr>
+            <tr><td>2</td><td>Diagnostic Assessment Reports</td><td>In Progress</td><td>July 6, 2026</td></tr>
+            <tr><td>3</td><td>Institutional Development Plans (IDPs)</td><td>Not Started</td><td>August 15, 2026</td></tr>
+            <tr><td>4</td><td>GRDAUs Establishment</td><td>Planning Phase</td><td>July 6, 2026</td></tr>
+            <tr><td>5</td><td>Monthly Progress Report (May 2026)</td><td>In Progress</td><td>June 10, 2026</td></tr>
         </table>
         
-        <!-- Training Programs -->
         <div class="section-title">Training Programs Conducted (May 2026)</div>
         <table>
             <tr><th>Date</th><th>Topic</th><th>Participants</th><th>Status</th></tr>
@@ -1138,6 +915,14 @@ def generate_consolidated_report_html():
             <tr><td>May 15, 2026</td><td>Graduation Outcomes (GO) & Outreach (OI) Parameters</td><td>All Coordinators</td><td>Completed</td></tr>
         </table>
         
+        <div class="section-title">Plan for June 2026</div>
+        <table>
+            <tr><th>Activity</th><th>Target Completion</th><th>Responsible</th></tr>
+            <tr><td>Complete NIRF data collection</td><td>June 15, 2026</td><td>All Coordinators</td></tr>
+            <tr><td>Submit Diagnostic Assessment Reports</td><td>June 30, 2026</td><td>ICARE Team</td></tr>
+            <tr><td>Finalize GRDAU team compositions</td><td>June 30, 2026</td><td>ICARE Team + Universities</td></tr>
+        </table>
+        
         <div class="footer">
             This consolidated report is submitted as per SOP Section 2 - Monthly Progress Report (MPR)<br>
             Report generated on {datetime.now().strftime('%d-%b-%Y %H:%M:%S')}
@@ -1145,21 +930,23 @@ def generate_consolidated_report_html():
     </body>
     </html>
     """
-    
     return html
 
 def get_html_download_link(html_content, filename):
-    """Generate download link for HTML content"""
     b64 = base64.b64encode(html_content.encode()).decode()
-    href = f'<a href="data:text/html;base64,{b64}" download="{filename}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📥 Download {filename}</a>'
-    return href
+    return f'<a href="data:text/html;base64,{b64}" download="{filename}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📥 Download {filename}</a>'
+
+def show_sangam_info():
+    st.markdown('<div class="sangam-card">', unsafe_allow_html=True)
+    st.markdown("### 🎉 SANGAM Orientation & Training Program")
+    st.markdown(f"**Dates:** May 5-6, 2026 | **Location:** Mumbai")
+    st.markdown("✅ **Status:** Completed successfully")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def create_admin_dashboard():
     st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2><p>Complete Project Analytics & Reports</p></div>', unsafe_allow_html=True)
+    st.markdown('<span class="storage-status storage-connected">✅ Persistent Storage Active</span>', unsafe_allow_html=True)
     
-    st.markdown('<span class="storage-status storage-connected">✅ Persistent Storage Active - Fresh Start Mode</span>', unsafe_allow_html=True)
-    
-    # Add reset button in sidebar
     with st.sidebar:
         st.markdown("---")
         st.markdown("### 🗑️ Data Management")
@@ -1167,42 +954,35 @@ def create_admin_dashboard():
             if reset_all_data():
                 st.success("✅ All data has been reset! Starting fresh.")
                 st.rerun()
-            else:
-                st.error("Failed to reset data")
     
     show_sangam_info()
-    
     st.markdown("---")
     
     col1, col2, col3, col4 = st.columns(4)
-    with col1:
+    total_unis = len(UNIVERSITIES)
+    total_planned = len(get_all_planned_dates()) * total_unis
+    summary_df = get_summary_stats()
+    total_completed = summary_df["Completed Tasks"].sum() if not summary_df.empty else 0
+    pending = total_planned - total_completed
+    
+    with col1: 
         st.metric("Project Phase", "May 7-31, 2026")
-    with col2:
-        total_unis = len(UNIVERSITIES)
+    with col2: 
         st.metric("Universities", f"{total_unis}")
-    with col3:
-        total_planned = len(get_all_planned_dates()) * total_unis
+    with col3: 
         st.metric("Total Tasks", total_planned)
-    with col4:
-        summary_df = get_summary_stats()
-        total_completed = summary_df["Completed"].sum() if not summary_df.empty else 0
-        st.metric("Tasks Completed", total_completed)
+    with col4: 
+        st.metric("Completed Tasks", total_completed, delta=f"{pending} remaining")
     
     st.markdown("---")
     
     tab1, tab2, tab3 = st.tabs(["📊 Progress Overview", "🏛️ University Details", "📄 Generate Reports"])
     
     with tab1:
-        st.subheader("Progress Overview")
-        
         daily_df = get_daily_progress_data()
         if not daily_df.empty:
-            daily_summary = daily_df.groupby("Date").agg({
-                "Task": "count",
-                "Hours": "sum"
-            }).reset_index()
+            daily_summary = daily_df.groupby("Date").agg({"Task": "count", "Hours": "sum"}).reset_index()
             daily_summary.columns = ["Date", "Tasks Logged", "Total Hours"]
-            
             col1, col2 = st.columns(2)
             with col1:
                 fig1 = px.bar(daily_summary, x="Date", y="Tasks Logged", title="Daily Tasks Logged", color="Tasks Logged", height=400)
@@ -1211,122 +991,134 @@ def create_admin_dashboard():
                 fig2 = px.line(daily_summary, x="Date", y="Total Hours", title="Daily Hours Invested", markers=True, height=400)
                 st.plotly_chart(fig2, use_container_width=True)
         
-        summary_df = get_summary_stats()
         if not summary_df.empty:
-            fig3 = px.bar(summary_df, x="University", y="Completion %", title="University-wise Progress", color="Completion %", text="Completion %", height=500)
-            fig3.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+            fig3 = px.bar(summary_df, x="University", y="Completed Tasks", title="University-wise Completed Tasks", color="Completed Tasks", text="Completed Tasks", height=500)
+            fig3.update_traces(texttemplate='%{text}', textposition='outside')
             st.plotly_chart(fig3, use_container_width=True)
             st.dataframe(summary_df, use_container_width=True)
     
     with tab2:
-        st.subheader("University-wise Detailed Progress")
-        
         selected_uni = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
         if selected_uni:
             df = get_university_entries(selected_uni)
             if not df.empty:
                 st.dataframe(df, use_container_width=True)
-                
-                pending = get_pending_tasks_for_coordinator(selected_uni)
-                if pending:
-                    st.subheader("Pending Tasks")
-                    pending_df = pd.DataFrame(pending)
-                    st.dataframe(pending_df[["date", "task", "category"]], use_container_width=True)
-                else:
-                    st.success("All tasks completed!")
             else:
-                st.info("No entries logged yet. Coordinators need to log their work.")
+                st.info("No entries logged yet")
     
     with tab3:
         st.subheader("📄 Generate Monthly Progress Reports")
-        st.markdown("Generate detailed reports in HTML format (can be printed as PDF or copied to Word)")
+        st.markdown("Generate complete MPR in Annexure C format (HTML - can be printed as PDF or copied to Word)")
         
-        st.markdown("### Individual University Reports")
-        selected_uni_report = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"], key="report_uni")
-        if st.button("Generate University Report", use_container_width=True):
-            with st.spinner("Generating report..."):
-                html_content = generate_university_report_html(selected_uni_report)
-                filename = f"MPR_{UNIVERSITIES[selected_uni_report]['name'].replace(' ', '_')}_May2026.html"
+        st.markdown("### Individual University Report")
+        selected_uni = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"], key="report_uni")
+        if st.button("Generate University MPR", use_container_width=True):
+            with st.spinner("Generating MPR..."):
+                html_content = generate_complete_mpr_html(selected_uni)
+                filename = f"MPR_{UNIVERSITIES[selected_uni]['name'].replace(' ', '_')}_May2026.html"
                 st.markdown(get_html_download_link(html_content, filename), unsafe_allow_html=True)
-                st.success("Report generated! Click the download link above.")
+                st.success("MPR generated! Click the download link above.")
         
         st.markdown("---")
         st.markdown("### Consolidated Report (All Universities)")
-        if st.button("Generate Consolidated Report", use_container_width=True):
-            with st.spinner("Generating consolidated report..."):
-                html_content = generate_consolidated_report_html()
+        if st.button("Generate Consolidated MPR", use_container_width=True):
+            with st.spinner("Generating consolidated MPR..."):
+                html_content = generate_consolidated_mpr_html()
                 filename = "Consolidated_MPR_All_Universities_May2026.html"
                 st.markdown(get_html_download_link(html_content, filename), unsafe_allow_html=True)
-                st.success("Consolidated report generated! Click the download link above.")
+                st.success("Consolidated MPR generated! Click the download link above.")
         
-        st.info("💡 **How to use:** Click the download link to save the HTML file. You can then open it in any browser and print as PDF or copy to Microsoft Word.")
+        st.info("💡 **How to use:** Download the HTML file, open in browser, and print as PDF or copy to Microsoft Word.")
 
 def create_project_lead_dashboard():
-    st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard - Dr. Harshal Kotwal</h2><p>Monitor Progress & Manage Reports</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard - Dr. Harshal Kotwal</h2><p>Submit Team Attendance & Manage MPR Data</p></div>', unsafe_allow_html=True)
     
     show_sangam_info()
-    
     st.markdown("---")
     
-    col1, col2, col3 = st.columns(3)
-    total_planned = len(get_all_planned_dates()) * len(UNIVERSITIES)
-    summary_df = get_summary_stats()
-    total_completed = summary_df["Completed"].sum() if not summary_df.empty else 0
-    overall_pct = round(total_completed / total_planned * 100, 1) if total_planned > 0 else 0
-    
-    with col1:
-        st.metric("Total Planned Tasks", total_planned)
-    with col2:
-        st.metric("Tasks Completed", total_completed)
-    with col3:
-        st.metric("Overall Progress", f"{overall_pct}%")
-    
-    st.progress(overall_pct / 100)
-    
-    st.markdown("---")
-    
-    tab1, tab2, tab3 = st.tabs(["📊 Progress Overview", "📋 Training Programs", "📄 Reports"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📋 Team Attendance", "📝 MPR Data Entry", "📊 Progress Overview", "📄 Reports"])
     
     with tab1:
+        st.subheader("Submit Team Attendance for May 2026")
+        st.markdown("Enter attendance details for each team member. This will appear in the MPR Project Team Deployment table.")
+        
+        attendance_data = load_team_attendance()
+        
+        for team_type, members in TEAM_MEMBERS.items():
+            if team_type == "MITRA":
+                st.markdown(f"### MITRA Level")
+            else:
+                uni_name = UNIVERSITIES.get(team_type, {}).get("name", team_type)
+                st.markdown(f"### {uni_name}")
+            
+            for member in members:
+                with st.expander(f"{member['name']} - {member['profile']}"):
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        present = st.number_input(f"Present Days", min_value=0, max_value=31, value=attendance_data.get(team_type, {}).get(member['name'], {}).get('present_days', 20), key=f"present_{team_type}_{member['name']}")
+                    with col2:
+                        absent = st.number_input(f"Absent Days", min_value=0, max_value=31, value=attendance_data.get(team_type, {}).get(member['name'], {}).get('absent_days', 0), key=f"absent_{team_type}_{member['name']}")
+                    with col3:
+                        holidays = st.number_input(f"Holidays/Weekoffs", min_value=0, max_value=31, value=attendance_data.get(team_type, {}).get(member['name'], {}).get('holidays', 6), key=f"holidays_{team_type}_{member['name']}")
+                    
+                    if st.button(f"Save Attendance for {member['name']}", key=f"save_{team_type}_{member['name']}"):
+                        update_team_attendance(team_type, member['name'], present, absent, holidays)
+                        st.success(f"Attendance saved for {member['name']}")
+        
+        st.info("📌 **Note:** Total working days in May 2026 = 31 days. Weekends (Saturdays & Sundays) = 8 days, so expected working days = 23.")
+    
+    with tab2:
+        st.subheader("MPR Header Information")
+        st.markdown("Enter the work order and project details for the MPR.")
+        
+        mpr_data = load_mpr_data()
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            work_order_ref = st.text_input("Work Order Reference", value=mpr_data.get("work_order_ref", "MITRA/Research/MahaSTRIDE/EduRFP/49/2025"))
+            period_start = st.date_input("Reporting Period Start", value=datetime.strptime(mpr_data.get("period_start", "2026-05-07"), "%Y-%m-%d").date())
+        with col2:
+            work_order_date = st.text_input("Work Order Date", value=mpr_data.get("work_order_date", "11-05-2026"))
+            period_end = st.date_input("Reporting Period End", value=datetime.strptime(mpr_data.get("period_end", "2026-05-31"), "%Y-%m-%d").date())
+        
+        if st.button("Save MPR Header Information", use_container_width=True):
+            mpr_data["work_order_ref"] = work_order_ref
+            mpr_data["work_order_date"] = work_order_date
+            mpr_data["period_start"] = period_start.strftime("%Y-%m-%d")
+            mpr_data["period_end"] = period_end.strftime("%Y-%m-%d")
+            save_mpr_data(mpr_data)
+            st.success("MPR header information saved!")
+    
+    with tab3:
+        summary_df = get_summary_stats()
         if not summary_df.empty:
-            fig = px.bar(summary_df, x="University", y="Completion %", title="University-wise Progress", color="Completion %", text="Completion %", height=500)
-            fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+            fig = px.bar(summary_df, x="University", y="Completed Tasks", title="University-wise Completed Tasks", color="Completed Tasks", text="Completed Tasks", height=500)
+            fig.update_traces(texttemplate='%{text}', textposition='outside')
             st.plotly_chart(fig, use_container_width=True)
             st.dataframe(summary_df, use_container_width=True)
     
-    with tab2:
-        st.subheader("Training Programs Conducted (May 12-15, 2026)")
-        
-        training_data = [
-            {"Date": "May 12, 2026", "Topic": "NIRF Framework & Formula Interpretation", "Duration": "4 hours", "Status": "Completed"},
-            {"Date": "May 13, 2026", "Topic": "Teaching, Learning & Resources (TLR) Parameter", "Duration": "4 hours", "Status": "Completed"},
-            {"Date": "May 14, 2026", "Topic": "Research & Professional Practice (RP) Parameter", "Duration": "4 hours", "Status": "Completed"},
-            {"Date": "May 15, 2026", "Topic": "Graduation Outcomes (GO) & Outreach (OI) Parameters", "Duration": "4 hours", "Status": "Completed"},
-        ]
-        
-        training_df = pd.DataFrame(training_data)
-        st.dataframe(training_df, use_container_width=True)
-    
-    with tab3:
-        st.subheader("📄 Generate Reports")
+    with tab4:
+        st.subheader("📄 Generate Monthly Progress Reports")
         
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("### Individual University Report")
             selected_uni = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
-            if st.button("Generate Report", use_container_width=True):
-                with st.spinner("Generating..."):
-                    html_content = generate_university_report_html(selected_uni)
+            if st.button("Generate University MPR", use_container_width=True):
+                with st.spinner("Generating MPR..."):
+                    html_content = generate_complete_mpr_html(selected_uni)
                     filename = f"MPR_{UNIVERSITIES[selected_uni]['name'].replace(' ', '_')}_May2026.html"
                     st.markdown(get_html_download_link(html_content, filename), unsafe_allow_html=True)
+                    st.success("MPR generated!")
         
         with col2:
             st.markdown("### Consolidated Report")
-            if st.button("Generate Consolidated Report", use_container_width=True):
-                with st.spinner("Generating..."):
-                    html_content = generate_consolidated_report_html()
+            if st.button("Generate Consolidated MPR", use_container_width=True):
+                with st.spinner("Generating consolidated MPR..."):
+                    html_content = generate_consolidated_mpr_html()
                     filename = "Consolidated_MPR_All_Universities_May2026.html"
                     st.markdown(get_html_download_link(html_content, filename), unsafe_allow_html=True)
+                    st.success("Consolidated MPR generated!")
 
 def create_coordinator_dashboard(university_code, coordinator_name):
     st.markdown('<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>Log Your Daily Work</p></div>', unsafe_allow_html=True)
@@ -1335,133 +1127,104 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     st.markdown(f"**🏛️ University:** {uni_info['name']}")
     st.markdown(f"**👤 Coordinator:** {coordinator_name}")
     st.markdown(f"**📌 Nodal Officer:** {uni_info['nodal_officer']}")
-    
     st.info(f"⏰ **Working Hours:** {WORKING_HOURS} | Daily Stand-up: 10:30-11:00 AM with ICARE Team Only")
     
     st.markdown("---")
-    
     st.subheader("📋 Daily Work Routine")
     st.markdown(DAILY_ROUTINE)
-    
     st.markdown("---")
     
     pending_tasks = get_pending_tasks_for_coordinator(university_code)
     completed_entries = get_university_entries(university_code)
     total_planned = len(get_all_planned_dates())
     completed_count = len(completed_entries)
+    pending_count = total_planned - completed_count
     
     col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("📋 Total Phase 1 Tasks", total_planned)
-    with col2:
+    with col1: 
+        st.metric("📋 Total Tasks", total_planned)
+    with col2: 
         st.metric("✅ Completed", completed_count)
-    with col3:
-        st.metric("⏳ Pending", total_planned - completed_count)
+    with col3: 
+        st.metric("⏳ Pending", pending_count)
     
-    st.progress(completed_count / total_planned if total_planned > 0 else 0)
+    if total_planned > 0:
+        progress_ratio = completed_count / total_planned
+        st.progress(progress_ratio)
+        if progress_ratio == 1.0:
+            st.success("🎉 Congratulations! You have completed all tasks!")
+        elif progress_ratio >= 0.5:
+            st.info(f"📈 Good progress! {pending_count} task(s) remaining.")
+        else:
+            st.warning(f"⚠️ {pending_count} task(s) pending. Keep going!")
     
     st.markdown("---")
     
     st.subheader("📋 YOUR PENDING TASKS")
     
     if pending_tasks:
-        st.warning(f"⚠️ You have **{len(pending_tasks)} pending tasks**. Please log them below.")
-        
-        selected_date_str = st.selectbox(
-            "Select Date to Log Work",
-            [task["date"] for task in pending_tasks],
-            format_func=lambda x: f"📅 {x} - {next((t['task'][:50] for t in pending_tasks if t['date'] == x), '')}"
-        )
+        selected_date_str = st.selectbox("Select Date to Log Work", [task["date"] for task in pending_tasks])
         
         if selected_date_str:
             selected_task = next((t for t in pending_tasks if t["date"] == selected_date_str), None)
             if selected_task:
-                selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d")
-                
                 st.markdown(f"""
                 <div class="default-task-card">
-                    <strong>📋 TASK FOR {selected_date_str} ({selected_date.strftime('%A')})</strong><br><br>
+                    <strong>📋 TASK FOR {selected_task['date']}</strong><br><br>
                     <strong>🎯 Task:</strong> {selected_task['task']}<br>
                     <strong>📂 Category:</strong> {selected_task['category']}<br>
-                    <strong>📝 Description:</strong> {selected_task['description']}<br>
-                    <strong>📎 Expected Deliverables:</strong> {selected_task['deliverables']}
+                    <strong>📝 Description:</strong> {selected_task['description']}
                 </div>
                 """, unsafe_allow_html=True)
                 
-                with st.form("log_pending_task_form"):
-                    use_planned = st.radio(
-                        "Did you complete the planned task?",
-                        ["✅ Yes, I completed the planned task", "🔄 No, I want to log a different task"],
-                        horizontal=True
-                    )
+                with st.form("log_task_form"):
+                    use_planned = st.radio("Did you complete the planned task?", ["✅ Yes", "🔄 No"], horizontal=True)
                     
-                    if use_planned == "✅ Yes, I completed the planned task":
+                    if use_planned == "✅ Yes":
                         task_category = selected_task['category']
                         task_name = selected_task['task']
                         description = selected_task['description']
                         deliverables = selected_task['deliverables']
                         swapped = False
-                        st.success(f"✅ Using planned task: **{task_name}**")
                     else:
                         task_category = st.selectbox("Task Category", list(TASK_CATEGORIES.keys()))
-                        suggested_tasks = TASK_CATEGORIES.get(task_category, [])
-                        task_name = st.selectbox("Task", ["-- Select --"] + suggested_tasks)
-                        if task_name == "-- Select --":
-                            task_name = st.text_input("Or enter custom task")
-                        description = st.text_area("Detailed Description", height=100)
-                        deliverables = st.text_area("Deliverables Produced", height=80)
+                        task_name = st.text_input("Task")
+                        description = st.text_area("Description", height=100)
+                        deliverables = st.text_area("Deliverables", height=80)
                         swapped = True
                     
                     col1, col2 = st.columns(2)
-                    with col1:
+                    with col1: 
                         status = st.selectbox("Status", ["completed"], index=0)
-                    with col2:
+                    with col2: 
                         hours_spent = st.number_input("Hours Spent", min_value=0.5, max_value=12.0, step=0.5, value=8.0)
+                    remarks = st.text_area("Remarks")
                     
-                    remarks = st.text_area("Additional Remarks")
-                    
-                    if st.form_submit_button("✅ Submit Work Log", use_container_width=True):
-                        if use_planned == "✅ Yes, I completed the planned task":
-                            if log_daily_entry(university_code, selected_date_str, selected_task['category'], selected_task['task'],
-                                              selected_task['description'], selected_task['deliverables'], 
-                                              status, hours_spent, remarks, False, False, coordinator_name):
-                                st.success(f"✅ Work for {selected_date_str} logged successfully!")
+                    if st.form_submit_button("✅ Submit Work Log"):
+                        if use_planned == "✅ Yes":
+                            if log_daily_entry(university_code, selected_task['date'], selected_task['category'], selected_task['task'],
+                                              selected_task['description'], selected_task['deliverables'], status, hours_spent, remarks, False, False, coordinator_name):
+                                st.success("Work logged successfully!")
                                 st.balloons()
                                 st.rerun()
                         else:
-                            if task_name and task_name != "-- Select --":
-                                if log_daily_entry(university_code, selected_date_str, task_category, task_name, description, 
-                                                  deliverables, status, hours_spent, remarks, swapped, True, coordinator_name):
-                                    st.success(f"✅ Work for {selected_date_str} logged successfully!")
+                            if task_name:
+                                if log_daily_entry(university_code, selected_task['date'], task_category, task_name, description, deliverables, status, hours_spent, remarks, True, True, coordinator_name):
+                                    st.success("Work logged successfully!")
                                     st.balloons()
                                     st.rerun()
-                            else:
-                                st.error("Please enter a task")
     else:
-        st.success("🎉 Congratulations! You have completed all Phase 1 tasks!")
+        st.success("🎉 Congratulations! You have completed all tasks!")
     
     st.markdown("---")
-    
     with st.expander("📋 View Your Completed Entries", expanded=False):
         df = get_university_entries(university_code)
         if not df.empty:
             st.dataframe(df, use_container_width=True)
-        else:
-            st.info("No entries logged yet")
-    
-    st.markdown("---")
-    st.subheader("📅 Training Programs Attended")
-    st.info("""
-    **Training Programs Completed (May 12-15, 2026):**
-    - May 12: NIRF Framework & Formula Interpretation
-    - May 13: Teaching, Learning & Resources (TLR) Parameter
-    - May 14: Research & Professional Practice (RP) Parameter
-    - May 15: Graduation Outcomes (GO) & Outreach (OI) Parameters
-    """)
     
     st.markdown("---")
     st.subheader("📅 MPR Submission Reminder")
-    st.warning("📋 **Note:** As per SOP Section 1 & 2, approved attendance and MPR must reach PMU MahaSTRIDE by the 10th of June 2026.")
+    st.warning("📋 As per SOP Section 1 & 2, approved MPR must reach PMU MahaSTRIDE by the 10th of June 2026.")
 
 def main():
     if "authenticated" not in st.session_state:
@@ -1515,21 +1278,8 @@ def main():
     with st.sidebar:
         st.title("📊 mahaSTRIDE")
         st.markdown(f"**Welcome, {user_name}**")
-        
-        if user_role == "admin":
-            st.markdown("*Role: Admin*")
-        elif user_role == "project_lead":
-            st.markdown("*Role: Project Lead*")
-        else:
-            st.markdown("*Role: Coordinator*")
-            if "user_university" in st.session_state:
-                uni = st.session_state["user_university"]
-                st.markdown(f"*University: {UNIVERSITIES[uni]['name'][:30]}...*")
-        
-        st.markdown("---")
         st.markdown(f"**Today:** {datetime.now().strftime('%d-%b-%Y')}")
         st.markdown("**Phase 1:** May 7-31, 2026")
-        
         st.markdown("---")
         
         if user_role == "admin":
@@ -1542,8 +1292,6 @@ def main():
         st.markdown("---")
         st.caption(f"⏰ {WORKING_HOURS}")
         st.caption("🔄 Stand-up: 10:30-11:00 AM")
-        
-        st.markdown("---")
         
         if st.button("🚪 Logout", use_container_width=True):
             for key in ["authenticated", "user_email", "user_role", "user_name", "user_university"]:
@@ -1559,22 +1307,16 @@ def main():
             st.markdown("""
             ### mahaSTRIDE Project Tracker
             
-            **Phase 1:** May 7-31, 2026
+            **Complete MPR Generation in Annexure C Format**
+            - Project Team Deployment table included
+            - Major Activities, Meetings, Deliverables sections
+            - Risk Management and Initiatives tracking
+            - Signatures section for approvals
             
-            **Participating Universities:**
-            - University of Mumbai
-            - Savitribai Phule Pune University
-            - COEP Technological University
-            - Sant Gadge Baba Amravati University
-            - Rashtrasant Tukadoji Maharaj Nagpur University
-            - KBCNMU Jalgaon
-            - BAMU Aurangabad
-            
-            **Features:**
-            - ✅ **Fresh Start Mode** - All data reset
-            - 📊 Dynamic progress tracking based on actual logged work
-            - 📄 Generate reports with real completion percentages
-            - 🔄 Reset data anytime from sidebar
+            **How to Use:**
+            1. Project Lead submits team attendance
+            2. Coordinators log daily tasks
+            3. Generate complete MPR with all sections
             """)
     
     elif user_role == "project_lead":
@@ -1585,14 +1327,22 @@ def main():
             st.markdown("""
             ### Project Lead Dashboard
             
-            **Features:**
-            - Monitor progress across all universities
-            - View training program details
-            - Generate university-wise and consolidated reports
-            - Reports show dynamic completion percentages
+            **Your Responsibilities:**
+            1. Submit team attendance for all members
+            2. Enter MPR header information (Work Order, dates)
+            3. Generate MPR reports
+            
+            **The MPR includes:**
+            - Project Team Deployment table
+            - Major Activities section
+            - Minutes of Meetings
+            - Major Deliverables status
+            - Risk Management
+            - Status of Initiatives
+            - Approvals and Signatures
             """)
     
-    else:  # coordinator
+    else:
         university_code = st.session_state.get("user_university")
         if not university_code:
             st.error("University not assigned. Please contact admin.")
@@ -1604,50 +1354,40 @@ def main():
                 df = get_university_entries(university_code)
                 if not df.empty:
                     st.dataframe(df, use_container_width=True)
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        completed = len(df[df["Status"] == "COMPLETED"])
-                        total_planned = len(get_all_planned_dates())
-                        st.metric("Completed Tasks", f"{completed}/{total_planned}")
-                    with col2:
-                        total_hours = df["Hours Spent"].sum() if "Hours Spent" in df.columns else 0
-                        st.metric("Total Hours", f"{total_hours:.1f}")
-                    
-                    # Training tasks summary
-                    training_tasks = df[df["Task Category"] == "TRAINING"]
-                    if not training_tasks.empty:
-                        st.subheader("Training Programs Completed")
-                        st.dataframe(training_tasks[["Date", "Task", "Status"]], use_container_width=True)
+                    completed = len(df[df["Status"] == "COMPLETED"])
+                    total_planned = len(get_all_planned_dates())
+                    st.metric("Completed Tasks", f"{completed}/{total_planned}")
                 else:
                     st.info("No entries logged yet")
             else:
                 st.title("ℹ️ About")
-                st.markdown(f"""
+                st.markdown("""
                 ### Coordinator Dashboard
-                
-                **University:** {UNIVERSITIES[university_code]['name']}
-                **Nodal Officer:** {UNIVERSITIES[university_code]['nodal_officer']}
-                
-                **Phase 1 (May 7-31, 2026):**
-                - Setup and onboarding
-                - Training programs (May 12-15)
-                - NIRF data collection
-                - Gap analysis and reporting
                 
                 **How to Log Work:**
                 1. Select a date from pending tasks
                 2. Confirm if you completed the planned task
                 3. Add hours spent and submit
+                
+                **Training Completed (May 12-15, 2026):**
+                - NIRF Framework & Formula Interpretation
+                - Teaching, Learning & Resources (TLR)
+                - Research & Professional Practice (RP)
+                - Graduation Outcomes (GO) & Outreach (OI)
                 """)
 
 if __name__ == "__main__":
-    # Initialize fresh data files if they don't exist
-    if not os.path.exists(PROGRESS_DATA_FILE):
-        save_progress_data(create_initial_progress_data())
-    if not os.path.exists(ASSIGNMENTS_DATA_FILE):
-        save_assignments_data(create_initial_assignments_data())
-    if not os.path.exists(CUSTOM_TASKS_DATA_FILE):
-        save_custom_tasks_data(create_initial_custom_tasks_data())
+    for file in [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE, TEAM_ATTENDANCE_FILE, MPR_DATA_FILE]:
+        if not os.path.exists(file):
+            if file == PROGRESS_DATA_FILE:
+                save_progress_data(create_initial_progress_data())
+            elif file == ASSIGNMENTS_DATA_FILE:
+                save_assignments_data(create_initial_assignments_data())
+            elif file == CUSTOM_TASKS_DATA_FILE:
+                save_custom_tasks_data(create_initial_custom_tasks_data())
+            elif file == TEAM_ATTENDANCE_FILE:
+                save_team_attendance(create_initial_team_attendance())
+            elif file == MPR_DATA_FILE:
+                save_mpr_data(create_initial_mpr_data())
     
     main()
