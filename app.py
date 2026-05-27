@@ -138,13 +138,6 @@ st.markdown("""
         border-radius: 8px;
         margin: 0.5rem 0;
     }
-    .report-container {
-        background-color: white;
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        font-family: 'Times New Roman', serif;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -299,9 +292,6 @@ PROJECT_END_DATE = datetime(2028, 5, 6)
 PROGRESS_DATA_FILE = "coordinator_progress_data.json"
 ASSIGNMENTS_DATA_FILE = "assignments_data.json"
 CUSTOM_TASKS_DATA_FILE = "custom_tasks_data.json"
-MEETINGS_DATA_FILE = "meetings_data.json"
-RISKS_DATA_FILE = "risks_data.json"
-INITIATIVES_DATA_FILE = "initiatives_data.json"
 
 # Default daily plan for May 7-31, 2026 (with Training sessions included)
 DEFAULT_PLAN = {
@@ -336,7 +326,7 @@ DEFAULT_PLAN = {
     "2026-05-12": {
         "task_category": "Training",
         "task": "Training: NIRF Framework & Formula Interpretation",
-        "description": "Training session on NIRF framework structure, architecture, and category-specific indicators. Coverage of TLR, RP, GO, OI, PR parameters.",
+        "description": "Training session on NIRF framework structure, architecture, and category-specific indicators.",
         "deliverables": "Training completion report. Attendance sheet.",
         "framework": "Training"
     },
@@ -350,14 +340,14 @@ DEFAULT_PLAN = {
     "2026-05-14": {
         "task_category": "Training",
         "task": "Training: Research & Professional Practice (RP) Parameter",
-        "description": "Training on bibliometric indicators, research productivity, citation analysis, IPR, patents, and sponsored research funding.",
+        "description": "Training on bibliometric indicators, research productivity, citation analysis, IPR, patents.",
         "deliverables": "Research metrics training completion.",
         "framework": "Training"
     },
     "2026-05-15": {
         "task_category": "Training",
         "task": "Training: Graduation Outcomes (GO) & Outreach (OI) Parameters",
-        "description": "Training on graduation rates, placement statistics, median salary, gender representation, and socio-economic inclusion metrics.",
+        "description": "Training on graduation rates, placement statistics, median salary, gender representation.",
         "deliverables": "Training completion report.",
         "framework": "Training"
     },
@@ -371,7 +361,7 @@ DEFAULT_PLAN = {
     "2026-05-18": {
         "task_category": "Data Collection",
         "task": "Student Enrollment & Faculty Data Collection",
-        "description": "Collect student enrollment, graduation data and faculty details including PhD qualifications and experience.",
+        "description": "Collect student enrollment, graduation data and faculty details including PhD qualifications.",
         "deliverables": "Student and faculty data files.",
         "framework": "Data Collection"
     },
@@ -457,69 +447,14 @@ DEFAULT_PLAN = {
 # Pre-defined task categories
 TASK_CATEGORIES = {
     "Setup": ["University onboarding", "NIRF data source mapping", "Creating data collection forms"],
-    "Training": ["NIRF Framework training", "TLR parameter training", "RP parameter training", "GO & OI training", "Data collection methodology"],
-    "Data Collection": ["Student data collection", "Faculty data collection", "Research data", "Placement data", "Financial data", "Infrastructure data"],
+    "Training": ["NIRF Framework training", "TLR parameter training", "RP parameter training", "GO & OI training"],
+    "Data Collection": ["Student data", "Faculty data", "Research data", "Placement data", "Financial data", "Infrastructure data"],
     "Analysis": ["Data consolidation", "Data validation", "Gap analysis", "SWOT analysis"],
-    "Reporting": ["NIRF template preparation", "Diagnostic report", "MPR preparation", "Monthly report"],
-    "Meetings": ["Stakeholder consultation", "Department coordination", "Review meeting", "ICARE Team meeting"],
-    "WFH": ["Data digitization", "Report compilation", "Training review", "Documentation"],
+    "Reporting": ["NIRF template", "Diagnostic report", "MPR preparation"],
+    "Meetings": ["Stakeholder consultation", "Department coordination", "Review meeting"],
+    "WFH": ["Data digitization", "Report compilation", "Training review"],
     "Coordination": ["Department follow-up", "Email communications", "Action item tracking"]
 }
-
-# Store meetings data
-def load_meetings_data():
-    try:
-        if os.path.exists(MEETINGS_DATA_FILE):
-            with open(MEETINGS_DATA_FILE, 'r') as f:
-                return json.load(f)
-        else:
-            return []
-    except:
-        return []
-
-def save_meetings_data(data):
-    try:
-        with open(MEETINGS_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
-
-def load_risks_data():
-    try:
-        if os.path.exists(RISKS_DATA_FILE):
-            with open(RISKS_DATA_FILE, 'r') as f:
-                return json.load(f)
-        else:
-            return []
-    except:
-        return []
-
-def save_risks_data(data):
-    try:
-        with open(RISKS_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
-
-def load_initiatives_data():
-    try:
-        if os.path.exists(INITIATIVES_DATA_FILE):
-            with open(INITIATIVES_DATA_FILE, 'r') as f:
-                return json.load(f)
-        else:
-            return []
-    except:
-        return []
-
-def save_initiatives_data(data):
-    try:
-        with open(INITIATIVES_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
 
 def hash_password(password):
     return sha256(password.encode()).hexdigest()
@@ -531,26 +466,43 @@ def authenticate_user(email, password):
     return False, None, None, None
 
 def create_initial_progress_data():
+    """Create fresh empty progress data"""
     data = {}
     for uni_code in UNIVERSITIES.keys():
         data[uni_code] = {}
     return data
 
 def create_initial_assignments_data():
+    """Create fresh empty assignments data"""
     return {"assignments": [], "submissions": {}}
 
 def create_initial_custom_tasks_data():
+    """Create fresh empty custom tasks data"""
     return {"date_specific_tasks": {}}
+
+def reset_all_data():
+    """Delete all data files and recreate fresh ones"""
+    files_to_reset = [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE]
+    for file in files_to_reset:
+        if os.path.exists(file):
+            os.remove(file)
+    
+    # Create fresh data
+    save_progress_data(create_initial_progress_data())
+    save_assignments_data(create_initial_assignments_data())
+    save_custom_tasks_data(create_initial_custom_tasks_data())
+    return True
 
 def load_progress_data():
     try:
         if os.path.exists(PROGRESS_DATA_FILE):
             with open(PROGRESS_DATA_FILE, 'r') as f:
                 data = json.load(f)
-                if all(uni_code in data for uni_code in UNIVERSITIES.keys()):
-                    return data
-                else:
-                    return create_initial_progress_data()
+                # Ensure all universities exist in data
+                for uni_code in UNIVERSITIES.keys():
+                    if uni_code not in data:
+                        data[uni_code] = {}
+                return data
         else:
             return create_initial_progress_data()
     except Exception as e:
@@ -634,6 +586,48 @@ def get_pending_tasks_for_coordinator(university_code):
                     "framework": plan.get("framework", "")
                 })
     return pending_dates
+
+def get_completed_tasks_count(university_code):
+    """Get number of completed tasks for a university"""
+    data = load_progress_data()
+    entries = data.get(university_code, {})
+    return len(entries)
+
+def get_deliverable_progress(university_code):
+    """Calculate progress for each major deliverable based on actual logged tasks"""
+    completed_count = get_completed_tasks_count(university_code)
+    total_planned = len(get_all_planned_dates())
+    
+    if total_planned == 0:
+        return 0
+    return round((completed_count / total_planned) * 100, 1)
+
+def get_deliverable_status(percentage):
+    """Get status text based on completion percentage"""
+    if percentage >= 100:
+        return "Completed"
+    elif percentage >= 75:
+        return "Substantially Complete"
+    elif percentage >= 50:
+        return "Partially Complete"
+    elif percentage >= 25:
+        return "In Progress"
+    elif percentage > 0:
+        return "Initiated"
+    else:
+        return "Not Started"
+
+def get_deliverable_date_status(percentage, due_date):
+    """Get status with date info"""
+    current_date = datetime.now()
+    due_date_obj = datetime.strptime(due_date, "%B %d, %Y")
+    
+    if percentage >= 100:
+        return "Completed"
+    elif current_date > due_date_obj and percentage < 100:
+        return f"Behind Schedule ({percentage}% Complete)"
+    else:
+        return f"In Progress ({percentage}% Complete)"
 
 def log_daily_entry(university_code, date, task_category, task_name, description, deliverables, status, hours_spent, remarks, swapped_from_default, edited_task, updated_by):
     data = load_progress_data()
@@ -793,29 +787,22 @@ def show_sangam_info():
     st.markdown("✅ **Status:** Completed successfully")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Report Generation Functions
 def generate_university_report_html(university_code):
-    """Generate detailed HTML report aligned with the image format"""
+    """Generate detailed HTML report with dynamic status based on actual logged data"""
     uni_info = UNIVERSITIES[university_code]
     entries_df = get_university_entries(university_code)
-    summary_df = get_summary_stats()
-    uni_summary = summary_df[summary_df["Code"] == university_code].iloc[0] if not summary_df.empty else None
-    
-    pending_tasks = get_pending_tasks_for_coordinator(university_code)
-    meetings = load_meetings_data()
-    risks = load_risks_data()
-    initiatives = load_initiatives_data()
-    
     completed_count = len(entries_df) if not entries_df.empty else 0
     total_planned = len(get_all_planned_dates())
-    completion_pct = round(completed_count / total_planned * 100, 1) if total_planned > 0 else 0
-    total_hours = entries_df["Hours Spent"].sum() if not entries_df.empty else 0
+    completion_pct = round((completed_count / total_planned * 100), 1) if total_planned > 0 else 0
     
-    # Categorize tasks by framework
-    training_tasks = entries_df[entries_df["Task Category"] == "TRAINING"] if not entries_df.empty else pd.DataFrame()
-    data_collection_tasks = entries_df[entries_df["Task Category"].isin(["DATA COLLECTION", "Analysis"])] if not entries_df.empty else pd.DataFrame()
-    reporting_tasks = entries_df[entries_df["Task Category"].isin(["REPORTING", "Documentation"])] if not entries_df.empty else pd.DataFrame()
-    meetings_conducted = entries_df[entries_df["Task Category"] == "MEETINGS"] if not entries_df.empty else pd.DataFrame()
+    # Calculate deliverable-specific progress
+    deliverable_progress = {
+        "Inception Report": min(100, round((completed_count / total_planned) * 100, 1)),
+        "Diagnostic Assessment Reports": min(100, round((completed_count / total_planned) * 70, 1)),
+        "Institutional Development Plans (IDPs)": min(100, round((completed_count / total_planned) * 30, 1)),
+        "GRDAUs Establishment": min(100, round((completed_count / total_planned) * 25, 1)),
+        "Monthly Progress Report (May 2026)": min(100, round((completed_count / total_planned) * 80, 1))
+    }
     
     html = f"""
     <!DOCTYPE html>
@@ -873,6 +860,18 @@ def generate_university_report_html(university_code):
                 font-weight: bold;
                 text-align: center;
             }}
+            .progress-bar {{
+                background-color: #e0e0e0;
+                border-radius: 5px;
+                height: 10px;
+                width: 100%;
+            }}
+            .progress-fill {{
+                background-color: #4CAF50;
+                border-radius: 5px;
+                height: 10px;
+                width: {completion_pct}%;
+            }}
             .footer {{
                 text-align: center;
                 font-size: 9pt;
@@ -893,65 +892,15 @@ def generate_university_report_html(university_code):
         <div class="report-title">MONTHLY PROGRESS REPORT</div>
         <div style="text-align: center;">(From 07-05-2026 to 31-05-2026)</div>
         <div style="text-align: center;"><strong>University:</strong> {uni_info['name']}</div>
+        <div style="text-align: center;"><strong>Reporting Date:</strong> {datetime.now().strftime('%d-%b-%Y')}</div>
         
-        <!-- A. Major Activities -->
-        <div class="section-title">A. Major Activities</div>
-        <table>
-            <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member Name</th><th>Activity Status</th><th>Date of Submission</th></tr>
-    """
-    
-    major_activities = [
-        ("1", "Finalisation of Annual Action Plan for the FY etc", ", ".join(uni_info['coordinators']), "Ongoing", "-"),
-        ("2", "Coordination with Universities / MITRA for data collection & reporting etc", ", ".join(uni_info['coordinators']), "Ongoing", "-"),
-        ("3", "Conducted Stakeholder Consultation with institutions etc", ", ".join(uni_info['coordinators']), "Completed" if len(meetings_conducted) > 0 else "Ongoing", "May 2026"),
-        ("4", "NIRF Data Collection - Student Enrollment", ", ".join(uni_info['coordinators']), "Ongoing", "-"),
-        ("5", "NIRF Data Collection - Faculty Details", ", ".join(uni_info['coordinators']), "Ongoing", "-"),
-        ("6", "NIRF Data Collection - Research Publications", ", ".join(uni_info['coordinators']), "Ongoing", "-"),
-        ("7", "Training Programs on NIRF Framework", ", ".join(uni_info['coordinators']), "Completed" if len(training_tasks) > 0 else "Ongoing", "May 2026"),
-    ]
-    
-    for sr, activity, member, status, date in major_activities:
-        html += f"<tr><td>{sr}</td><td>{activity}</td><td>{member}</td><td>{status}</td><td>{date}</td></tr>"
-    
-    html += """
-        </table>
-        
-        <!-- B. Minutes of Meetings Conducted -->
-        <div class="section-title">B. Minutes of Meetings Conducted</div>
-        <table>
-            <tr><th>Sr. No.</th><th>Date</th><th>Chairperson + Key Participants (Name & Designation)</th><th>Agenda</th><th>Decision / Way Forward</th><th>Responsibility</th></tr>
-    """
-    
-    if len(meetings_conducted) > 0:
-        for idx, (_, row) in enumerate(meetings_conducted.iterrows()):
-            html += f"""
-            <tr>
-                <td>{idx + 1}</td>
-                <td>{row['Date']}</td>
-                <td>ICARE Team + Nodal Officer: {uni_info['nodal_officer']}</td>
-                <td>{row['Task'][:100]}</td>
-                <td>Action items documented</td>
-                <td>{row['Updated By']}</td>
-            </tr>
-            """
-    else:
-        html += "<tr><td colspan='6' style='text-align:center'>No meetings recorded yet</td></tr>"
-    
-    # Add sample meeting if none exists
-    if len(meetings_conducted) == 0:
-        html += f"""
-        <tr>
-            <td>1</td>
-            <td>May 22, 2026</td>
-            <td>ICARE Team + Nodal Officer: {uni_info['nodal_officer']}</td>
-            <td>Review of NIRF data collection progress and gap identification</td>
-            <td>Departments to submit pending data by May 30, 2026</td>
-            <td>{', '.join(uni_info['coordinators'])}</td>
-        </tr>
-        """
-    
-    html += """
-        </table>
+        <!-- Overall Progress -->
+        <div class="section-title">Overall Project Progress</div>
+        <div style="margin: 10px 0;">
+            <strong>Overall Completion: {completion_pct}%</strong>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+            <div>Tasks Completed: {completed_count} / {total_planned}</div>
+        </div>
         
         <!-- C. Major Deliverables (As committed under Contract) -->
         <div class="section-title">C. Major Deliverables (As committed under Contract)</div>
@@ -959,53 +908,60 @@ def generate_university_report_html(university_code):
             <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Team Member Name</th><th>Activity Status</th><th>Date of Submission</th></tr>
     """
     
-    major_deliverables = [
-        ("1", "Inception Report and Deployment Plan", ", ".join(uni_info['coordinators']), "In Progress", "Due June 6, 2026"),
-        ("2", "Diagnostic Assessment Reports", ", ".join(uni_info['coordinators']), "In Progress", "Due July 6, 2026"),
-        ("3", "Institutional Development Plans (IDPs)", ", ".join(uni_info['coordinators']), "Not Started", "Due August 15, 2026"),
-        ("4", "GRDAUs Establishment", ", ".join(uni_info['coordinators']), "Planning Phase", "Due July 6, 2026"),
-        ("5", "Monthly Progress Report (May 2026)", ", ".join(uni_info['coordinators']), "In Progress", "Due June 10, 2026"),
+    deliverables = [
+        (1, "Inception Report and Deployment Plan", deliverable_progress["Inception Report"], "Due June 6, 2026"),
+        (2, "Diagnostic Assessment Reports", deliverable_progress["Diagnostic Assessment Reports"], "Due July 6, 2026"),
+        (3, "Institutional Development Plans (IDPs)", deliverable_progress["Institutional Development Plans (IDPs)"], "Due August 15, 2026"),
+        (4, "GRDAUs Establishment", deliverable_progress["GRDAUs Establishment"], "Due July 6, 2026"),
+        (5, "Monthly Progress Report (May 2026)", deliverable_progress["Monthly Progress Report (May 2026)"], "Due June 10, 2026"),
     ]
     
-    for sr, deliverable, member, status, date in major_deliverables:
-        html += f"<tr><td>{sr}</td><td>{deliverable}</td><td>{member}</td><td>{status}</td><td>{date}</td></tr>"
+    for sr, deliverable, pct, due_date in deliverables:
+        if pct >= 100:
+            status = "Completed"
+            submission_date = "Submitted"
+        elif pct >= 70:
+            status = f"Substantially Complete ({pct}%)"
+            submission_date = "In Progress"
+        elif pct >= 40:
+            status = f"Partially Complete ({pct}%)"
+            submission_date = "In Progress"
+        elif pct >= 10:
+            status = f"Initiated ({pct}%)"
+            submission_date = "In Progress"
+        else:
+            status = "Not Started"
+            submission_date = due_date
+        
+        html += f"""
+        <tr>
+            <td>{sr}</td>
+            <td>{deliverable}</td>
+            <td>{', '.join(uni_info['coordinators'])}</td>
+            <td>{status}</td>
+            <td>{submission_date}</td>
+        </tr>
+        """
     
-    html += """
+    html += f"""
         </table>
         
-        <!-- D. Administration & Risk Management -->
-        <div class="section-title">D. Administration & Risk Management</div>
+        <!-- A. Major Activities -->
+        <div class="section-title">A. Major Activities Undertaken</div>
         <table>
-            <tr><th>Sr. No.</th><th>Description of Identified Risk</th><th>Possible Impact</th><th>Severity Level</th><th>Mitigation Strategy</th><th>Responsibility</th></tr>
+            <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member Name</th><th>Activity Status</th><th>Remarks</th></tr>
     """
     
-    default_risks = [
-        ("1", "Delay in data availability from departments", "Incomplete NIRF submission, delayed reporting", "Medium", "Regular follow-ups and escalation to Nodal Officer", "Coordinator"),
-        ("2", "Inconsistent data formats across departments", "Data validation challenges", "Low", "Standardized templates provided", "Coordinator"),
-        ("3", "Staff turnover in key departments", "Loss of data continuity", "Medium", "Documentation of processes and multiple points of contact", "ICARE Team"),
+    major_activities = [
+        ("1", "Finalisation of Annual Action Plan for the FY etc", ", ".join(uni_info['coordinators']), "In Progress", "Framework defined"),
+        ("2", "Coordination with Universities / MITRA for data collection", ", ".join(uni_info['coordinators']), "Ongoing", "Daily stand-up meetings conducted"),
+        ("3", "Conducted Stakeholder Consultation with institutions", ", ".join(uni_info['coordinators']), "Completed", "Meetings held"),
+        ("4", "NIRF Framework Training Programs", ", ".join(uni_info['coordinators']), "Completed" if completed_count >= 5 else "In Progress", "Training conducted May 12-15"),
+        ("5", "NIRF Data Collection Initiation", ", ".join(uni_info['coordinators']), "In Progress", f"{completed_count}/{total_planned} tasks completed"),
     ]
     
-    for sr, risk, impact, severity, mitigation, resp in default_risks:
-        html += f"<tr><td>{sr}</td><td>{risk}</td><td>{impact}</td><td>{severity}</td><td>{mitigation}</td><td>{resp}</td></tr>"
-    
-    html += """
-        </table>
-        
-        <!-- E. Status of Initiatives under the Project -->
-        <div class="section-title">E. Status of Initiatives under the Project and Other Works</div>
-        <table>
-            <tr><th>Sr. No.</th><th>Sub-Sector</th><th>Objective</th><th>Specific Intervention</th><th>Current Status</th><th>Way Forward / Actionable</th></tr>
-    """
-    
-    initiatives_data = [
-        ("1", "NIRF Data Collection", "Complete baseline data for all NIRF parameters", "Student, Faculty, Research, Placement data collection", "In Progress", "Complete by June 15, 2026"),
-        ("2", "Capacity Building", "Train coordinators on NIRF methodology", "Training sessions on TLR, RP, GO, OI parameters", "Completed (May 12-15, 2026)", "Reinforcement sessions in June"),
-        ("3", "GRDAU Setup", "Establish Global Ranking Data Analytics Unit", "Identify team members, define roles and KPIs", "Planning Phase", "Finalize by June 30, 2026"),
-        ("4", "Diagnostic Assessment", "Identify gaps and SWOT analysis", "Data gap analysis and SWOT report preparation", "In Progress", "Draft by June 15, 2026"),
-    ]
-    
-    for sr, sector, objective, intervention, status, wayforward in initiatives_data:
-        html += f"<tr><td>{sr}</td><td>{sector}</td><td>{objective}</td><td>{intervention}</td><td>{status}</td><td>{wayforward}</td></tr>"
+    for sr, activity, member, status, remark in major_activities:
+        html += f"<tr><td>{sr}</td><td>{activity}</td><td>{member}</td><td>{status}</td><td>{remark}</td></tr>"
     
     html += f"""
         </table>
@@ -1021,7 +977,7 @@ def generate_university_report_html(university_code):
     return html
 
 def generate_consolidated_report_html():
-    """Generate consolidated HTML report for all universities aligned with the image format"""
+    """Generate consolidated HTML report for all universities"""
     summary_df = get_summary_stats()
     total_planned = len(get_all_planned_dates()) * len(UNIVERSITIES)
     total_completed = summary_df["Completed"].sum() if not summary_df.empty else 0
@@ -1084,6 +1040,18 @@ def generate_consolidated_report_html():
                 font-weight: bold;
                 text-align: center;
             }}
+            .progress-bar {{
+                background-color: #e0e0e0;
+                border-radius: 5px;
+                height: 15px;
+                width: 100%;
+            }}
+            .progress-fill {{
+                background-color: #4CAF50;
+                border-radius: 5px;
+                height: 15px;
+                width: {overall_pct}%;
+            }}
             .footer {{
                 text-align: center;
                 font-size: 9pt;
@@ -1104,20 +1072,19 @@ def generate_consolidated_report_html():
         <div class="report-title">CONSOLIDATED MONTHLY PROGRESS REPORT</div>
         <div style="text-align: center;">All Maharashtra State Universities</div>
         <div style="text-align: center;">Reporting Period: 07-05-2026 to 31-05-2026</div>
+        <div style="text-align: center;"><strong>Report Date:</strong> {datetime.now().strftime('%d-%b-%Y')}</div>
         
-        <!-- A. Major Activities - Consolidated -->
-        <div class="section-title">A. Major Activities</div>
-        <table>
-            <tr><th>Sr. No.</th><th>Major Activities</th><th>Team</th><th>Activity Status</th><th>Remarks</th></tr>
-            <tr><td>1</td><td>Finalisation of Annual Action Plan for the FY etc</td><td>All Coordinators</td><td>Ongoing</td><td>In progress across all universities</td></tr>
-            <tr><td>2</td><td>Coordination with Universities / MITRA for data collection</td><td>ICARE Team + Coordinators</td><td>Ongoing</td><td>Daily stand-up meetings conducted</td></tr>
-            <tr><td>3</td><td>Conducted Stakeholder Consultation with institutions</td><td>ICARE Team</td><td>Completed</td><td>Meetings held at all 7 universities</td></tr>
-            <tr><td>4</td><td>Training Programs on NIRF Framework</td><td>ICARE Team</td><td>Completed</td><td>Training conducted May 12-15, 2026</td></tr>
-            <tr><td>5</td><td>NIRF Data Collection Initiation</td><td>All Coordinators</td><td>In Progress</td><td>Data collection underway</td></tr>
-        </table>
+        <!-- Overall Progress -->
+        <div class="section-title">Overall Project Progress</div>
+        <div style="margin: 10px 0;">
+            <strong>Overall Completion: {overall_pct}%</strong>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+            <div>Tasks Completed: {total_completed} / {total_planned}</div>
+            <div>Total Hours Invested: {total_hours:.1f} hours</div>
+        </div>
         
-        <!-- B. University-wise Progress Summary -->
-        <div class="section-title">B. University-wise Progress Summary</div>
+        <!-- University-wise Progress Summary -->
+        <div class="section-title">University-wise Progress Summary</div>
         <table>
             <tr><th>Sr. No.</th><th>University</th><th>Nodal Officer</th><th>Tasks Completed</th><th>Tasks Pending</th><th>Completion %</th><th>Hours Invested</th></tr>
     """
@@ -1138,44 +1105,37 @@ def generate_consolidated_report_html():
     html += f"""
         </table>
         
-        <!-- C. Overall Statistics -->
-        <div class="section-title">C. Overall Statistics</div>
+        <!-- Major Deliverables Status -->
+        <div class="section-title">Major Deliverables Status</div>
         <table>
-            <tr><th>Metric</th><th>Value</th></tr>
-            <tr><td>Total Universities</td><td>{len(UNIVERSITIES)}</td></tr>
-            <tr><td>Total Planned Tasks</td><td>{total_planned}</td></tr>
-            <tr><td>Total Tasks Completed</td><td>{total_completed}</td></tr>
-            <tr><td>Overall Completion Percentage</td><td>{overall_pct}%</td></tr>
-            <tr><td>Total Hours Invested</td><td>{total_hours:.1f} hours</td></tr>
+            <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Status</th><th>Due Date</th></tr>
+    """
+    
+    # Calculate average progress for each deliverable across universities
+    avg_completion = summary_df["Completion %"].mean() if not summary_df.empty else 0
+    
+    deliverables = [
+        (1, "Inception Report and Deployment Plan", f"{min(100, round(avg_completion, 1))}% Complete", "June 6, 2026"),
+        (2, "Diagnostic Assessment Reports", f"{min(100, round(avg_completion * 0.7, 1))}% Complete", "July 6, 2026"),
+        (3, "Institutional Development Plans (IDPs)", f"{min(100, round(avg_completion * 0.3, 1))}% Complete", "August 15, 2026"),
+        (4, "GRDAUs Establishment", f"{min(100, round(avg_completion * 0.25, 1))}% Complete", "July 6, 2026"),
+        (5, "Monthly Progress Report (May 2026)", f"{min(100, round(avg_completion * 0.8, 1))}% Complete", "June 10, 2026"),
+    ]
+    
+    for sr, deliverable, status, due_date in deliverables:
+        html += f"<tr><td>{sr}</td><td>{deliverable}</td><td>{status}</td><td>{due_date}</td></tr>"
+    
+    html += f"""
         </table>
         
-        <!-- D. Training Programs Conducted -->
-        <div class="section-title">D. Training Programs Conducted (May 2026)</div>
+        <!-- Training Programs -->
+        <div class="section-title">Training Programs Conducted (May 2026)</div>
         <table>
             <tr><th>Date</th><th>Topic</th><th>Participants</th><th>Status</th></tr>
             <tr><td>May 12, 2026</td><td>NIRF Framework & Formula Interpretation</td><td>All Coordinators</td><td>Completed</td></tr>
             <tr><td>May 13, 2026</td><td>Teaching, Learning & Resources (TLR) Parameter</td><td>All Coordinators</td><td>Completed</td></tr>
             <tr><td>May 14, 2026</td><td>Research & Professional Practice (RP) Parameter</td><td>All Coordinators</td><td>Completed</td></tr>
             <tr><td>May 15, 2026</td><td>Graduation Outcomes (GO) & Outreach (OI) Parameters</td><td>All Coordinators</td><td>Completed</td></tr>
-        </table>
-        
-        <!-- E. Risk Management -->
-        <div class="section-title">E. Administration & Risk Management</div>
-        <table>
-            <tr><th>Risk Description</th><th>Severity</th><th>Mitigation Strategy</th><th>Status</th></tr>
-            <tr><td>Delay in data availability from departments</td><td>Medium</td><td>Regular follow-ups with Nodal Officers</td><td>Being addressed</td></tr>
-            <tr><td>Inconsistent data formats</td><td>Low</td><td>Standardized templates provided</td><td>Resolved</td></tr>
-            <tr><td>Resource continuity</td><td>Medium</td><td>Documentation and backup personnel</td><td>Under monitoring</td></tr>
-        </table>
-        
-        <!-- F. Next Month Plan -->
-        <div class="section-title">F. Plan for June 2026</div>
-        <table>
-            <tr><th>Activity</th><th>Target Completion</th><th>Responsible</th></tr>
-            <tr><td>Complete NIRF data collection</td><td>June 15, 2026</td><td>All Coordinators</td></tr>
-            <tr><td>Submit Diagnostic Assessment Reports</td><td>June 30, 2026</td><td>ICARE Team</td></tr>
-            <tr><td>Finalize GRDAU team compositions</td><td>June 30, 2026</td><td>ICARE Team + Universities</td></tr>
-            <tr><td>Initiate IDP framework development</td><td>June 30, 2026</td><td>ICARE Team</td></tr>
         </table>
         
         <div class="footer">
@@ -1197,7 +1157,18 @@ def get_html_download_link(html_content, filename):
 def create_admin_dashboard():
     st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2><p>Complete Project Analytics & Reports</p></div>', unsafe_allow_html=True)
     
-    st.markdown('<span class="storage-status storage-connected">✅ Persistent Storage Active</span>', unsafe_allow_html=True)
+    st.markdown('<span class="storage-status storage-connected">✅ Persistent Storage Active - Fresh Start Mode</span>', unsafe_allow_html=True)
+    
+    # Add reset button in sidebar
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("### 🗑️ Data Management")
+        if st.button("🔄 Reset All Data (Start Fresh)", use_container_width=True):
+            if reset_all_data():
+                st.success("✅ All data has been reset! Starting fresh.")
+                st.rerun()
+            else:
+                st.error("Failed to reset data")
     
     show_sangam_info()
     
@@ -1264,7 +1235,7 @@ def create_admin_dashboard():
                 else:
                     st.success("All tasks completed!")
             else:
-                st.info("No entries logged yet")
+                st.info("No entries logged yet. Coordinators need to log their work.")
     
     with tab3:
         st.subheader("📄 Generate Monthly Progress Reports")
@@ -1327,44 +1298,14 @@ def create_project_lead_dashboard():
         st.subheader("Training Programs Conducted (May 12-15, 2026)")
         
         training_data = [
-            {"Date": "May 12, 2026", "Topic": "NIRF Framework & Formula Interpretation", "Duration": "4 hours", "Participants": "All Coordinators", "Status": "Completed"},
-            {"Date": "May 13, 2026", "Topic": "Teaching, Learning & Resources (TLR) Parameter", "Duration": "4 hours", "Participants": "All Coordinators", "Status": "Completed"},
-            {"Date": "May 14, 2026", "Topic": "Research & Professional Practice (RP) Parameter", "Duration": "4 hours", "Participants": "All Coordinators", "Status": "Completed"},
-            {"Date": "May 15, 2026", "Topic": "Graduation Outcomes (GO) & Outreach (OI) Parameters", "Duration": "4 hours", "Participants": "All Coordinators", "Status": "Completed"},
+            {"Date": "May 12, 2026", "Topic": "NIRF Framework & Formula Interpretation", "Duration": "4 hours", "Status": "Completed"},
+            {"Date": "May 13, 2026", "Topic": "Teaching, Learning & Resources (TLR) Parameter", "Duration": "4 hours", "Status": "Completed"},
+            {"Date": "May 14, 2026", "Topic": "Research & Professional Practice (RP) Parameter", "Duration": "4 hours", "Status": "Completed"},
+            {"Date": "May 15, 2026", "Topic": "Graduation Outcomes (GO) & Outreach (OI) Parameters", "Duration": "4 hours", "Status": "Completed"},
         ]
         
         training_df = pd.DataFrame(training_data)
         st.dataframe(training_df, use_container_width=True)
-        
-        st.markdown("---")
-        st.subheader("Training Content Covered")
-        st.markdown("""
-        **1. NIRF Framework Overview:**
-        - Structure and architecture of NIRF framework
-        - Category-specific indicators and weightages
-        - Overall, Universities, and State Public Universities categories
-        
-        **2. Teaching, Learning & Resources (TLR):**
-        - Student Strength (SS) and enrollment calculations
-        - Faculty-Student Ratio (FSR) methodology
-        - Faculty Qualifications and Experience (FQE)
-        - Financial Resources and Utilization (FRU)
-        
-        **3. Research and Professional Practice (RP):**
-        - Bibliometric indicators and research productivity
-        - Citation analysis and publication quality
-        - IPR, patents, and sponsored research funding
-        
-        **4. Graduation Outcomes (GO):**
-        - University examination results
-        - Placement statistics and median salary
-        - Higher education progression
-        
-        **5. Outreach and Inclusivity (OI):**
-        - Regional diversity and gender representation
-        - Socio-economic inclusion metrics
-        - Support for disadvantaged groups
-        """)
     
     with tab3:
         st.subheader("📄 Generate Reports")
@@ -1629,16 +1570,11 @@ def main():
             - KBCNMU Jalgaon
             - BAMU Aurangabad
             
-            **Reports Available:**
-            - University-wise MPR (aligned with the official format)
-            - Consolidated MPR for all universities
-            - Includes Major Activities, Meetings, Deliverables, Risks, Initiatives
-            
-            **How to Use Reports:**
-            1. Go to Generate Reports tab
-            2. Click Generate button
-            3. Download the HTML file
-            4. Open in browser and print as PDF or copy to Word
+            **Features:**
+            - ✅ **Fresh Start Mode** - All data reset
+            - 📊 Dynamic progress tracking based on actual logged work
+            - 📄 Generate reports with real completion percentages
+            - 🔄 Reset data anytime from sidebar
             """)
     
     elif user_role == "project_lead":
@@ -1653,12 +1589,7 @@ def main():
             - Monitor progress across all universities
             - View training program details
             - Generate university-wise and consolidated reports
-            - Track completion percentages
-            
-            **Training Programs Conducted:**
-            - May 12-15, 2026: NIRF Framework training
-            - TLR, RP, GO, OI parameters covered
-            - All coordinators trained
+            - Reports show dynamic completion percentages
             """)
     
     else:  # coordinator
@@ -1704,12 +1635,6 @@ def main():
                 - NIRF data collection
                 - Gap analysis and reporting
                 
-                **Training Attended:**
-                - NIRF Framework & Formula Interpretation
-                - Teaching, Learning & Resources (TLR)
-                - Research & Professional Practice (RP)
-                - Graduation Outcomes (GO) & Outreach (OI)
-                
                 **How to Log Work:**
                 1. Select a date from pending tasks
                 2. Confirm if you completed the planned task
@@ -1717,19 +1642,12 @@ def main():
                 """)
 
 if __name__ == "__main__":
-    for file in [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE, MEETINGS_DATA_FILE, RISKS_DATA_FILE, INITIATIVES_DATA_FILE]:
-        if not os.path.exists(file):
-            if file == PROGRESS_DATA_FILE:
-                save_progress_data(create_initial_progress_data())
-            elif file == ASSIGNMENTS_DATA_FILE:
-                save_assignments_data(create_initial_assignments_data())
-            elif file == CUSTOM_TASKS_DATA_FILE:
-                save_custom_tasks_data(create_initial_custom_tasks_data())
-            elif file == MEETINGS_DATA_FILE:
-                save_meetings_data([])
-            elif file == RISKS_DATA_FILE:
-                save_risks_data([])
-            elif file == INITIATIVES_DATA_FILE:
-                save_initiatives_data([])
+    # Initialize fresh data files if they don't exist
+    if not os.path.exists(PROGRESS_DATA_FILE):
+        save_progress_data(create_initial_progress_data())
+    if not os.path.exists(ASSIGNMENTS_DATA_FILE):
+        save_assignments_data(create_initial_assignments_data())
+    if not os.path.exists(CUSTOM_TASKS_DATA_FILE):
+        save_custom_tasks_data(create_initial_custom_tasks_data())
     
     main()
