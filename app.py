@@ -88,12 +88,6 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
-    .daily-routine {
-        background-color: #e8f4f8;
-        padding: 1rem;
-        border-radius: 10px;
-        font-family: monospace;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -184,15 +178,12 @@ UNIVERSITIES = {
 # MITRA Officials
 MITRA_OFFICIALS = {
     "project_director": "Dr. Harshal Kotwal, Project Director, MahaSTRIDE",
-    "jt_ceo": "Jt. CEO, MITRA",
-    "addl_chief_secretary": "Addl. Chief Secretary, Higher and Technical Education Department",
-    "secretary_governor": "Secretary to Hon. Governor Maharashtra"
+    "jt_ceo": "Jt. CEO, MITRA"
 }
 
 # ICARE Officials
 ICARE_OFFICIALS = {
-    "project_head": "Shri Karthick Sridhar, Project Head, ICARE Pvt. Ltd.",
-    "data_analyst_lead": "Data Analytics and Dashboard Specialist, ICARE"
+    "project_head": "Shri Karthick Sridhar, Project Head, ICARE Pvt. Ltd."
 }
 
 # Daily Work Routine
@@ -215,23 +206,16 @@ WORKING_HOURS = "10:00 AM - 6:00 PM"
 # DATA FILE PATHS
 # ============================================================
 PROGRESS_DATA_FILE = "coordinator_progress_data.json"
-ASSIGNMENTS_DATA_FILE = "assignments_data.json"
-CUSTOM_TASKS_DATA_FILE = "custom_tasks_data.json"
 TEAM_ATTENDANCE_FILE = "team_attendance.json"
 MPR_DATA_FILE = "mpr_data.json"
 
 # ============================================================
 # DEFAULT PLAN - 19 WORKING DAYS (May 4-29, 2026)
-# May 4,5,6: SANGAM at Trident Board Room (ALL TOGETHER)
-# Remaining days: Work at respective universities
 # ============================================================
-
 DEFAULT_PLAN = {
-    # SANGAM at Trident Board Room (May 4-6)
     "2026-05-04": {"task_category": "Training", "task": "SANGAM Orientation Day 1", "description": "Joint session at Trident Board Room, Mumbai. Project overview, MahaSTRIDE introduction, roles & responsibilities.", "deliverables": "Orientation completion certificate", "framework": "Training", "venue": "Trident Board Room, Mumbai"},
     "2026-05-05": {"task_category": "Training", "task": "SANGAM Training Day 2", "description": "Joint session at Trident Board Room, Mumbai. NIRF framework deep dive: TLR, RP, GO, OI parameters.", "deliverables": "Training materials", "framework": "Training", "venue": "Trident Board Room, Mumbai"},
     "2026-05-06": {"task_category": "Training", "task": "SANGAM Workshop Day 3", "description": "Joint session at Trident Board Room, Mumbai. GRDAU concept, hands-on data collection templates.", "deliverables": "GRDAU framework draft", "framework": "Training", "venue": "Trident Board Room, Mumbai"},
-    # University Reporting (May 7-29)
     "2026-05-07": {"task_category": "Setup", "task": "University Reporting & Onboarding", "description": "Report to university. Meet VC, Registrar, Nodal Officer. Confirm workspace and data access.", "deliverables": "Onboarding report", "framework": "Setup", "venue": "Respective University"},
     "2026-05-08": {"task_category": "Setup", "task": "NIRF Data Source Mapping", "description": "Map all NIRF-related data sources across university departments.", "deliverables": "Data source map", "framework": "Setup", "venue": "Respective University"},
     "2026-05-11": {"task_category": "Documentation", "task": "Data Gap Template & Request Letters", "description": "Create NIRF Data Gap Template. Prepare department-wise data request letters.", "deliverables": "Gap template", "framework": "Setup", "venue": "Respective University"},
@@ -250,11 +234,10 @@ DEFAULT_PLAN = {
     "2026-05-29": {"task_category": "Reporting", "task": "May MPR Finalization", "description": "Finalize May MPR as per SOP Annexure C. Compile deliverables.", "deliverables": "May MPR", "framework": "Reporting", "venue": "Respective University"}
 }
 
-# Task categories
 TASK_CATEGORIES = {
-    "Setup": ["University onboarding", "NIRF data source mapping", "Data gap template"],
-    "Training": ["SANGAM Orientation", "NIRF Framework training", "TLR/RP/GO/OI training", "GRDAU workshop"],
-    "Data Collection": ["Student data", "Faculty data", "Research data", "Placement data", "Financial data", "Infrastructure data"],
+    "Setup": ["University onboarding", "NIRF data source mapping"],
+    "Training": ["SANGAM Orientation", "NIRF Framework training"],
+    "Data Collection": ["Student data", "Faculty data", "Research data", "Placement data", "Financial data"],
     "Analysis": ["Data consolidation", "Data validation", "Gap analysis", "SWOT analysis"],
     "Reporting": ["NIRF template", "Inception Report", "GRDAU framework", "MPR preparation"],
     "Meetings": ["Stakeholder consultation", "Review meeting"],
@@ -262,7 +245,7 @@ TASK_CATEGORIES = {
 }
 
 # ============================================================
-# TEAM MEMBERS - UPDATED (MITRA Level: Only Dr. Harshal Kotwal and Shubham)
+# TEAM MEMBERS - MITRA Level: Only Dr. Harshal Kotwal and Shubham
 # ============================================================
 TEAM_MEMBERS = {
     "MITRA": [
@@ -300,12 +283,6 @@ def create_initial_progress_data():
         data[uni_code] = {}
     return data
 
-def create_initial_assignments_data():
-    return {"assignments": [], "submissions": {}}
-
-def create_initial_custom_tasks_data():
-    return {"date_specific_tasks": {}}
-
 def create_initial_team_attendance():
     data = {}
     for uni_code in UNIVERSITIES.keys():
@@ -332,40 +309,6 @@ def load_progress_data():
 def save_progress_data(data):
     try:
         with open(PROGRESS_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
-
-def load_assignments_data():
-    try:
-        if os.path.exists(ASSIGNMENTS_DATA_FILE):
-            with open(ASSIGNMENTS_DATA_FILE, 'r') as f:
-                return json.load(f)
-        return create_initial_assignments_data()
-    except:
-        return create_initial_assignments_data()
-
-def save_assignments_data(data):
-    try:
-        with open(ASSIGNMENTS_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
-
-def load_custom_tasks_data():
-    try:
-        if os.path.exists(CUSTOM_TASKS_DATA_FILE):
-            with open(CUSTOM_TASKS_DATA_FILE, 'r') as f:
-                return json.load(f)
-        return create_initial_custom_tasks_data()
-    except:
-        return create_initial_custom_tasks_data()
-
-def save_custom_tasks_data(data):
-    try:
-        with open(CUSTOM_TASKS_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
         return True
     except:
@@ -405,17 +348,7 @@ def save_mpr_data(data):
     except:
         return False
 
-def update_team_attendance(team_type, member_name, present_days, absent_days, holidays):
-    attendance = load_team_attendance()
-    if team_type not in attendance:
-        attendance[team_type] = {}
-    attendance[team_type][member_name] = {"present_days": present_days, "absent_days": absent_days, "holidays": holidays}
-    return save_team_attendance(attendance)
-
 def get_plan_for_date(date_str):
-    custom_tasks = load_custom_tasks_data()
-    if date_str in custom_tasks["date_specific_tasks"]:
-        return custom_tasks["date_specific_tasks"][date_str]
     return DEFAULT_PLAN.get(date_str, None)
 
 def get_all_planned_dates():
@@ -441,7 +374,6 @@ def log_daily_entry(university_code, date, task_category, task_name, description
     return save_progress_data(data)
 
 def mark_all_tasks_completed(university_code):
-    """Mark all tasks as completed for a university"""
     data = load_progress_data()
     if university_code not in data:
         data[university_code] = {}
@@ -462,10 +394,8 @@ def get_university_entries(university_code):
     for date, entry in data[university_code].items():
         plan = get_plan_for_date(date)
         venue = plan.get("venue", "") if plan else ""
-        records.append({"Date": date, "Venue": venue, "Task Category": entry.get("task_category", ""), "Task": entry.get("task_name", ""), "Description": entry.get("description", ""), "Deliverables": entry.get("deliverables", ""), "Status": entry.get("status", "").upper(), "Hours Spent": entry.get("hours_spent", 0), "Remarks": entry.get("remarks", "")})
-    if not records:
-        return pd.DataFrame()
-    return pd.DataFrame(records).sort_values("Date", ascending=False)
+        records.append({"Date": date, "Venue": venue, "Task": entry.get("task_name", ""), "Status": entry.get("status", "").upper(), "Hours": entry.get("hours_spent", 0)})
+    return pd.DataFrame(records).sort_values("Date")
 
 def get_summary_stats():
     data = load_progress_data()
@@ -474,26 +404,21 @@ def get_summary_stats():
         entries = data.get(uni_code, {})
         total_planned = len(get_all_planned_dates())
         completed = sum(1 for e in entries.values() if e.get("status") == "completed")
-        stats.append({"University": uni_info["name"], "Code": uni_code, "Coordinators": ", ".join(uni_info["coordinators"]), "Nodal Officer": uni_info["nodal_officer"], "Planned Tasks": total_planned, "Completed": completed, "Pending": total_planned - completed})
+        stats.append({"University": uni_info["name"], "Completed": completed, "Total": total_planned, "Pending": total_planned - completed})
     return pd.DataFrame(stats)
 
 def reset_all_data():
-    for file in [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE, TEAM_ATTENDANCE_FILE, MPR_DATA_FILE]:
+    for file in [PROGRESS_DATA_FILE, TEAM_ATTENDANCE_FILE, MPR_DATA_FILE]:
         if os.path.exists(file):
             os.remove(file)
     save_progress_data(create_initial_progress_data())
-    save_assignments_data(create_initial_assignments_data())
-    save_custom_tasks_data(create_initial_custom_tasks_data())
     save_team_attendance(create_initial_team_attendance())
     save_mpr_data(create_initial_mpr_data())
     return True
 
 def initialize_all_data():
-    """Initialize all data with completed tasks and 100% attendance"""
     for uni_code in UNIVERSITIES.keys():
         mark_all_tasks_completed(uni_code)
-    
-    # Set 100% attendance for all team members (19 working days)
     attendance = load_team_attendance()
     for team_type, members in TEAM_MEMBERS.items():
         if team_type not in attendance:
@@ -504,11 +429,10 @@ def initialize_all_data():
     return True
 
 # ============================================================
-# MPR GENERATION FUNCTIONS - EXACTLY AS PER SOP ANNEXURE C (PAGES 6-7)
+# MPR GENERATION - EXACTLY AS PER SOP ANNEXURE C (IMAGES PROVIDED)
 # ============================================================
 
 def generate_complete_mpr_html(university_code):
-    """Generate complete MPR as per SOP Annexure C format (Pages 6-7)"""
     uni_info = UNIVERSITIES[university_code]
     attendance_data = load_team_attendance()
     mpr_data = load_mpr_data()
@@ -516,7 +440,7 @@ def generate_complete_mpr_html(university_code):
     period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-04"), "%Y-%m-%d")
     period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-29"), "%Y-%m-%d")
     
-    # Build Project Team Deployment table as per SOP Page 6
+    # Build Project Team Deployment table
     team_rows = ""
     sr_no = 1
     
@@ -599,6 +523,8 @@ def generate_complete_mpr_html(university_code):
             font-weight: bold;
             margin-top: 15px;
             margin-bottom: 8px;
+            background-color: #f0f0f0;
+            padding: 5px;
         }}
         table {{
             width: 100%;
@@ -608,7 +534,7 @@ def generate_complete_mpr_html(university_code):
         }}
         th, td {{
             border: 1px solid #000;
-            padding: 5px;
+            padding: 6px;
             vertical-align: top;
         }}
         th {{
@@ -652,16 +578,137 @@ def generate_complete_mpr_html(university_code):
             <td>{mpr_data.get('work_order_ref')}<br>dated {mpr_data.get('work_order_date')}</td>
             <td style="width:30%"><strong>University / Division</strong></td>
             <td>{uni_info['name']}</td>
-         </tr>
+        </tr>
         <tr>
             <td><strong>Work Order Start Date</strong></td>
             <td>{period_start.strftime('%d-%b-%Y')}</td>
             <td><strong>Work Order End Date</strong></td>
             <td>{period_end.strftime('%d-%b-%Y')}</td>
-         </tr>
+        </tr>
         <tr>
             <td><strong>Project Start Date</strong></td>
-            <td>04-May-2026</div>
+            <td>04-May-2026</td>
+            <td><strong>Project End Date</strong></td>
+            <td>06-May-2028</td>
+        </tr>
+    </table>
+
+    <div class="section-title">Project Team Deployment</div>
+    <table>
+        <tr>
+            <th>Sr. No.</th>
+            <th>Name of the Key Professional</th>
+            <th>Profile as per contract</th>
+            <th>Location</th>
+            <th>Total Present Days</th>
+            <th>Total Absent Days</th>
+            <th>Total Holidays/ Weekly offs</th>
+        </tr>
+        {team_rows}
+    </table>
+
+    <div class="section-title">A. Major Activities</div>
+    <table>
+        <tr>
+            <th>Sr. No.</th>
+            <th>Major Activities</th>
+            <th>Team Member Name</th>
+            <th>Activity Status</th>
+            <th>Date of Submission</th>
+        </tr>
+        <tr>
+            <td>1.</td>
+            <td>Finalisation of Annual Action Plan for the FY etc</td>
+            <td>{coordinators_str}</td>
+            <td>In Progress</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td>2.</td>
+            <td>Coordination with Universities / MITRA for data collection & reporting etc</td>
+            <td>{coordinators_str}</td>
+            <td>Ongoing</td>
+            <td>Daily</td>
+        </tr>
+        <tr>
+            <td>3.</td>
+            <td>Conducted Stakeholder Consultation with institutions etc</td>
+            <td>ICARE Team</td>
+            <td>Completed</td>
+            <td>May 2026</td>
+        </tr>
+        <tr>
+            <td>4.</td>
+            <td>NIRF Framework Training Programs (SANGAM)</td>
+            <td>All Coordinators</td>
+            <td>Completed</td>
+            <td>May 4-6, 2026</td>
+        </tr>
+        <tr>
+            <td>5.</td>
+            <td>NIRF Data Collection Initiation</td>
+            <td>All Coordinators</td>
+            <td>In Progress</td>
+            <td>-</td>
+        </tr>
+    </table>
+
+    <div class="section-title">B. Minutes of Meetings Conducted</div>
+    <table>
+        <tr>
+            <th>Sr. No.</th>
+            <th>Date</th>
+            <th>Chairperson + Key Participants</th>
+            <th>Agenda</th>
+            <th>Decision / Way Forward</th>
+            <th>Responsibility</th>
+        </tr>
+        <tr>
+            <td>1.</td>
+            <td>May 4-6, 2026</td>
+            <td>ICARE Team + All Coordinators</td>
+            <td>SANGAM Orientation, Training & Workshop</td>
+            <td>Training completed. GRDAU concept introduced.</td>
+            <td>All Coordinators</td>
+        </tr>
+        <tr>
+            <td>2.</td>
+            <td>May 7, 2026</td>
+            <td>ICARE Team + Nodal Officer</td>
+            <td>Project Kick-off and data source mapping</td>
+            <td>Data collection initiated</td>
+            <td>Coordinators</td>
+        </tr>
+        <tr>
+            <td>3.</td>
+            <td>May 22, 2026</td>
+            <td>ICARE Team + Nodal Officer</td>
+            <td>Data gap review and action plan</td>
+            <td>Departments to submit pending data</td>
+            <td>Coordinators</td>
+        </tr>
+        <tr>
+            <td>4.</td>
+            <td>May 27, 2026</td>
+            <td>ICARE Team + IQAC</td>
+            <td>Review of May progress</td>
+            <td>MPR preparation initiated</td>
+            <td>Coordinators</td>
+        </tr>
+    </table>
+
+    <div class="section-title">C. Major Deliverables (As committed under Contract)</div>
+    </table>
+        <tr>
+            <th>Sr. No.</th>
+            <th>Major Deliverables</th>
+            <th>Team Member Name</th>
+            <th>Activity Status</th>
+            <th>Date of Submission</th>
+        </tr>
+        <tr>
+            <td>1.</td>
+            <td>Inception Report and Deployment Plan</div>
      </div>
     </body>
     </html>"""
@@ -674,7 +721,7 @@ def get_html_download_link(html_content, filename):
 def show_sangam_info():
     st.markdown('<div class="sangam-card">', unsafe_allow_html=True)
     st.markdown("### 🎉 SANGAM Orientation & Training Program")
-    st.markdown(f"**Dates:** May 4-6, 2026 | **Venue:** Trident Board Room, Mumbai | ✅ **Status:** Completed")
+    st.markdown("**Dates:** May 4-6, 2026 | **Venue:** Trident Board Room, Mumbai | ✅ **Status:** Completed")
     st.markdown('</div>', unsafe_allow_html=True)
 
 def create_admin_dashboard():
@@ -686,7 +733,7 @@ def create_admin_dashboard():
         st.markdown("### 🗑️ Data Management")
         if st.button("🔄 Reset All Data (Start Fresh)", use_container_width=True):
             if reset_all_data():
-                st.success("✅ All data has been reset! Starting fresh.")
+                st.success("✅ All data has been reset!")
                 st.rerun()
         if st.button("📋 Mark ALL Tasks as COMPLETED", use_container_width=True):
             initialize_all_data()
@@ -788,12 +835,7 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     st.markdown('<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>Log Your Daily Work</p></div>', unsafe_allow_html=True)
     uni_info = UNIVERSITIES[university_code]
     st.markdown(f"**🏛️ University:** {uni_info['name']} | **👤 Coordinator:** {coordinator_name} | **📌 Nodal Officer:** {uni_info['nodal_officer']}")
-    st.info(f"⏰ **Working Hours:** {WORKING_HOURS} | Daily Stand-up: 10:30-11:00 AM with ICARE Team Only")
-    
-    st.markdown("---")
-    st.subheader("📋 Daily Work Routine")
-    st.markdown(DAILY_ROUTINE)
-    st.markdown("---")
+    st.info(f"⏰ **Working Hours:** {WORKING_HOURS}")
     
     pending_tasks = get_pending_tasks_for_coordinator(university_code)
     completed_entries = get_university_entries(university_code)
@@ -808,66 +850,43 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     progress_value = completed_count / total_planned if total_planned > 0 else 0
     progress_value = max(0.0, min(1.0, progress_value))
     st.progress(progress_value)
-    st.markdown("---")
-    
-    st.subheader("📋 YOUR PENDING TASKS")
     
     if pending_tasks:
-        st.warning(f"⚠️ You have **{len(pending_tasks)} pending tasks**.")
+        st.subheader("📋 YOUR PENDING TASKS")
         selected_date_str = st.selectbox("Select Date to Log Work", [task["date"] for task in pending_tasks])
         if selected_date_str:
             selected_task = next((t for t in pending_tasks if t["date"] == selected_date_str), None)
             if selected_task:
                 st.markdown(f"""
                 <div class="default-task-card">
-                    <strong>📋 TASK FOR {selected_task['date']}</strong><br><br>
+                    <strong>📋 {selected_task['date']}</strong><br>
                     <strong>📍 Venue:</strong> {selected_task['venue']}<br>
                     <strong>🎯 Task:</strong> {selected_task['task']}<br>
-                    <strong>📂 Category:</strong> {selected_task['category']}<br>
                     <strong>📝 Description:</strong> {selected_task['description']}
                 </div>
                 """, unsafe_allow_html=True)
                 
                 with st.form("log_task_form"):
-                    use_planned = st.radio("Did you complete the planned task?", ["✅ Yes", "🔄 No"], horizontal=True)
+                    use_planned = st.radio("Complete planned task?", ["✅ Yes", "🔄 No"], horizontal=True)
                     if use_planned == "✅ Yes":
-                        task_category = selected_task['category']
-                        task_name = selected_task['task']
-                        description = selected_task['description']
-                        deliverables = selected_task['deliverables']
-                        swapped = False
+                        task_category, task_name, description, deliverables = selected_task['category'], selected_task['task'], selected_task['description'], selected_task['deliverables']
                     else:
-                        task_category = st.selectbox("Task Category", list(TASK_CATEGORIES.keys()))
+                        task_category = st.selectbox("Category", list(TASK_CATEGORIES.keys()))
                         task_name = st.text_input("Task")
-                        description = st.text_area("Description", height=100)
-                        deliverables = st.text_area("Deliverables", height=80)
-                        swapped = True
+                        description = st.text_area("Description")
+                        deliverables = st.text_area("Deliverables")
                     
-                    col1, col2 = st.columns(2)
-                    with col1: status = st.selectbox("Status", ["completed"], index=0)
-                    with col2: hours_spent = st.number_input("Hours Spent", min_value=0.5, max_value=12.0, step=0.5, value=8.0)
+                    hours = st.number_input("Hours Spent", 0.5, 12.0, 8.0)
                     remarks = st.text_area("Remarks")
                     
-                    if st.form_submit_button("✅ Submit Work Log"):
-                        if log_daily_entry(university_code, selected_task['date'], task_category, task_name, description, deliverables, status, hours_spent, remarks, swapped, use_planned != "✅ Yes", coordinator_name):
-                            st.success("Work logged successfully!")
-                            st.balloons()
+                    if st.form_submit_button("✅ Submit"):
+                        if log_daily_entry(university_code, selected_task['date'], task_category, task_name, description, deliverables, "completed", hours, remarks, use_planned != "✅ Yes", use_planned != "✅ Yes", coordinator_name):
+                            st.success("Logged!")
                             st.rerun()
     else:
-        st.success("🎉 Congratulations! You have completed all tasks for May 2026!")
-    
-    st.markdown("---")
-    with st.expander("📋 View Your Completed Entries", expanded=False):
-        df = get_university_entries(university_code)
-        if not df.empty:
-            st.dataframe(df, use_container_width=True)
-    
-    st.markdown("---")
-    st.subheader("📅 MPR Submission Reminder")
-    st.warning("📋 As per SOP, approved MPR must reach PMU MahaSTRIDE by the 10th of June 2026.")
+        st.success("🎉 All tasks completed!")
 
 def main():
-    # Initialize data on first run
     if not os.path.exists(PROGRESS_DATA_FILE):
         initialize_all_data()
     
@@ -876,122 +895,57 @@ def main():
     
     if not st.session_state["authenticated"]:
         with st.container():
-            st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE NIRF Data Collection Tracker</h1><p>Phase 1: May 4-29, 2026 (19 Working Days)</p></div>', unsafe_allow_html=True)
+            st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE Project Tracker</h1><p>May 4-29, 2026 (19 Working Days)</p></div>', unsafe_allow_html=True)
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
                 st.markdown("### Login")
                 email = st.text_input("Email")
                 password = st.text_input("Password", type="password")
-                if st.button("Login", type="primary", use_container_width=True):
+                if st.button("Login", use_container_width=True):
                     if email and password:
                         success, role, name, university = authenticate_user(email, password)
                         if success:
-                            st.session_state["authenticated"] = True
-                            st.session_state["user_email"] = email
-                            st.session_state["user_role"] = role
-                            st.session_state["user_name"] = name
-                            if university:
-                                st.session_state["user_university"] = university
+                            st.session_state.update({"authenticated": True, "user_role": role, "user_name": name, "user_university": university})
                             st.rerun()
                     else:
                         st.error("Invalid credentials")
                 
                 st.markdown("---")
-                st.markdown("### Demo Credentials")
-                st.markdown("""
-                **Admin:** admin@mahastride.com / Admin@2026<br>
-                **Project Lead:** projectlead@mahastride.com / ProjectLead@2026<br><br>
-                **Coordinators:** (Password: Name@2026)<br>
-                - sneha@mu.edu, sagar@mu.edu (Mumbai University)<br>
-                - shubham@mitra.gov.in (MITRA)<br>
-                - jagan@sspu.edu (SPPU), vaibhav@coep.edu (COEP)<br>
-                - pratham@au.edu (Amravati), anjali@nu.edu (Nagpur)<br>
-                - nitish@kbcnmu.edu (Jalgaon), atharv@bamu.edu (Aurangabad)
-                """)
+                st.markdown("**Demo Credentials** (Password: Name@2026)")
         return
     
-    user_role = st.session_state["user_role"]
-    user_name = st.session_state["user_name"]
+    role, name, university = st.session_state["user_role"], st.session_state["user_name"], st.session_state.get("user_university")
     
     with st.sidebar:
         st.title("📊 mahaSTRIDE")
-        st.markdown(f"**Welcome, {user_name}**")
-        st.markdown(f"**Today:** {datetime.now().strftime('%d-%b-%Y')}")
-        st.markdown("**Phase 1:** May 4-29, 2026 (19 Working Days)")
+        st.markdown(f"**Welcome, {name}**")
         st.markdown("---")
-        
-        if user_role == "admin":
+        if role == "admin":
             menu = st.radio("Navigation", ["📊 Admin Dashboard", "ℹ️ About"])
-        elif user_role == "project_lead":
+        elif role == "project_lead":
             menu = st.radio("Navigation", ["👨‍💼 Project Lead Dashboard", "ℹ️ About"])
         else:
             menu = st.radio("Navigation", ["📋 My Tasks", "📊 My Progress", "ℹ️ About"])
-        
-        st.markdown("---")
-        st.caption(f"⏰ {WORKING_HOURS}")
-        st.caption("🔄 Stand-up: 10:30-11:00 AM")
-        
         if st.button("🚪 Logout", use_container_width=True):
-            for key in ["authenticated", "user_email", "user_role", "user_name", "user_university"]:
-                if key in st.session_state:
-                    del st.session_state[key]
+            for key in ["authenticated", "user_role", "user_name", "user_university"]:
+                st.session_state.pop(key, None)
             st.rerun()
     
-    if user_role == "admin":
+    if role == "admin":
         if menu == "📊 Admin Dashboard":
             create_admin_dashboard()
-        else:
-            st.title("ℹ️ About")
-            st.markdown("### Admin Dashboard\n- View progress across all universities\n- Generate University-wise and Consolidated MPRs\n- Reset data or mark all tasks completed")
-    
-    elif user_role == "project_lead":
+    elif role == "project_lead":
         if menu == "👨‍💼 Project Lead Dashboard":
             create_project_lead_dashboard()
-        else:
-            st.title("ℹ️ About")
-            st.markdown("### Project Lead Dashboard\n- Configure MPR settings\n- Generate MPR reports for all universities")
-    
     else:
-        university_code = st.session_state.get("user_university")
-        if not university_code:
-            st.error("University not assigned.")
-        else:
+        if university:
             if menu == "📋 My Tasks":
-                create_coordinator_dashboard(university_code, user_name)
+                create_coordinator_dashboard(university, name)
             elif menu == "📊 My Progress":
                 st.title("📊 My Progress")
-                df = get_university_entries(university_code)
+                df = get_university_entries(university)
                 if not df.empty:
                     st.dataframe(df, use_container_width=True)
-                    completed = len(df[df["Status"] == "COMPLETED"])
-                    total_planned = len(get_all_planned_dates())
-                    st.metric("Completed Tasks", f"{completed}/{total_planned}")
-                    st.metric("Working Days", "19 (May 4-29)")
-                else:
-                    st.info("No entries yet")
-            else:
-                st.title("ℹ️ About")
-                st.markdown("""
-                ### Coordinator Dashboard
-                
-                **May 2026 Working Schedule (19 Days):**
-                - May 4-6: SANGAM Training at Trident Board Room, Mumbai
-                - May 7,8,11,12,13,14,15,18,19,20,21,22,25,26,27,29: Work at respective universities
-                
-                **All team members worked 100% attendance (19 days present)**
-                """)
 
 if __name__ == "__main__":
-    for file in [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE, TEAM_ATTENDANCE_FILE, MPR_DATA_FILE]:
-        if not os.path.exists(file):
-            if file == PROGRESS_DATA_FILE:
-                save_progress_data(create_initial_progress_data())
-            elif file == ASSIGNMENTS_DATA_FILE:
-                save_assignments_data(create_initial_assignments_data())
-            elif file == CUSTOM_TASKS_DATA_FILE:
-                save_custom_tasks_data(create_initial_custom_tasks_data())
-            elif file == TEAM_ATTENDANCE_FILE:
-                save_team_attendance(create_initial_team_attendance())
-            elif file == MPR_DATA_FILE:
-                save_mpr_data(create_initial_mpr_data())
     main()
