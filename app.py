@@ -501,6 +501,8 @@ def create_initial_mpr_data():
     }
 
 def load_progress_data():
+    """Load progress data - tries GitHub first, falls back to local"""
+    # Try GitHub first if available
     if GITHUB_AVAILABLE:
         try:
             data = github_get_progress()
@@ -509,9 +511,11 @@ def load_progress_data():
                     if uni_code not in data:
                         data[uni_code] = {}
                 return data
-        except Exception:
+        except Exception as e:
+            # Silently fail - don't show warning on every load
             pass
     
+    # Fallback to local file
     try:
         if os.path.exists(PROGRESS_DATA_FILE):
             with open(PROGRESS_DATA_FILE, 'r') as f:
@@ -524,7 +528,7 @@ def load_progress_data():
         pass
     
     return create_initial_progress_data()
-
+    
 def save_progress_data_to_storage(data):
     if GITHUB_AVAILABLE:
         try:
