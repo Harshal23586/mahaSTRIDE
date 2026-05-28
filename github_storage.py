@@ -16,7 +16,26 @@ class GitHubStorage:
         "attendance": "attendance_data.json"
     }
     
+    # Class-level cache to prevent multiple initializations
+    _instance = None
+    _initialized = False
+    
+    def __new__(cls):
+        """Singleton pattern to prevent multiple initializations"""
+        if cls._instance is None:
+            cls._instance = super(GitHubStorage, cls).__new__(cls)
+        return cls._instance
+    
     def __init__(self):
+        """Initialize only once"""
+        if GitHubStorage._initialized:
+            return
+        
+        GitHubStorage._initialized = True
+        self.repo = None
+        self.file_shas = {}
+        self._auth_success = False
+        
         # Try to get secrets from Streamlit Cloud secrets
         try:
             self.token = st.secrets.get("GITHUB_TOKEN")
@@ -30,39 +49,33 @@ class GitHubStorage:
             self.branch = os.getenv("GITHUB_BRANCH", "main")
             self.data_prefix = os.getenv("DATA_FILE_PREFIX", "data/")
         
-        self.repo = None
-        self.file_shas = {}  # Store SHA for each file
-        
         if not self.token:
-            st.info("💡 GitHub token not configured. Add GITHUB_TOKEN in secrets for cloud backup.")
             return
         
         if not self.repo_name:
-            st.info("💡 GitHub repository not configured. Add GITHUB_REPO in secrets (format: username/repo-name)")
             return
         
         try:
             self.g = Github(self.token)
             # Test authentication
             user = self.g.get_user()
-            st.success(f"✅ Authenticated as: {user.login}")
+            self._auth_success = True
             
             # Try to get the repository
             try:
                 self.repo = self.g.get_repo(self.repo_name)
-                st.success(f"✅ Connected to repository: {self.repo_name}")
                 self._ensure_data_directory()
             except GithubException as e:
                 if e.status == 404:
-                    st.error(f"❌ Repository '{self.repo_name}' not found. Please create it first.")
-                    st.info("📝 To fix: Create a repository at https://github.com/new and update GITHUB_REPO secret")
-                else:
-                    st.error(f"❌ GitHub error: {e}")
+                    pass
                 self.repo = None
                 
-        except Exception as e:
-            st.error(f"❌ GitHub connection error: {e}")
+        except Exception:
             self.repo = None
+    
+    def is_authenticated(self):
+        """Check if authentication was successful"""
+        return self._auth_success and self.repo is not None
     
     def _ensure_data_directory(self):
         """Ensure the data directory exists in the repository"""
@@ -70,11 +83,9 @@ class GitHubStorage:
             return
         
         try:
-            # Try to get the data directory
             self.repo.get_contents(self.data_prefix, ref=self.branch)
         except GithubException as e:
             if e.status == 404:
-                # Create a .gitkeep file to create the directory
                 try:
                     self.repo.create_file(
                         f"{self.data_prefix}.gitkeep",
@@ -83,8 +94,7 @@ class GitHubStorage:
                         branch=self.branch
                     )
                 except:
-                    pass  # Directory might already exist
-            # Ignore other errors
+                    pass
     
     def _get_full_path(self, file_key):
         """Get full path for a data file"""
@@ -102,13 +112,11 @@ class GitHubStorage:
             content = json.dumps(data, indent=2, default=str)
             
             try:
-                # Try to get existing file
                 contents = self.repo.get_contents(file_path, ref=self.branch)
                 self.file_shas[file_key] = contents.sha
-                # Update existing file
                 self.repo.update_file(
                     file_path,
-                    f"Auto-save: Update {file_key} data {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    f"Auto-save: Update {file_key} data",
                     content,
                     self.file_shas[file_key],
                     branch=self.branch
@@ -116,18 +124,16 @@ class GitHubStorage:
                 return True
             except GithubException as e:
                 if e.status == 404:
-                    # File doesn't exist, create it
                     self.repo.create_file(
                         file_path,
-                        f"Auto-save: Initial {file_key} data save {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                        f"Auto-save: Initial {file_key} data save",
                         content,
                         branch=self.branch
                     )
                     return True
                 else:
                     raise
-        except Exception as e:
-            st.error(f"Error saving to GitHub ({file_key}): {e}")
+        except Exception:
             return False
     
     def load_data(self, file_key="progress"):
@@ -141,13 +147,9 @@ class GitHubStorage:
             self.file_shas[file_key] = contents.sha
             content = base64.b64decode(contents.content).decode('utf-8')
             return json.loads(content)
-        except GithubException as e:
-            if e.status == 404:
-                # File doesn't exist yet
-                return None
-            else:
-                return None
-        except Exception as e:
+        except GithubException:
+            return None
+        except Exception:
             return None
     
     def save_all_data(self, data_dict):
@@ -176,22 +178,18 @@ class GitHubStorage:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             backup_prefix = f"backups/{timestamp}/"
             
-            # If specific data provided, backup only that
             if data_dict:
                 files_to_backup = data_dict
             else:
-                # Load all current data
                 files_to_backup = {}
                 for file_key in self.DATA_FILES.keys():
                     data = self.load_data(file_key)
                     if data is not None:
                         files_to_backup[file_key] = data
             
-            # Create backup directory
             try:
                 self.repo.get_contents("backups", ref=self.branch)
             except:
-                # Create backups directory if it doesn't exist
                 self.repo.create_file(
                     "backups/.gitkeep",
                     "Create backups directory",
@@ -199,41 +197,20 @@ class GitHubStorage:
                     branch=self.branch
                 )
             
-            # Create timestamp directory
-            try:
-                self.repo.get_contents(backup_prefix, ref=self.branch)
-            except:
-                pass
-            
-            # Backup each file
             for file_key, data in files_to_backup.items():
                 backup_path = f"{backup_prefix}{self.DATA_FILES.get(file_key, file_key)}"
                 content = json.dumps(data, indent=2, default=str)
                 
                 self.repo.create_file(
                     backup_path,
-                    f"Backup: {file_key} data at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    f"Backup: {file_key} data",
                     content,
                     branch=self.branch
                 )
             
             return True
-        except Exception as e:
-            st.error(f"Error creating backup: {e}")
+        except Exception:
             return False
-    
-    def restore_from_backup(self, backup_timestamp, file_key="progress"):
-        """Restore data from a specific backup"""
-        if not self.repo:
-            return None
-        
-        try:
-            backup_path = f"backups/{backup_timestamp}/{self.DATA_FILES.get(file_key, file_key)}"
-            contents = self.repo.get_contents(backup_path, ref=self.branch)
-            content = base64.b64decode(contents.content).decode('utf-8')
-            return json.loads(content)
-        except:
-            return None
     
     def list_backups(self):
         """List available backups"""
@@ -253,27 +230,6 @@ class GitHubStorage:
     def is_available(self):
         """Check if GitHub storage is available"""
         return self.repo is not None
-    
-    def get_sync_status(self):
-        """Get sync status for all data files"""
-        if not self.repo:
-            return {"available": False}
-        
-        status = {"available": True, "files": {}}
-        for file_key, file_name in self.DATA_FILES.items():
-            try:
-                file_path = self._get_full_path(file_key)
-                contents = self.repo.get_contents(file_path, ref=self.branch)
-                status["files"][file_key] = {
-                    "name": file_name,
-                    "sha": contents.sha[:8],
-                    "size": contents.size,
-                    "last_modified": contents.last_modified if hasattr(contents, 'last_modified') else "Unknown"
-                }
-            except:
-                status["files"][file_key] = {"name": file_name, "exists": False}
-        
-        return status
 
 
 class LocalStorage:
@@ -288,8 +244,7 @@ class LocalStorage:
             with open(file_name, 'w') as f:
                 json.dump(data, f, indent=2, default=str)
             return True
-        except Exception as e:
-            st.error(f"Error saving locally: {e}")
+        except Exception:
             return False
     
     def load_data(self, file_key="progress"):
@@ -300,7 +255,7 @@ class LocalStorage:
                 with open(file_name, 'r') as f:
                     return json.load(f)
             return None
-        except Exception as e:
+        except Exception:
             return None
     
     def save_all_data(self, data_dict):
@@ -321,19 +276,17 @@ class LocalStorage:
         return all_data
     
     def is_available(self):
-        """Local storage is always available"""
         return True
 
 
-# Initialize storage (tries GitHub first, falls back to local)
+# Initialize storage (singleton pattern)
 @st.cache_resource
 def get_storage():
-    """Get the appropriate storage handler"""
+    """Get the appropriate storage handler - cached to prevent re-initialization"""
     github_storage = GitHubStorage()
     if github_storage.is_available():
         return github_storage
     else:
-        st.warning("⚠️ GitHub storage not available. Using local file storage.")
         return LocalStorage()
 
 
@@ -363,7 +316,6 @@ class DataManager:
         data = self.storage.load_data(file_key)
         if data is None:
             data = self._get_initial_data(file_key)
-            # Save initial data
             self.storage.save_data(data, file_key)
         
         self._data_cache[file_key] = data
@@ -406,43 +358,44 @@ class DataManager:
         return self.load_all_data()
 
 
-# Helper functions for specific data types
+# Helper functions for specific data types - SINGLE INSTANCE ONLY
+_manager = None
+
+def _get_manager():
+    """Get the singleton DataManager instance"""
+    global _manager
+    if _manager is None:
+        _manager = DataManager()
+    return _manager
+
 def get_progress_data():
     """Get progress data for coordinators"""
-    manager = DataManager()
-    return manager.load_data("progress")
+    return _get_manager().load_data("progress")
 
 def save_progress_data(data):
     """Save progress data"""
-    manager = DataManager()
-    return manager.save_data(data, "progress")
+    return _get_manager().save_data(data, "progress")
 
 def get_assignments_data():
     """Get assignments data"""
-    manager = DataManager()
-    return manager.load_data("assignments")
+    return _get_manager().load_data("assignments")
 
 def save_assignments_data(data):
     """Save assignments data"""
-    manager = DataManager()
-    return manager.save_data(data, "assignments")
+    return _get_manager().save_data(data, "assignments")
 
 def get_custom_tasks_data():
     """Get custom tasks data"""
-    manager = DataManager()
-    return manager.load_data("custom_tasks")
+    return _get_manager().load_data("custom_tasks")
 
 def save_custom_tasks_data(data):
     """Save custom tasks data"""
-    manager = DataManager()
-    return manager.save_data(data, "custom_tasks")
+    return _get_manager().save_data(data, "custom_tasks")
 
 def get_attendance_data():
     """Get attendance data"""
-    manager = DataManager()
-    return manager.load_data("attendance")
+    return _get_manager().load_data("attendance")
 
 def save_attendance_data(data):
     """Save attendance data"""
-    manager = DataManager()
-    return manager.save_data(data, "attendance")
+    return _get_manager().save_data(data, "attendance")
