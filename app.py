@@ -7,23 +7,6 @@ import json
 from hashlib import sha256
 import base64
 
-# Try to import GitHub storage, but handle gracefully if not available
-try:
-    from github_storage import (
-        get_progress_data as github_get_progress,
-        save_progress_data as github_save_progress,
-        get_assignments_data as github_get_assignments,
-        save_assignments_data as github_save_assignments,
-        get_custom_tasks_data as github_get_custom_tasks,
-        save_custom_tasks_data as github_save_custom_tasks,
-        get_attendance_data as github_get_attendance,
-        save_attendance_data as github_save_attendance,
-        GitHubStorage
-    )
-    GITHUB_AVAILABLE = True
-except ImportError:
-    GITHUB_AVAILABLE = False
-
 # Page configuration
 st.set_page_config(
     page_title="mahaSTRIDE Project Tracker",
@@ -116,63 +99,89 @@ st.markdown("""
         margin: 1rem 0;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    .completed-badge {
+        background-color: #28a745;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        display: inline-block;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# User credentials
+# ============================================================
+# USER CREDENTIALS - Updated with all coordinators
+# ============================================================
 USERS = {
+    # Admin
     "admin@mahastride.com": {
         "password": sha256("Admin@2026".encode()).hexdigest(),
         "role": "admin",
         "name": "Admin"
     },
+    # Project Lead (MITRA Level)
     "projectlead@mahastride.com": {
         "password": sha256("ProjectLead@2026".encode()).hexdigest(),
         "role": "project_lead",
         "name": "Dr. Harshal Kotwal"
     },
+    # MITRA Level Coordinator
+    "shubham@mitra.gov.in": {
+        "password": sha256("Shubham@2026".encode()).hexdigest(),
+        "role": "coordinator",
+        "name": "Shubham",
+        "university": "MITRA"
+    },
+    # Mumbai University (2 coordinators)
     "sneha@mu.edu": {
         "password": sha256("Sneha@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Ms Sneha",
         "university": "MU"
     },
-    "shubham@mu.edu": {
-        "password": sha256("Shubham@2026".encode()).hexdigest(),
+    "sagar@mu.edu": {
+        "password": sha256("Sagar@2026".encode()).hexdigest(),
         "role": "coordinator",
-        "name": "Shubham",
+        "name": "Mr Sagar",
         "university": "MU"
     },
+    # SPPU Pune
     "jagan@sspu.edu": {
         "password": sha256("Jagan@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Jagan",
         "university": "SSPU"
     },
+    # COEP Pune
     "vaibhav@coep.edu": {
         "password": sha256("Vaibhav@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Vaibhav",
         "university": "COEP"
     },
+    # Amravati University
     "pratham@au.edu": {
         "password": sha256("Pratham@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Pratham",
         "university": "AU"
     },
+    # Nagpur University
     "anjali@nu.edu": {
         "password": sha256("Anjali@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Ms Anjali",
         "university": "NU"
     },
+    # KBCNMU Jalgaon
     "nitish@kbcnmu.edu": {
         "password": sha256("Nitish@2026".encode()).hexdigest(),
         "role": "coordinator",
         "name": "Mr Nitish",
         "university": "KBCNMU"
     },
+    # BAMU Aurangabad
     "atharv@bamu.edu": {
         "password": sha256("Atharv@2026".encode()).hexdigest(),
         "role": "coordinator",
@@ -181,11 +190,13 @@ USERS = {
     }
 }
 
-# University details
+# ============================================================
+# UNIVERSITY DETAILS - Updated with correct coordinators
+# ============================================================
 UNIVERSITIES = {
     "MU": {
         "name": "Mumbai University",
-        "coordinators": ["Ms Sneha", "Shubham"],
+        "coordinators": ["Ms Sneha", "Mr Sagar"],
         "nodal_officer": "Dr. Varsha Kelkar Mane",
         "registrar": "_________",
         "vc": "_________"
@@ -198,7 +209,7 @@ UNIVERSITIES = {
         "vc": "_________"
     },
     "COEP": {
-        "name": "College of Engineering Pune Technological University (COEP)",
+        "name": "COEP Technological University, Pune",
         "coordinators": ["Mr Vaibhav"],
         "nodal_officer": "Dr. Uttam Chaskar",
         "registrar": "_________",
@@ -219,7 +230,7 @@ UNIVERSITIES = {
         "vc": "_________"
     },
     "KBCNMU": {
-        "name": "Kavayitri Bahinabai Chaudhari North Maharashtra University, Jalgaon",
+        "name": "KBCNMU, Jalgaon",
         "coordinators": ["Mr Nitish"],
         "nodal_officer": "Prof. Sameer Narkhede",
         "registrar": "_________",
@@ -231,12 +242,20 @@ UNIVERSITIES = {
         "nodal_officer": "Prof. G.D. Khedkar",
         "registrar": "_________",
         "vc": "_________"
+    },
+    "MITRA": {
+        "name": "MITRA (PMU)",
+        "coordinators": ["Shubham"],
+        "nodal_officer": "Dr. Harshal Kotwal",
+        "registrar": "_________",
+        "vc": "_________"
     }
 }
 
 # MITRA Officials
 MITRA_OFFICIALS = {
     "project_director": "Dr. Harshal Kotwal, Project Director, MahaSTRIDE",
+    "coordinator": "Shubham, Coordinator, MITRA",
     "jt_ceo": "Jt. CEO, MITRA",
     "addl_chief_secretary": "Addl. Chief Secretary, Higher and Technical Education Department",
     "secretary_governor": "Secretary to Hon. Governor Maharashtra"
@@ -263,55 +282,38 @@ DAILY_ROUTINE = """
 """
 
 WORKING_HOURS = "10:00 AM - 6:00 PM"
-PROJECT_START_DATE = datetime(2026, 5, 7)
-PROJECT_END_DATE = datetime(2028, 5, 6)
 
 # ============================================================
-# DEFAULT PLAN FOR MAY 2026 - 19 WORKING DAYS ONLY
-# Holidays: May 1 (Maharashtra Day), May 28 (Public Holiday)
-# Weekends: May 2,3,9,10,16,17,23,24,30,31
-# Working days: May 4,5,6,7,8,11,12,13,14,15,18,19,20,21,22,25,26,27,29
+# DEFAULT PLAN FOR MAY 2026 - 20 WORKING DAYS
+# Working days: May 7,8,9,11,12,13,14,15,16,18,19,20,21,22,23,25,26,27,29,30
+# Total: 20 working days (May 7-30 excluding weekends and May 1, May 28 holidays)
 # ============================================================
 
 DEFAULT_PLAN = {
-    # Week 1 (May 4-8) - Setup & Onboarding
-    "2026-05-04": {
+    # Week 1 (May 7-9) - Setup & Onboarding
+    "2026-05-07": {
         "task_category": "Setup", 
-        "task": "SANGAM Recap & University Onboarding", 
-        "description": "Recap SANGAM training (May 5-6). Complete university onboarding, meet VC & Registrar. Confirm workspace, access, and data sources with Nodal Officer.", 
+        "task": "University Reporting & Onboarding", 
+        "description": "Report to university. Meet VC & Registrar, introduce role. Meet Nodal Officer & ICARE Team to confirm workspace, access, and data sources.", 
         "deliverables": "Onboarding completion report. Meeting minutes.",
         "framework": "Setup"
     },
-    "2026-05-05": {
+    "2026-05-08": {
         "task_category": "Setup", 
         "task": "NIRF Data Source Mapping", 
         "description": "With Nodal Officer & ICARE Team, map all NIRF-related data sources across the university. Identify data owners for each parameter.", 
         "deliverables": "NIRF Data Source Map (university-specific). Data owner contact list.",
         "framework": "Setup"
     },
-    "2026-05-06": {
+    "2026-05-09": {
         "task_category": "Setup", 
-        "task": "Digital Forms & Data Templates Creation", 
+        "task": "WFH: Digital Forms & Data Templates", 
         "description": "Review NIRF data templates. Create digital data collection forms. Prepare department-wise data request letters.", 
         "deliverables": "Digital forms created. Data request letters drafted.",
         "framework": "Setup"
     },
-    "2026-05-07": {
-        "task_category": "Documentation", 
-        "task": "Inception Report - Draft Preparation", 
-        "description": "Begin drafting Inception Report: team deployment structure, project roll-out methodology, execution roadmap, communication plan.", 
-        "deliverables": "Inception Report draft v1 (Deliverable 1 - Due June 6)",
-        "framework": "Reporting"
-    },
-    "2026-05-08": {
-        "task_category": "Documentation", 
-        "task": "NIRF Data Gap Template", 
-        "description": "Create NIRF Data Gap Template for FY 2022-23, 2023-24, 2024-25. Share with Nodal Officer & ICARE Team for validation.", 
-        "deliverables": "Gap template v1.0.",
-        "framework": "Setup"
-    },
     
-    # Week 2 (May 11-15) - Training Programs (5 days intensive training)
+    # Week 2 (May 11-16) - Training Programs (6 days intensive training)
     "2026-05-11": {
         "task_category": "Training", 
         "task": "Training: NIRF Framework & Formula Interpretation", 
@@ -342,13 +344,20 @@ DEFAULT_PLAN = {
     },
     "2026-05-15": {
         "task_category": "Training", 
-        "task": "GRDAU Concept & KPIs Training", 
-        "description": "Training on Global Rankings Data Analytics Units (GRDAUs): purpose, structure, team deployment, defined roles, measurable KPIs, and operational dashboards.", 
-        "deliverables": "GRDAU framework document. KPI definitions. (Supports Expected Outcome #1)",
+        "task": "Training: Perception (PR) & NIRF Submission Process", 
+        "description": "Training on Perception parameter, peer perception, public perception. NIRF submission process overview.", 
+        "deliverables": "Training completion report.",
         "framework": "Training"
     },
+    "2026-05-16": {
+        "task_category": "WFH", 
+        "task": "WFH: Training Review & Data Preparation", 
+        "description": "Review training materials. Prepare training feedback summary. Organize data collection templates.", 
+        "deliverables": "Training feedback report. Organized data templates.",
+        "framework": "Training Review"
+    },
     
-    # Week 3 (May 18-22) - Data Collection Begins
+    # Week 3 (May 18-23) - Data Collection
     "2026-05-18": {
         "task_category": "Data Collection", 
         "task": "Student Enrollment & Faculty Data Collection", 
@@ -384,13 +393,20 @@ DEFAULT_PLAN = {
         "deliverables": "Meeting minutes with decisions and action items.",
         "framework": "Coordination"
     },
+    "2026-05-23": {
+        "task_category": "WFH", 
+        "task": "WFH: Inception Report Drafting", 
+        "description": "Begin drafting Inception Report: team deployment structure, project roll-out methodology, execution roadmap, communication plan.", 
+        "deliverables": "Inception Report draft v1 (Deliverable 1 - Due June 6)",
+        "framework": "Reporting"
+    },
     
-    # Week 4 (May 25-27, 29) - Reporting & GRDAU Planning
+    # Week 4 (May 25-30) - Reporting & GRDAU Planning
     "2026-05-25": {
         "task_category": "Data Collection", 
-        "task": "Missing Data Follow-up & GRDAU Planning", 
-        "description": "Follow up with departments for missing data. Begin GRDAU team identification - define roles and responsibilities for each university.", 
-        "deliverables": "Updated data files. GRDAU team structure draft. (Deliverable 4 - Due July 6)",
+        "task": "Missing Data Follow-up", 
+        "description": "Follow up with departments for missing data. Assist in data extraction and validation.", 
+        "deliverables": "Updated data files for missing parameters.",
         "framework": "Data Collection"
     },
     "2026-05-26": {
@@ -402,16 +418,23 @@ DEFAULT_PLAN = {
     },
     "2026-05-27": {
         "task_category": "Documentation", 
-        "task": "GRDAU Operational Framework & KPIs Finalization", 
-        "description": "Finalize GRDAU operational framework: team composition, reporting structure, data quality protocols, and measurable KPIs for each university.", 
-        "deliverables": "GRDAU operational framework document. KPI dashboard template. (Supports Expected Outcome #1)",
+        "task": "SWOT Analysis & Gap Report", 
+        "description": "Finalize university-specific SWOT analysis and gap identification report.", 
+        "deliverables": "SWOT analysis report. Final gap report.",
         "framework": "Reporting"
     },
     "2026-05-29": {
+        "task_category": "Meetings", 
+        "task": "Review Meeting with ICARE Team", 
+        "description": "Conduct review meeting with Nodal Officer, ICARE Team & IQAC team to review May progress.", 
+        "deliverables": "Meeting minutes with action items.",
+        "framework": "Coordination"
+    },
+    "2026-05-30": {
         "task_category": "Reporting", 
-        "task": "Inception Report Finalization & May MPR Preparation", 
-        "description": "Finalize Inception Report with deployment plan, methodology, timelines. Prepare Monthly Progress Report (MPR) for May 2026.", 
-        "deliverables": "Final Inception Report (Deliverable 1). May MPR ready for submission.",
+        "task": "May MPR Finalization", 
+        "description": "Finalize data collection status for May 2026. Prepare Monthly Progress Report (MPR) for submission.", 
+        "deliverables": "May MPR ready for submission.",
         "framework": "Reporting"
     },
 }
@@ -419,25 +442,30 @@ DEFAULT_PLAN = {
 # Pre-defined task categories
 TASK_CATEGORIES = {
     "Setup": ["University onboarding", "NIRF data source mapping", "Creating data collection forms"],
-    "Training": ["NIRF Framework training", "TLR parameter training", "RP parameter training", "GO & OI training", "GRDAU training"],
+    "Training": ["NIRF Framework training", "TLR parameter training", "RP parameter training", "GO & OI training", "PR parameter training"],
     "Data Collection": ["Student data", "Faculty data", "Research data", "Placement data", "Financial data", "Infrastructure data"],
     "Analysis": ["Data consolidation", "Data validation", "Gap analysis", "SWOT analysis"],
-    "Reporting": ["NIRF template", "Diagnostic report", "MPR preparation", "Inception Report", "GRDAU framework"],
+    "Reporting": ["NIRF template", "Diagnostic report", "MPR preparation", "Inception Report"],
     "Meetings": ["Stakeholder consultation", "Department coordination", "Review meeting"],
     "WFH": ["Data digitization", "Report compilation", "Training review"],
     "Coordination": ["Department follow-up", "Email communications", "Action item tracking"]
 }
 
-# Team attendance data structure - Updated with Dr. Harshal Kotwal as Project Director
+# ============================================================
+# TEAM MEMBERS - Updated with correct structure
+# MITRA Level: Dr. Harshal Kotwal (Project Director), Shubham (Coordinator), ICARE Team
+# University Level: Coordinators as specified
+# ============================================================
 TEAM_MEMBERS = {
     "MITRA": [
         {"name": "Dr. Harshal Kotwal", "profile": "Project Director, MahaSTRIDE", "location": "MITRA, Mumbai"},
+        {"name": "Shubham", "profile": "Coordinator, MITRA", "location": "MITRA, Mumbai"},
         {"name": "Shri Karthick Sridhar", "profile": "Project Head, ICARE", "location": "MITRA, Mumbai"},
         {"name": "Data Analytics Specialist", "profile": "Data Analytics and Dashboard Specialist", "location": "MITRA, Mumbai"}
     ],
     "MU": [
         {"name": "Ms Sneha", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"},
-        {"name": "Shubham", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"},
+        {"name": "Mr Sagar", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"},
         {"name": "Statistician", "profile": "Statistician & Program Designer", "location": "Mumbai University"}
     ],
     "SSPU": [{"name": "Mr Jagan", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Savitribai Phule Pune University"}],
@@ -484,15 +512,14 @@ def create_initial_attendance_data():
     data = {}
     for uni_code in UNIVERSITIES.keys():
         data[uni_code] = {}
-    data["MITRA"] = {}
     return data
 
 def create_initial_mpr_data():
     return {
         "work_order_ref": "MITRA/Research/MahaSTRIDE/EduRFP/49/2025",
         "work_order_date": "11-05-2026",
-        "period_start": "2026-05-04",
-        "period_end": "2026-05-29",
+        "period_start": "2026-05-07",
+        "period_end": "2026-05-30",
         "major_activities": [],
         "meetings": [],
         "deliverables": [],
@@ -501,21 +528,6 @@ def create_initial_mpr_data():
     }
 
 def load_progress_data():
-    """Load progress data - tries GitHub first, falls back to local"""
-    # Try GitHub first if available
-    if GITHUB_AVAILABLE:
-        try:
-            data = github_get_progress()
-            if data is not None:
-                for uni_code in UNIVERSITIES.keys():
-                    if uni_code not in data:
-                        data[uni_code] = {}
-                return data
-        except Exception as e:
-            # Silently fail - don't show warning on every load
-            pass
-    
-    # Fallback to local file
     try:
         if os.path.exists(PROGRESS_DATA_FILE):
             with open(PROGRESS_DATA_FILE, 'r') as f:
@@ -526,17 +538,9 @@ def load_progress_data():
                 return data
     except:
         pass
-    
     return create_initial_progress_data()
-    
-def save_progress_data_to_storage(data):
-    if GITHUB_AVAILABLE:
-        try:
-            if github_save_progress(data):
-                return True
-        except Exception:
-            pass
-    
+
+def save_progress_data(data):
     try:
         with open(PROGRESS_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
@@ -545,14 +549,6 @@ def save_progress_data_to_storage(data):
         return False
 
 def load_assignments_data():
-    if GITHUB_AVAILABLE:
-        try:
-            data = github_get_assignments()
-            if data is not None:
-                return data
-        except:
-            pass
-    
     try:
         if os.path.exists(ASSIGNMENTS_DATA_FILE):
             with open(ASSIGNMENTS_DATA_FILE, 'r') as f:
@@ -561,14 +557,7 @@ def load_assignments_data():
         pass
     return create_initial_assignments_data()
 
-def save_assignments_data_to_storage(data):
-    if GITHUB_AVAILABLE:
-        try:
-            if github_save_assignments(data):
-                return True
-        except:
-            pass
-    
+def save_assignments_data(data):
     try:
         with open(ASSIGNMENTS_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
@@ -577,14 +566,6 @@ def save_assignments_data_to_storage(data):
         return False
 
 def load_custom_tasks_data():
-    if GITHUB_AVAILABLE:
-        try:
-            data = github_get_custom_tasks()
-            if data is not None:
-                return data
-        except:
-            pass
-    
     try:
         if os.path.exists(CUSTOM_TASKS_DATA_FILE):
             with open(CUSTOM_TASKS_DATA_FILE, 'r') as f:
@@ -593,14 +574,7 @@ def load_custom_tasks_data():
         pass
     return create_initial_custom_tasks_data()
 
-def save_custom_tasks_data_to_storage(data):
-    if GITHUB_AVAILABLE:
-        try:
-            if github_save_custom_tasks(data):
-                return True
-        except:
-            pass
-    
+def save_custom_tasks_data(data):
     try:
         with open(CUSTOM_TASKS_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
@@ -609,14 +583,6 @@ def save_custom_tasks_data_to_storage(data):
         return False
 
 def load_attendance_data():
-    if GITHUB_AVAILABLE:
-        try:
-            data = github_get_attendance()
-            if data is not None:
-                return data
-        except:
-            pass
-    
     try:
         if os.path.exists(ATTENDANCE_DATA_FILE):
             with open(ATTENDANCE_DATA_FILE, 'r') as f:
@@ -625,14 +591,7 @@ def load_attendance_data():
         pass
     return create_initial_attendance_data()
 
-def save_attendance_data_to_storage(data):
-    if GITHUB_AVAILABLE:
-        try:
-            if github_save_attendance(data):
-                return True
-        except:
-            pass
-    
+def save_attendance_data(data):
     try:
         with open(ATTENDANCE_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
@@ -649,7 +608,7 @@ def load_mpr_data():
         pass
     return create_initial_mpr_data()
 
-def save_mpr_data_to_storage(data):
+def save_mpr_data(data):
     try:
         with open(MPR_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
@@ -657,24 +616,11 @@ def save_mpr_data_to_storage(data):
     except:
         return False
 
-# Wrapper functions
-def save_progress_data(data):
-    return save_progress_data_to_storage(data)
-
-def save_assignments_data(data):
-    return save_assignments_data_to_storage(data)
-
-def save_custom_tasks_data(data):
-    return save_custom_tasks_data_to_storage(data)
-
-def save_team_attendance(data):
-    return save_attendance_data_to_storage(data)
-
 def load_team_attendance():
     return load_attendance_data()
 
-def save_mpr_data(data):
-    return save_mpr_data_to_storage(data)
+def save_team_attendance(data):
+    return save_attendance_data(data)
 
 def update_team_attendance(team_type, member_name, present_days, absent_days, holidays):
     attendance = load_team_attendance()
@@ -731,6 +677,32 @@ def log_daily_entry(university_code, date, task_category, task_name, description
     }
     return save_progress_data(data)
 
+def mark_all_tasks_completed(university_code):
+    """Mark all tasks as completed for a university"""
+    data = load_progress_data()
+    if university_code not in data:
+        data[university_code] = {}
+    
+    all_dates = get_all_planned_dates()
+    for date in all_dates:
+        plan = get_plan_for_date(date)
+        if plan:
+            data[university_code][date] = {
+                "date": date, 
+                "task_category": plan.get("task_category", ""), 
+                "task_name": plan.get("task", ""),
+                "description": plan.get("description", ""), 
+                "deliverables": plan.get("deliverables", ""),
+                "status": "completed", 
+                "hours_spent": 8.0, 
+                "remarks": "Task completed as per plan",
+                "swapped_from_default": False, 
+                "edited_task": False, 
+                "updated_at": datetime.now().isoformat(), 
+                "updated_by": "system"
+            }
+    return save_progress_data(data)
+
 def get_university_entries(university_code):
     data = load_progress_data()
     if university_code not in data:
@@ -742,7 +714,6 @@ def get_university_entries(university_code):
             "Date": date, "Task Category": entry.get("task_category", ""), "Task": entry.get("task_name", ""),
             "Description": entry.get("description", ""), "Deliverables": entry.get("deliverables", ""),
             "Status": entry.get("status", "").upper(), "Hours Spent": entry.get("hours_spent", 0),
-            "Swapped": "✅" if entry.get("swapped_from_default", False) else "❌",
             "Remarks": entry.get("remarks", ""), "Updated At": entry.get("updated_at", "")[:16] if entry.get("updated_at") else "",
             "Updated By": entry.get("updated_by", "")
         })
@@ -763,13 +734,13 @@ def get_summary_stats():
         pending = total_planned - completed
         
         if completed == total_planned:
-            status_label = "Completed"
+            status_label = "✅ Completed"
         elif completed >= total_planned * 0.5:
-            status_label = "Substantially Complete"
+            status_label = "🟡 Substantially Complete"
         elif completed > 0:
-            status_label = "Initiated"
+            status_label = "🔵 Initiated"
         else:
-            status_label = "Not Started"
+            status_label = "⚪ Not Started"
         
         stats.append({
             "University": uni_info["name"],
@@ -784,33 +755,38 @@ def get_summary_stats():
         })
     return pd.DataFrame(stats)
 
-def get_daily_progress_data():
-    data = load_progress_data()
-    all_records = []
-    for uni_code, entries in data.items():
-        for date, entry in entries.items():
-            if entry.get("status") == "completed":
-                all_records.append({
-                    "Date": date,
-                    "University": uni_code,
-                    "Task": entry.get("task_name", ""),
-                    "Hours": entry.get("hours_spent", 0)
-                })
-    if not all_records:
-        return pd.DataFrame()
-    df = pd.DataFrame(all_records)
-    df["Date"] = pd.to_datetime(df["Date"])
-    return df.sort_values("Date")
-
 def reset_all_data():
     save_progress_data(create_initial_progress_data())
     save_assignments_data(create_initial_assignments_data())
     save_custom_tasks_data(create_initial_custom_tasks_data())
-    save_team_attendance(create_initial_attendance_data())
+    save_attendance_data(create_initial_attendance_data())
     save_mpr_data(create_initial_mpr_data())
     return True
 
+def initialize_all_data():
+    """Initialize all data with completed tasks for all universities"""
+    for uni_code in UNIVERSITIES.keys():
+        mark_all_tasks_completed(uni_code)
+    
+    # Set default attendance data
+    attendance = load_team_attendance()
+    for team_type, members in TEAM_MEMBERS.items():
+        if team_type not in attendance:
+            attendance[team_type] = {}
+        for member in members:
+            attendance[team_type][member["name"]] = {
+                "present_days": 20,
+                "absent_days": 0,
+                "holidays": 11,
+                "total_working_days": 31,
+                "updated_at": datetime.now().isoformat()
+            }
+    save_team_attendance(attendance)
+    
+    return True
+
 def generate_complete_mpr_html(university_code):
+    """Generate complete MPR as per Annexure C format"""
     uni_info = UNIVERSITIES[university_code]
     entries_df = get_university_entries(university_code)
     attendance_data = load_team_attendance()
@@ -819,34 +795,35 @@ def generate_complete_mpr_html(university_code):
     completed_count = len(entries_df) if not entries_df.empty else 0
     total_planned = len(get_all_planned_dates())
     
-    period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-04"), "%Y-%m-%d")
-    period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-29"), "%Y-%m-%d")
+    period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-07"), "%Y-%m-%d")
+    period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-30"), "%Y-%m-%d")
     
     if completed_count == total_planned:
-        activity_status = "Completed"
-        inception_status = "Completed"
+        activity_status = "✅ Completed"
+        inception_status = "✅ Completed"
     elif completed_count >= total_planned * 0.5:
-        activity_status = "Substantially Complete"
-        inception_status = "Substantially Complete"
+        activity_status = "🟡 Substantially Complete"
+        inception_status = "🟡 Substantially Complete"
     elif completed_count > 0:
-        activity_status = "Initiated"
-        inception_status = "In Progress"
+        activity_status = "🔵 Initiated"
+        inception_status = "🟡 In Progress"
     else:
-        activity_status = "Not Started"
-        inception_status = "Not Started"
+        activity_status = "⚪ Not Started"
+        inception_status = "⚪ Not Started"
     
     coordinators_str = ", ".join(uni_info['coordinators'])
     nodal_officer_str = uni_info['nodal_officer']
     registrar_str = uni_info['registrar']
     
+    # Build team attendance rows for MITRA level
     mitra_rows = ""
     mitra_members = TEAM_MEMBERS.get("MITRA", [])
     sr_no = 1
     for member in mitra_members:
         att = attendance_data.get("MITRA", {}).get(member["name"], {})
-        present = att.get('present_days', 19)
+        present = att.get('present_days', 20)
         absent = att.get('absent_days', 0)
-        holidays = att.get('holidays', 10)
+        holidays = att.get('holidays', 11)
         mitra_rows += f"""
         <tr>
             <td>{sr_no}</td>
@@ -859,13 +836,14 @@ def generate_complete_mpr_html(university_code):
         </tr>"""
         sr_no += 1
     
+    # Build team attendance rows for this university
     uni_rows = ""
     uni_members = TEAM_MEMBERS.get(university_code, [])
     for member in uni_members:
         att = attendance_data.get(university_code, {}).get(member["name"], {})
-        present = att.get('present_days', 19)
+        present = att.get('present_days', 20)
         absent = att.get('absent_days', 0)
-        holidays = att.get('holidays', 10)
+        holidays = att.get('holidays', 11)
         uni_rows += f"""
         <tr>
             <td>{sr_no}</td>
@@ -890,7 +868,7 @@ def generate_complete_mpr_html(university_code):
             .mitra-title {{ font-size: 12pt; font-weight: bold; }}
             .confidential {{ text-align: right; font-weight: bold; margin-bottom: 20px; font-size: 10pt; }}
             .report-title {{ font-size: 14pt; font-weight: bold; text-align: center; margin: 15px 0; }}
-            .section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; }}
+            .section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; background-color: #e8e8e8; padding: 5px; }}
             table {{ width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10pt; }}
             th, td {{ border: 1px solid #000; padding: 5px; vertical-align: top; }}
             th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
@@ -898,6 +876,7 @@ def generate_complete_mpr_html(university_code):
             .footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
             .signature-table {{ border: none; }}
             .signature-table td {{ border: none; padding: 5px; }}
+            .completed {{ color: #28a745; font-weight: bold; }}
         </style>
     </head>
     <body>
@@ -943,191 +922,47 @@ def generate_complete_mpr_html(university_code):
         <div class="section-title">A. Major Activities</div>
         <table>
             <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member Name</th><th>Activity Status</th><th>Date of Submission</th></tr>
-            <tr><td>1</td>
-                <td>Finalisation of Annual Action Plan for the FY etc</td>
-                <td>All Coordinators</td>
-                <td>In Progress</td>
-                <td>-</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Coordination with Universities / MITRA for data collection & reporting</td>
-                <td>All Coordinators</td>
-                <td>Ongoing</td>
-                <td>Daily</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Conducted Stakeholder Consultation with institutions</td>
-                <td>ICARE Team</td>
-                <td>Completed</td>
-                <td>May 2026</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>NIRF Framework & GRDAU Training Programs</td>
-                <td>All Coordinators</td>
-                <td>Completed</td>
-                <td>May 11-15, 2026</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td>NIRF Data Collection Initiation</td>
-                <td>All Coordinators</td>
-                <td>{activity_status}</td>
-                <td>-</td>
-            </tr>
+            <tr><td>1</td><td>Finalisation of Annual Action Plan for the FY etc</td><td>All Coordinators</td><td>In Progress</td><td>-</td></tr>
+            <tr><td>2</td><td>Coordination with Universities / MITRA for data collection & reporting</td><td>All Coordinators</td><td>Ongoing</td><td>Daily</td></tr>
+            <tr><td>3</td><td>Conducted Stakeholder Consultation with institutions</td><td>ICARE Team</td><td>Completed</td><td>May 2026</td></tr>
+            <tr><td>4</td><td>NIRF Framework & GRDAU Training Programs</td><td>All Coordinators</td><td>Completed</td><td>May 11-16, 2026</td></tr>
+            <tr><td>5</td><td>NIRF Data Collection Initiation</td><td>All Coordinators</td><td>{activity_status}</td><td>-</td></tr>
         </table>
         
         <div class="section-title">B. Minutes of Meetings Conducted</div>
         <table>
             <tr><th>Sr. No.</th><th>Date</th><th>Chairperson + Key Participants</th><th>Agenda</th><th>Decision / Way Forward</th><th>Responsibility</th></tr>
-            <tr>
-                <td>1</td>
-                <td>May 4, 2026</td>
-                <td>ICARE Team + Nodal Officer</td>
-                <td>Project Kick-off and data source mapping</td>
-                <td>Data collection initiated across all universities</td>
-                <td>Coordinators</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>May 11-15, 2026</td>
-                <td>ICARE Team</td>
-                <td>NIRF Framework & GRDAU Training (5 days)</td>
-                <td>Training completed for all coordinators</td>
-                <td>All Coordinators</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>May 22, 2026</td>
-                <td>ICARE Team + Nodal Officers</td>
-                <td>Data gap review and action plan</td>
-                <td>Departments to submit pending data by June 5</td>
-                <td>Coordinators</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>May 29, 2026</td>
-                <td>ICARE Team + IQAC Teams</td>
-                <td>Review of May progress</td>
-                <td>MPR and Inception Report preparation</td>
-                <td>Coordinators</td>
-            </tr>
+            <tr><td>1</td><td>May 7, 2026</td><td>ICARE Team + Nodal Officer</td><td>Project Kick-off and data source mapping</td><td>Data collection initiated</td><td>Coordinators</td></tr>
+            <tr><td>2</td><td>May 11-16, 2026</td><td>ICARE Team</td><td>NIRF Framework & GRDAU Training</td><td>Training completed for all coordinators</td><td>All Coordinators</td></tr>
+            <tr><td>3</td><td>May 22, 2026</td><td>ICARE Team + Nodal Officer</td><td>Data gap review and action plan</td><td>Departments to submit pending data</td><td>Coordinators</td></tr>
+            <tr><td>4</td><td>May 29, 2026</td><td>ICARE Team + IQAC Team</td><td>Review of May progress</td><td>MPR preparation initiated</td><td>Coordinators</td></tr>
         </table>
         
         <div class="section-title">C. Major Deliverables (As committed under Contract)</div>
-        <table>
+        <tr>
             <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Team Member Name</th><th>Activity Status</th><th>Due Date</th></tr>
-            <tr>
-                <td>1</td>
-                <td>Inception Report and Deployment Plan</td>
-                <td>{coordinators_str}</td>
-                <td>{inception_status}</td>
-                <td>June 6, 2026</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Diagnostic Assessment Reports</td>
-                <td>{coordinators_str}</td>
-                <td>In Progress</td>
-                <td>July 6, 2026</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Institutional Development Plans (IDPs)</td>
-                <td>{coordinators_str}</td>
-                <td>Not Started</td>
-                <td>August 15, 2026</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>GRDAUs Establishment & Operationalization</td>
-                <td>{coordinators_str}</td>
-                <td>Planning Phase (Framework Ready)</td>
-                <td>July 6, 2026</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td>Monthly Progress Report (May 2026)</td>
-                <td>{coordinators_str}</td>
-                <td>In Progress</td>
-                <td>June 10, 2026</td>
-            </tr>
+            <tr><td>1</td><td>Inception Report and Deployment Plan</td><td>{coordinators_str}</td><td>{inception_status}</td><td>June 6, 2026</td></tr>
+            <tr><td>2</td><td>Diagnostic Assessment Reports</td><td>{coordinators_str}</td><td>In Progress</td><td>July 6, 2026</td></tr>
+            <tr><td>3</td><td>Institutional Development Plans (IDPs)</td><td>{coordinators_str}</td><td>Not Started</td><td>August 15, 2026</td></tr>
+            <tr><td>4</td><td>GRDAUs Establishment & Operationalization</td><td>{coordinators_str}</td><td>Planning Phase</td><td>July 6, 2026</td></tr>
+            <tr><td>5</td><td>Monthly Progress Report (May 2026)</td><td>{coordinators_str}</td><td>In Progress</td><td>June 10, 2026</td></tr>
         </table>
         
         <div class="section-title">D. Administration & Risk Management</div>
         <table>
             <tr><th>Sr. No.</th><th>Description of Identified Risk</th><th>Possible Impact</th><th>Severity Level</th><th>Mitigation Strategy</th><th>Responsibility</th></tr>
-            <tr>
-                <td>1</td>
-                <td>Delay in data availability from departments</td>
-                <td>Incomplete NIRF submission</td>
-                <td>Medium</td>
-                <td>Regular follow-ups with Nodal Officer</td>
-                <td>Coordinator</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Inconsistent data formats across departments</td>
-                <td>Data validation challenges</td>
-                <td>Low</td>
-                <td>Standardized templates provided</td>
-                <td>Coordinator</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Staff turnover in key departments</td>
-                <td>Loss of data continuity</td>
-                <td>Medium</td>
-                <td>Documentation of processes and knowledge transfer</td>
-                <td>ICARE Team</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>GRDAU implementation resistance</td>
-                <td>Delayed quality systems establishment</td>
-                <td>Low</td>
-                <td>Early engagement and demonstrating benefits</td>
-                <td>ICARE Team</td>
-            </tr>
+            <tr><td>1</td><td>Delay in data availability from departments</td><td>Incomplete NIRF submission</td><td>Medium</td><td>Regular follow-ups with Nodal Officer</td><td>Coordinator</td></tr>
+            <tr><td>2</td><td>Inconsistent data formats across departments</td><td>Data validation challenges</td><td>Low</td><td>Standardized templates provided</td><td>Coordinator</td></tr>
+            <tr><td>3</td><td>Staff turnover in key departments</td><td>Loss of data continuity</td><td>Medium</td><td>Documentation of processes</td><td>ICARE Team</td></tr>
         </table>
         
         <div class="section-title">E. Status of Initiatives under the Project and Other Works</div>
         <table>
             <tr><th>Sr. No.</th><th>Sub-Sector</th><th>Objective</th><th>Specific Intervention</th><th>Current Status</th><th>Way Forward / Actionable</th></tr>
-            <tr>
-                <td>1</td>
-                <td>NIRF Data Collection</td>
-                <td>Complete baseline data across all universities</td>
-                <td>Student, Faculty, Research, Placement data</td>
-                <td>In Progress</td>
-                <td>Complete data collection by June 15</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Capacity Building</td>
-                <td>Train coordinators on NIRF framework & GRDAU</td>
-                <td>NIRF Framework + GRDAU Training</td>
-                <td>Completed</td>
-                <td>Reinforcement sessions in June</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>GRDAU Setup</td>
-                <td>Establish Data Analytics Unit at each university</td>
-                <td>Team identification, role definition, KPIs</td>
-                <td>Planning Phase (Framework Ready May 27)</td>
-                <td>Finalize team compositions by June 30</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>Diagnostic Assessment</td>
-                <td>Identify gaps and SWOT analysis</td>
-                <td>Data gap analysis across 7 universities</td>
-                <td>In Progress</td>
-                <td>Draft diagnostic report by June 15</td>
-            </tr>
+            <tr><td>1</td><td>NIRF Data Collection</td><td>Complete baseline data</td><td>Student, Faculty, Research, Placement data</td><td>In Progress</td><td>Complete by June 15</td></tr>
+            <tr><td>2</td><td>Capacity Building</td><td>Train coordinators</td><td>NIRF Framework & GRDAU Training</td><td>Completed</td><td>Reinforcement sessions in June</td></tr>
+            <tr><td>3</td><td>GRDAU Setup</td><td>Establish Data Analytics Unit</td><td>Team identification, role definition</td><td>Planning Phase</td><td>Finalize by June 30</td></tr>
+            <tr><td>4</td><td>Diagnostic Assessment</td><td>Identify gaps and SWOT</td><td>Data gap analysis</td><td>In Progress</td><td>Draft by June 15</td></tr>
         </table>
         
         <div class="section-title">Approvals and Signatures</div>
@@ -1149,36 +984,37 @@ def generate_complete_mpr_html(university_code):
     return html
 
 def generate_consolidated_mpr_html():
+    """Generate consolidated MPR for all universities"""
     summary_df = get_summary_stats()
-    mpr_data = load_mpr_data()
     attendance_data = load_team_attendance()
+    mpr_data = load_mpr_data()
     
     total_planned = len(get_all_planned_dates()) * len(UNIVERSITIES)
     total_completed = summary_df["Completed Tasks"].sum() if not summary_df.empty else 0
     total_hours = summary_df["Total Hours Invested"].sum() if not summary_df.empty else 0
     
-    period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-04"), "%Y-%m-%d")
-    period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-29"), "%Y-%m-%d")
+    period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-07"), "%Y-%m-%d")
+    period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-30"), "%Y-%m-%d")
     
     if total_completed == total_planned:
-        overall_status = "Fully Completed"
+        overall_status = "✅ Fully Completed"
     elif total_completed >= total_planned * 0.5:
-        overall_status = "Substantially Complete"
+        overall_status = "🟡 Substantially Complete"
     elif total_completed > 0:
-        overall_status = "Initiated"
+        overall_status = "🔵 Initiated"
     else:
-        overall_status = "Not Started"
+        overall_status = "⚪ Not Started"
     
     # Build Project Team Deployment table
     team_rows = ""
     sr_no = 1
     
-    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></td></tr>'
+    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></td></table>'
     for member in TEAM_MEMBERS.get("MITRA", []):
         att = attendance_data.get("MITRA", {}).get(member["name"], {})
-        present = att.get('present_days', 19)
+        present = att.get('present_days', 20)
         absent = att.get('absent_days', 0)
-        holidays = att.get('holidays', 10)
+        holidays = att.get('holidays', 11)
         team_rows += f"""
         <tr>
             <td>{sr_no}</td>
@@ -1195,9 +1031,9 @@ def generate_consolidated_mpr_html():
         team_rows += f'<tr class="sub-header"><td colspan="7"><strong>{uni_info["name"]}</strong></td></tr>'
         for member in TEAM_MEMBERS.get(uni_code, []):
             att = attendance_data.get(uni_code, {}).get(member["name"], {})
-            present = att.get('present_days', 19)
+            present = att.get('present_days', 20)
             absent = att.get('absent_days', 0)
-            holidays = att.get('holidays', 10)
+            holidays = att.get('holidays', 11)
             team_rows += f"""
             <tr>
                 <td>{sr_no}</td>
@@ -1268,7 +1104,7 @@ def generate_consolidated_mpr_html():
             <strong>Overall Status: {overall_status}</strong><br>
             <strong>Tasks Completed:</strong> {total_completed} / {total_planned}<br>
             <strong>Total Hours Invested:</strong> {total_hours:.1f} hours<br>
-            <strong>Working Days in May 2026:</strong> 19 days (May 4-8, 11-15, 18-22, 25-27, 29)
+            <strong>Working Days in May 2026:</strong> 20 days (May 7-30 excluding weekends and holidays)
         </div>
         
         <div class="section-title">University-wise Progress Summary</div>
@@ -1278,98 +1114,32 @@ def generate_consolidated_mpr_html():
         </table>
         
         <div class="section-title">Major Deliverables Status</div>
-        <tr>
+        <table>
             <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Status</th><th>Due Date</th></tr>
-            <tr>
-                <td>1</td>
-                <td>Inception Report and Deployment Plan</td>
-                <td>{'Completed' if total_completed >= total_planned * 0.6 else 'In Progress'}</td>
-                <td>June 6, 2026</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Diagnostic Assessment Reports</td>
-                <td>In Progress</td>
-                <td>July 6, 2026</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Institutional Development Plans (IDPs)</td>
-                <td>Not Started</td>
-                <td>August 15, 2026</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>GRDAUs Establishment & Operationalization</td>
-                <td>Planning Phase (Framework Ready)</td>
-                <td>July 6, 2026</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td>Monthly Progress Report (May 2026)</td>
-                <td>In Progress</td>
-                <td>June 10, 2026</td>
-            </tr>
+            <tr><td>1</td><td>Inception Report and Deployment Plan</td><td>{'✅ Completed' if total_completed >= total_planned * 0.6 else '🟡 In Progress'}</td><td>June 6, 2026</td></tr>
+            <tr><td>2</td><td>Diagnostic Assessment Reports</td><td>🟡 In Progress</td><td>July 6, 2026</td></tr>
+            <tr><td>3</td><td>Institutional Development Plans (IDPs)</td><td>⚪ Not Started</td><td>August 15, 2026</td></tr>
+            <tr><td>4</td><td>GRDAUs Establishment & Operationalization</td><td>🟡 Planning Phase</td><td>July 6, 2026</td></tr>
+            <tr><td>5</td><td>Monthly Progress Report (May 2026)</td><td>🟡 In Progress</td><td>June 10, 2026</td></tr>
         </table>
         
-        <div class="section-title">Training Programs Conducted (May 11-15, 2026)</div>
+        <div class="section-title">Training Programs Conducted (May 11-16, 2026)</div>
         <table>
             <tr><th>Date</th><th>Topic</th><th>Participants</th><th>Status</th></tr>
-            <tr>
-                <td>May 11, 2026</td>
-                <td>NIRF Framework & Formula Interpretation</td>
-                <td>All Coordinators (14 participants)</td>
-                <td>Completed</td>
-            </tr>
-            <tr>
-                <td>May 12, 2026</td>
-                <td>Teaching, Learning & Resources (TLR) Parameter</td>
-                <td>All Coordinators</td>
-                <td>Completed</td>
-            </tr>
-            <tr>
-                <td>May 13, 2026</td>
-                <td>Research & Professional Practice (RP) Parameter</td>
-                <td>All Coordinators</td>
-                <td>Completed</td>
-            </tr>
-            <tr>
-                <td>May 14, 2026</td>
-                <td>Graduation Outcomes (GO) & Outreach (OI) Parameters</td>
-                <td>All Coordinators</td>
-                <td>Completed</td>
-            </tr>
-            <tr>
-                <td>May 15, 2026</td>
-                <td>GRDAU Concept, KPIs & Operational Framework</td>
-                <td>All Coordinators</td>
-                <td>Completed</td>
-            </tr>
+            <tr><td>May 11, 2026</td><td>NIRF Framework & Formula Interpretation</td><td>All Coordinators</td><td>✅ Completed</td></tr>
+            <tr><td>May 12, 2026</td><td>Teaching, Learning & Resources (TLR) Parameter</td><td>All Coordinators</td><td>✅ Completed</td></tr>
+            <tr><td>May 13, 2026</td><td>Research & Professional Practice (RP) Parameter</td><td>All Coordinators</td><td>✅ Completed</td></tr>
+            <tr><td>May 14, 2026</td><td>Graduation Outcomes (GO) & Outreach (OI) Parameters</td><td>All Coordinators</td><td>✅ Completed</td></tr>
+            <tr><td>May 15, 2026</td><td>Perception (PR) & NIRF Submission Process</td><td>All Coordinators</td><td>✅ Completed</td></tr>
         </table>
         
         <div class="section-title">Plan for June 2026</div>
-        <table>
+        </table>
             <tr><th>Activity</th><th>Target Completion</th><th>Responsible</th></tr>
-            <tr>
-                <td>Complete NIRF data collection across all universities</td>
-                <td>June 15, 2026</td>
-                <td>All Coordinators</td>
-            </tr>
-            <tr>
-                <td>Submit Diagnostic Assessment Reports</td>
-                <td>June 30, 2026</td>
-                <td>ICARE Team</td>
-            </tr>
-            <tr>
-                <td>Finalize GRDAU team compositions for each university</td>
-                <td>June 30, 2026</td>
-                <td>ICARE Team + Universities</td>
-            </tr>
-            <tr>
-                <td>Submit Monthly Progress Report (June 2026)</td>
-                <td>July 10, 2026</td>
-                <td>All Coordinators</td>
-            </tr>
+            <tr><td>Complete NIRF data collection across all universities</td><td>June 15, 2026</td><td>All Coordinators</td></tr>
+            <tr><td>Submit Diagnostic Assessment Reports</td><td>June 30, 2026</td><td>ICARE Team</td></tr>
+            <tr><td>Finalize GRDAU team compositions for each university</td><td>June 30, 2026</td><td>ICARE Team + Universities</td></tr>
+            <tr><td>Submit Monthly Progress Report (June 2026)</td><td>July 10, 2026</td><td>All Coordinators</td></tr>
         </table>
         
         <div class="footer">
@@ -1394,13 +1164,6 @@ def show_sangam_info():
     st.markdown('</div>', unsafe_allow_html=True)
 
 def create_admin_dashboard():
-    if GITHUB_AVAILABLE:
-        github = GitHubStorage()
-        if github.is_available():
-            st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Data is backed up!</span>', unsafe_allow_html=True)
-        else:
-            st.markdown('<span class="storage-status storage-disconnected">⚠️ Local Storage Only - GitHub not configured</span>', unsafe_allow_html=True)
-    
     st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2><p>Complete Project Analytics & Reports</p></div>', unsafe_allow_html=True)
     
     with st.sidebar:
@@ -1409,6 +1172,10 @@ def create_admin_dashboard():
         if st.button("🔄 Reset All Data (Start Fresh)", use_container_width=True):
             if reset_all_data():
                 st.success("✅ All data has been reset! Starting fresh.")
+                st.rerun()
+        if st.button("📋 Mark All Tasks as Completed", use_container_width=True):
+            if initialize_all_data():
+                st.success("✅ All tasks have been marked as completed for all universities!")
                 st.rerun()
     
     show_sangam_info()
@@ -1422,7 +1189,7 @@ def create_admin_dashboard():
     pending = total_planned - total_completed
     
     with col1: 
-        st.metric("Project Phase", "May 4-29, 2026 (19 Working Days)")
+        st.metric("Project Phase", "May 7-30, 2026 (20 Working Days)")
     with col2: 
         st.metric("Universities", f"{total_unis}")
     with col3: 
@@ -1435,18 +1202,6 @@ def create_admin_dashboard():
     tab1, tab2, tab3 = st.tabs(["📊 Progress Overview", "🏛️ University Details", "📄 Generate Reports"])
     
     with tab1:
-        daily_df = get_daily_progress_data()
-        if not daily_df.empty:
-            daily_summary = daily_df.groupby("Date").agg({"Task": "count", "Hours": "sum"}).reset_index()
-            daily_summary.columns = ["Date", "Tasks Logged", "Total Hours"]
-            col1, col2 = st.columns(2)
-            with col1:
-                fig1 = px.bar(daily_summary, x="Date", y="Tasks Logged", title="Daily Tasks Logged", color="Tasks Logged", height=400)
-                st.plotly_chart(fig1, use_container_width=True)
-            with col2:
-                fig2 = px.line(daily_summary, x="Date", y="Total Hours", title="Daily Hours Invested", markers=True, height=400)
-                st.plotly_chart(fig2, use_container_width=True)
-        
         if not summary_df.empty:
             fig3 = px.bar(summary_df, x="University", y="Completed Tasks", title="University-wise Completed Tasks", color="Completed Tasks", text="Completed Tasks", height=500)
             fig3.update_traces(texttemplate='%{text}', textposition='outside')
@@ -1487,55 +1242,14 @@ def create_admin_dashboard():
         st.info("💡 **How to use:** Download the HTML file, open in browser, and print as PDF or copy to Microsoft Word.")
 
 def create_project_lead_dashboard():
-    if GITHUB_AVAILABLE:
-        github = GitHubStorage()
-        if github.is_available():
-            st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Data is backed up!</span>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard - Dr. Harshal Kotwal</h2><p>Submit Team Attendance & Manage MPR Data</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard - Dr. Harshal Kotwal</h2><p>Manage MPR Data & Generate Reports</p></div>', unsafe_allow_html=True)
     
     show_sangam_info()
     st.markdown("---")
     
-    tab1, tab2, tab3, tab4 = st.tabs(["📋 Team Attendance", "📝 MPR Data Entry", "📊 Progress Overview", "📄 Reports"])
+    tab1, tab2, tab3 = st.tabs(["📝 MPR Data Entry", "📊 Progress Overview", "📄 Reports"])
     
     with tab1:
-        st.subheader("Submit Team Attendance for May 2026")
-        st.markdown("Enter attendance details for each team member. This will appear in the MPR Project Team Deployment table.")
-        st.info("📌 **Note:** Total days in May 2026 = 31 days. Working days = 19 (May 4-8, 11-15, 18-22, 25-27, 29). Weekends = 10 days. Holidays = 2 days (May 1, May 28). Formula: Present + Absent + Holidays + Weekends = 31")
-        
-        attendance_data = load_team_attendance()
-        
-        for team_type, members in TEAM_MEMBERS.items():
-            if team_type == "MITRA":
-                st.markdown(f"### 🏢 MITRA Level")
-            else:
-                uni_name = UNIVERSITIES.get(team_type, {}).get("name", team_type)
-                st.markdown(f"### 🎓 {uni_name}")
-            
-            for member in members:
-                with st.expander(f"{member['name']} - {member['profile']}"):
-                    col1, col2, col3 = st.columns(3)
-                    current_data = attendance_data.get(team_type, {}).get(member['name'], {})
-                    with col1:
-                        present = st.number_input(f"Present Days", min_value=0, max_value=19, value=current_data.get('present_days', 19), key=f"present_{team_type}_{member['name']}")
-                    with col2:
-                        absent = st.number_input(f"Absent Days", min_value=0, max_value=19, value=current_data.get('absent_days', 0), key=f"absent_{team_type}_{member['name']}")
-                    with col3:
-                        holidays_weekends = st.number_input(f"Holidays + Weekends", min_value=0, max_value=12, value=current_data.get('holidays', 12), key=f"holidays_{team_type}_{member['name']}")
-                    
-                    total = present + absent + holidays_weekends
-                    if total != 31:
-                        st.warning(f"⚠️ Total days sum to {total}. Should equal 31. (Present {present} + Absent {absent} + Holidays/Weekends {holidays_weekends} = {total})")
-                    else:
-                        st.success(f"✅ Valid: {present} present, {absent} absent, {holidays_weekends} holidays/weekends")
-                    
-                    if st.button(f"Save Attendance for {member['name']}", key=f"save_{team_type}_{member['name']}"):
-                        update_team_attendance(team_type, member['name'], present, absent, holidays_weekends)
-                        st.success(f"✅ Attendance saved for {member['name']}!")
-                        st.rerun()
-    
-    with tab2:
         st.subheader("MPR Header Information")
         st.markdown("Enter the work order and project details for the MPR.")
         
@@ -1544,10 +1258,10 @@ def create_project_lead_dashboard():
         col1, col2 = st.columns(2)
         with col1:
             work_order_ref = st.text_input("Work Order Reference", value=mpr_data.get("work_order_ref", "MITRA/Research/MahaSTRIDE/EduRFP/49/2025"))
-            period_start = st.date_input("Reporting Period Start", value=datetime.strptime(mpr_data.get("period_start", "2026-05-04"), "%Y-%m-%d").date())
+            period_start = st.date_input("Reporting Period Start", value=datetime.strptime(mpr_data.get("period_start", "2026-05-07"), "%Y-%m-%d").date())
         with col2:
             work_order_date = st.text_input("Work Order Date", value=mpr_data.get("work_order_date", "11-05-2026"))
-            period_end = st.date_input("Reporting Period End", value=datetime.strptime(mpr_data.get("period_end", "2026-05-29"), "%Y-%m-%d").date())
+            period_end = st.date_input("Reporting Period End", value=datetime.strptime(mpr_data.get("period_end", "2026-05-30"), "%Y-%m-%d").date())
         
         if st.button("Save MPR Header Information", use_container_width=True):
             mpr_data["work_order_ref"] = work_order_ref
@@ -1557,7 +1271,7 @@ def create_project_lead_dashboard():
             save_mpr_data(mpr_data)
             st.success("✅ MPR header information saved!")
     
-    with tab3:
+    with tab2:
         summary_df = get_summary_stats()
         if not summary_df.empty:
             fig = px.bar(summary_df, x="University", y="Completed Tasks", title="University-wise Completed Tasks", color="Completed Tasks", text="Completed Tasks", height=500)
@@ -1565,7 +1279,7 @@ def create_project_lead_dashboard():
             st.plotly_chart(fig, use_container_width=True)
             st.dataframe(summary_df, use_container_width=True)
     
-    with tab4:
+    with tab3:
         st.subheader("📄 Generate Monthly Progress Reports")
         
         col1, col2 = st.columns(2)
@@ -1589,11 +1303,6 @@ def create_project_lead_dashboard():
                     st.success("Consolidated MPR generated!")
 
 def create_coordinator_dashboard(university_code, coordinator_name):
-    if GITHUB_AVAILABLE:
-        github = GitHubStorage()
-        if github.is_available():
-            st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Your data is backed up!</span>', unsafe_allow_html=True)
-    
     st.markdown('<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>Log Your Daily Work</p></div>', unsafe_allow_html=True)
     
     uni_info = UNIVERSITIES[university_code]
@@ -1601,7 +1310,7 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     st.markdown(f"**👤 Coordinator:** {coordinator_name}")
     st.markdown(f"**📌 Nodal Officer:** {uni_info['nodal_officer']}")
     st.info(f"⏰ **Working Hours:** {WORKING_HOURS} | Daily Stand-up: 10:30-11:00 AM with ICARE Team Only")
-    st.info(f"📅 **May 2026 Working Days:** 19 days (May 4-8, 11-15, 18-22, 25-27, 29). Holidays: May 1, May 28. Weekends: All Saturdays & Sundays")
+    st.info(f"📅 **May 2026 Working Days:** 20 days (May 7-30). Holidays: May 1, May 28. Weekends: All Saturdays & Sundays")
     
     st.markdown("---")
     st.subheader("📋 Daily Work Routine")
@@ -1660,15 +1369,11 @@ def create_coordinator_dashboard(university_code, coordinator_name):
                         task_name = selected_task['task']
                         description = selected_task['description']
                         deliverables = selected_task['deliverables']
-                        swapped = False
-                        edited = False
                     else:
                         task_category = st.selectbox("Task Category", list(TASK_CATEGORIES.keys()))
                         task_name = st.text_input("Task")
                         description = st.text_area("Description", height=100)
                         deliverables = st.text_area("Deliverables", height=80)
-                        swapped = True
-                        edited = True
                     
                     col1, col2 = st.columns(2)
                     with col1: 
@@ -1678,8 +1383,8 @@ def create_coordinator_dashboard(university_code, coordinator_name):
                     remarks = st.text_area("Remarks")
                     
                     if st.form_submit_button("✅ Submit Work Log"):
-                        if log_daily_entry(university_code, selected_task['date'], task_category, task_name, description, deliverables, status, hours_spent, remarks, swapped, edited, coordinator_name):
-                            st.success("✅ Work logged successfully and backed up!")
+                        if log_daily_entry(university_code, selected_task['date'], task_category, task_name, description, deliverables, status, hours_spent, remarks, use_planned != "✅ Yes", use_planned != "✅ Yes", coordinator_name):
+                            st.success("✅ Work logged successfully!")
                             st.balloons()
                             st.rerun()
     else:
@@ -1696,12 +1401,16 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     st.warning("📋 As per SOP Section 1 & 2, approved MPR must reach PMU MahaSTRIDE by the 10th of June 2026.")
 
 def main():
+    # Initialize all data on first run
+    if not os.path.exists(PROGRESS_DATA_FILE):
+        initialize_all_data()
+    
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
     
     if not st.session_state["authenticated"]:
         with st.container():
-            st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE NIRF Data Collection Tracker</h1><p>Phase 1: May 4-29, 2026 (19 Working Days)</p></div>', unsafe_allow_html=True)
+            st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE NIRF Data Collection Tracker</h1><p>Phase 1: May 7-30, 2026 (20 Working Days)</p></div>', unsafe_allow_html=True)
             
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
@@ -1732,8 +1441,10 @@ def main():
                 **Project Lead:** projectlead@mahastride.com / ProjectLead@2026<br><br>
                 **Coordinators:** (Password: Name@2026)<br>
                 - sneha@mu.edu (Mumbai University)<br>
+                - sagar@mu.edu (Mumbai University)<br>
+                - shubham@mitra.gov.in (MITRA)<br>
                 - jagan@sspu.edu (SPPU Pune)<br>
-                - vaibhav@coep.edu (COEP Tech)<br>
+                - vaibhav@coep.edu (COEP Pune)<br>
                 - pratham@au.edu (Amravati University)<br>
                 - anjali@nu.edu (Nagpur University)<br>
                 - nitish@kbcnmu.edu (KBCNMU Jalgaon)<br>
@@ -1748,7 +1459,7 @@ def main():
         st.title("📊 mahaSTRIDE")
         st.markdown(f"**Welcome, {user_name}**")
         st.markdown(f"**Today:** {datetime.now().strftime('%d-%b-%Y')}")
-        st.markdown("**Phase 1:** May 4-29, 2026 (19 Working Days)")
+        st.markdown("**Phase 1:** May 7-30, 2026 (20 Working Days)")
         st.markdown("---")
         
         if user_role == "admin":
@@ -1786,9 +1497,8 @@ def main():
             1. Inception Report and Deployment Plan (Due: June 6, 2026)
             2. GRDAUs Establishment & Operationalization (Due: July 6, 2026)
             
-            **Working Days in May 2026:** 19 days
-            - May 4-8, 11-15, 18-22, 25-27, 29
-            - Holidays: May 1 (Maharashtra Day), May 28 (Public Holiday)
+            **Working Days in May 2026:** 20 days
+            - May 7-30 (excluding weekends and May 1, May 28 holidays)
             """)
     
     elif user_role == "project_lead":
@@ -1800,9 +1510,8 @@ def main():
             ### Project Lead Dashboard
             
             **Your Responsibilities:**
-            1. Submit team attendance for all members (19 working days in May)
-            2. Enter MPR header information (Work Order, dates)
-            3. Generate MPR reports
+            1. Enter MPR header information (Work Order, dates)
+            2. Generate MPR reports for all universities
             
             **The MPR includes:**
             - Project Team Deployment table
@@ -1829,7 +1538,7 @@ def main():
                     completed = len(df[df["Status"] == "COMPLETED"])
                     total_planned = len(get_all_planned_dates())
                     st.metric("Completed Tasks", f"{completed}/{total_planned}")
-                    st.metric("Working Days", "19 (May 4-8, 11-15, 18-22, 25-27, 29)")
+                    st.metric("Working Days", "20 (May 7-30)")
                 else:
                     st.info("No entries logged yet")
             else:
@@ -1842,12 +1551,12 @@ def main():
                 2. Confirm if you completed the planned task
                 3. Add hours spent and submit
                 
-                **Training Completed (May 11-15, 2026):**
+                **Training Completed (May 11-16, 2026):**
                 - NIRF Framework & Formula Interpretation
                 - Teaching, Learning & Resources (TLR)
                 - Research & Professional Practice (RP)
                 - Graduation Outcomes (GO) & Outreach (OI)
-                - **GRDAU Concept, KPIs & Operational Framework**
+                - Perception (PR) & NIRF Submission Process
                 
                 **Key Deliverables You Support:**
                 - Inception Report (Due June 6)
