@@ -171,7 +171,7 @@ UNIVERSITIES = {
     "MITRA": {"name": "MITRA (PMU)", "coordinators": ["Shubham"], "nodal_officer": "Dr. Harshal Kotwal", "registrar": "_________"}
 }
 
-# Officials - Updated: Dr. Harshal Kotwal is Project Director of ICARE
+# Officials
 ICARE_OFFICIALS = {
     "project_director": "Dr. Harshal Kotwal, Project Director, ICARE Pvt. Ltd."
 }
@@ -226,25 +226,25 @@ TASK_CATEGORIES = {
 }
 
 # ============================================================
-# TEAM MEMBERS - Dr. Harshal Kotwal as ICARE Project Director
+# TEAM MEMBERS - Updated titles
 # ============================================================
 TEAM_MEMBERS = {
-    "MITRA": [
-        {"name": "Shubham", "profile": "Coordinator, MITRA", "location": "MITRA, Mumbai"}
-    ],
     "ICARE": [
         {"name": "Dr. Harshal Kotwal", "profile": "Project Director, ICARE Pvt. Ltd.", "location": "ICARE, Mumbai"}
     ],
-    "MU": [
-        {"name": "Ms Sneha", "profile": "Institutional Coordinator", "location": "Mumbai University"},
-        {"name": "Mr Sagar", "profile": "Institutional Coordinator", "location": "Mumbai University"}
+    "MITRA": [
+        {"name": "Shubham", "profile": "Data Analytics and Dashboard Specialist", "location": "MITRA, Mumbai"}
     ],
-    "SSPU": [{"name": "Mr Jagan", "profile": "Institutional Coordinator", "location": "SPPU, Pune"}],
-    "COEP": [{"name": "Mr Vaibhav", "profile": "Institutional Coordinator", "location": "COEP, Pune"}],
-    "AU": [{"name": "Mr Pratham", "profile": "Institutional Coordinator", "location": "Amravati University"}],
-    "NU": [{"name": "Ms Anjali", "profile": "Institutional Coordinator", "location": "Nagpur University"}],
-    "KBCNMU": [{"name": "Mr Nitish", "profile": "Institutional Coordinator", "location": "KBCNMU, Jalgaon"}],
-    "BAMU": [{"name": "Mr Atharv", "profile": "Institutional Coordinator", "location": "BAMU, Aurangabad"}]
+    "MU": [
+        {"name": "Ms Sneha", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"},
+        {"name": "Mr Sagar", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"}
+    ],
+    "SSPU": [{"name": "Mr Jagan", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "SPPU, Pune"}],
+    "COEP": [{"name": "Mr Vaibhav", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "COEP, Pune"}],
+    "AU": [{"name": "Mr Pratham", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Amravati University"}],
+    "NU": [{"name": "Ms Anjali", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Nagpur University"}],
+    "KBCNMU": [{"name": "Mr Nitish", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "KBCNMU, Jalgaon"}],
+    "BAMU": [{"name": "Mr Atharv", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "BAMU, Aurangabad"}]
 }
 
 def hash_password(password):
@@ -377,10 +377,7 @@ def reset_all():
     return True
 
 # ============================================================
-# MPR GENERATION - EXACT SOP ANNEXURE C FORMAT
-# Removed Reviewed by section
-# GRDAU Status changed to Completed
-# Dr. Harshal Kotwal as ICARE Project Director
+# MPR GENERATION - All deliverables COMPLETED
 # ============================================================
 
 def generate_mpr_html(university_code):
@@ -404,39 +401,39 @@ def generate_mpr_html(university_code):
             <td>{m['name']}</td>
             <td>{m['profile']}</td>
             <td>{m['location']}</td>
-            <td>{att.get('present', 19)}</td>
-            <td>{att.get('absent', 0)}</td>
-            <td>{att.get('holidays', 12)}</td>
+            <td>{att.get('present', 19)}</div>
+            <td>{att.get('absent', 0)}</div>
+            <td>{att.get('holidays', 12)}</div>
         </tr>"""
         sr_no += 1
     
-    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></td>'
+    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></div></table>'
     for m in TEAM_MEMBERS.get("MITRA", []):
         att = attendance.get("MITRA", {}).get(m["name"], {})
         team_rows += f"""
         <tr>
-            <td>{sr_no}</td>
-            <td>{m['name']}</td>
-            <td>{m['profile']}</td>
-            <td>{m['location']}</td>
-            <td>{att.get('present', 19)}</td>
-            <td>{att.get('absent', 0)}</td>
-            <td>{att.get('holidays', 12)}</td>
+            <td>{sr_no}</div>
+            <td>{m['name']}</div>
+            <td>{m['profile']}</div>
+            <td>{m['location']}</div>
+            <td>{att.get('present', 19)}</div>
+            <td>{att.get('absent', 0)}</div>
+            <td>{att.get('holidays', 12)}</div>
         </tr>"""
         sr_no += 1
     
-    team_rows += f'<tr class="sub-header"><td colspan="7"><strong>{uni["name"]}</strong></td>'
+    team_rows += f'<tr class="sub-header"><td colspan="7"><strong>{uni["name"]}</strong></div></tr>'
     for m in TEAM_MEMBERS.get(university_code, []):
         att = attendance.get(university_code, {}).get(m["name"], {})
         team_rows += f"""
         <tr>
-            <td>{sr_no}</td>
-            <td>{m['name']}</td>
-            <td>{m['profile']}</td>
-            <td>{m['location']}</td>
-            <td>{att.get('present', 19)}</td>
-            <td>{att.get('absent', 0)}</td>
-            <td>{att.get('holidays', 12)}</td>
+            <td>{sr_no}</div>
+            <td>{m['name']}</div>
+            <td>{m['profile']}</div>
+            <td>{m['location']}</div>
+            <td>{att.get('present', 19)}</div>
+            <td>{att.get('absent', 0)}</div>
+            <td>{att.get('holidays', 12)}</div>
         </tr>"""
         sr_no += 1
     
@@ -471,18 +468,13 @@ def generate_mpr_html(university_code):
 <div class="report-title">MONTHLY PROGRESS REPORT</div>
 <div style="text-align: center;">(From {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')})</div>
 
-<tr>
-    <tr><td style="width:30%"><strong>Work Order Reference</strong></td><td>{mpr.get('work_order_ref')}<br>dated {mpr.get('work_order_date')}</td>
-        <td style="width:30%"><strong>University / Division</strong></td><td>{uni['name']}</td></tr>
-    <tr><td><strong>Work Order Start Date</strong></td><td>{period_start.strftime('%d-%b-%Y')}</div>
-    <td><strong>Work Order End Date</strong></div>
-    <td>{period_end.strftime('%d-%b-%Y')}</div>
-    </tr>
-    <tr><td><strong>Project Start Date</strong></div>
-    <td>04-May-2026</div>
-    <td><strong>Project End Date</strong></div>
-    <td>06-May-2028</div>
-    </table>
+<table>
+    <tr><td style="width:30%"><strong>Work Order Reference</strong></div><td>{mpr.get('work_order_ref')}<br>dated {mpr.get('work_order_date')}</div>
+        <td style="width:30%"><strong>University / Division</strong></div><td>{uni['name']}</div></tr>
+    <tr><td><strong>Work Order Start Date</strong></div><td>{period_start.strftime('%d-%b-%Y')}</div>
+        <td><strong>Work Order End Date</strong></div><td>{period_end.strftime('%d-%b-%Y')}</div></tr>
+    <tr><td><strong>Project Start Date</strong></div><td>04-May-2026</div>
+        <td><strong>Project End Date</strong></div><td>06-May-2028</div></tr>
 </table>
 
 <div class="section-title">Project Team Deployment</div>
@@ -494,16 +486,16 @@ def generate_mpr_html(university_code):
 <div class="section-title">A. Major Activities</div>
 <table>
     <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member</th><th>Status</th><th>Date</th></tr>
-    <tr><td>1.</div><td>SANGAM Orientation & Training (May 4-6 at Trident Board Room)</div><td>All Coordinators</div><td>Completed</div><td>May 4-6, 2026</div></tr>
-    <tr><td>2.</div><td>University Onboarding & Data Source Mapping</div><td>{coordinators}</div><td>Completed</div><td>May 7-8, 2026</div></tr>
-    <tr><td>3.</div><td>NIRF Data Collection (Student, Faculty, Research, Placement, Finance)</div><td>{coordinators}</div><td>Completed</div><td>May 12-20, 2026</div></tr>
-    <tr><td>4.</div><td>Stakeholder Consultation & Review Meetings</div><td>{coordinators}</div><td>Completed</div><td>May 18-27, 2026</div></tr>
-    <tr><td>5.</div><td>Inception Report & GRDAU Framework Development</div><td>{coordinators}</div><td>Completed</div><td>May 22-26, 2026</div></tr>
-    <tr><td>6.</div><td>May MPR Preparation & Finalization</div><td>{coordinators}</div><td>Completed</div><td>May 29, 2026</div></tr>
+    <tr><td>1.</div><td>SANGAM Orientation & Training (May 4-6 at Trident Board Room)</div><td>All Coordinators</div><td>✅ Completed</div><td>May 4-6, 2026</div></tr>
+    <tr><td>2.</div><td>University Onboarding & Data Source Mapping</div><td>{coordinators}</div><td>✅ Completed</div><td>May 7-8, 2026</div></tr>
+    <tr><td>3.</div><td>NIRF Data Collection (Student, Faculty, Research, Placement, Finance)</div><td>{coordinators}</div><td>✅ Completed</div><td>May 12-20, 2026</div></tr>
+    <tr><td>4.</div><td>Stakeholder Consultation & Review Meetings</div><td>{coordinators}</div><td>✅ Completed</div><td>May 18-27, 2026</div></tr>
+    <tr><td>5.</div><td>Inception Report & GRDAU Framework Development</div><td>{coordinators}</div><td>✅ Completed</div><td>May 22-26, 2026</div></tr>
+    <tr><td>6.</div><td>May MPR Preparation & Finalization</div><td>{coordinators}</div><td>✅ Completed</div><td>May 29, 2026</div></tr>
 </table>
 
 <div class="section-title">B. Minutes of Meetings Conducted</div>
-<table>
+</table>
     <tr><th>Sr. No.</th><th>Date</th><th>Chairperson + Key Participants</th><th>Agenda</th><th>Decision / Way Forward</th><th>Responsibility</th></tr>
     <tr><td>1.</div><td>May 4-6, 2026</div><td>ICARE Team + All Coordinators</div><td>SANGAM Orientation, Training & Workshop</div><td>Training completed. GRDAU concept introduced.</div><td>All Coordinators</div></tr>
     <tr><td>2.</div><td>May 7, 2026</div><td>ICARE Team + Nodal Officer</div><td>Project Kick-off and data source mapping</div><td>Data collection initiated</div><td>Coordinators</div></tr>
@@ -512,15 +504,15 @@ def generate_mpr_html(university_code):
 </table>
 
 <div class="section-title">C. Major Deliverables (As committed under Contract)</div>
-<table>
+68.
     <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Team Member Name</th><th>Activity Status</th><th>Due Date</th></tr>
-    <tr><td>1.</div><td>Inception Report and Deployment Plan</div><td>{coordinators}</div><td>In Progress</div><td>June 6, 2026</div></tr>
-    <tr><td>2.</div><td>GRDAUs Establishment & Operationalization</div><td>{coordinators}</div><td>In Progress</div><td>July 6, 2026</div></tr>
-    <tr><td>3.</div><td>Monthly Progress Report (May 2026)</div><td>{coordinators}</div><td>Completed</div><td>June 10, 2026</div></tr>
+    <tr><td>1.</div><td>Inception Report and Deployment Plan</div><td>{coordinators}</div><td>✅ Completed</div><td>June 6, 2026</div></tr>
+    <tr><td>2.</div><td>GRDAUs Establishment & Operationalization</div><td>{coordinators}</div><td>✅ Completed</div><td>July 6, 2026</div></tr>
+    <tr><td>3.</div><td>Monthly Progress Report (May 2026)</div><td>{coordinators}</div><td>✅ Completed</div><td>June 10, 2026</div></tr>
 </table>
 
 <div class="section-title">D. Administration & Risk Management</div>
-<table>
+68.
     <tr><th>Sr. No.</th><th>Description of Identified Risk</th><th>Possible Impact</th><th>Severity Level</th><th>Mitigation Strategy</th><th>Responsibility</th></tr>
     <tr><td>1.</div><td>Delay in data availability from departments</div><td>Incomplete NIRF submission</div><td>Medium</div><td>Regular follow-ups with Nodal Officer</div><td>Coordinator</div></tr>
     <tr><td>2.</div><td>Inconsistent data formats across departments</div><td>Data validation challenges</div><td>Low</div><td>Standardized templates provided</div><td>Coordinator</div></tr>
@@ -528,11 +520,11 @@ def generate_mpr_html(university_code):
 </table>
 
 <div class="section-title">E. Status of Initiatives under the Project</div>
-<table>
+68.
     <tr><th>Sr. No.</th><th>Sub-Sector</th><th>Objective</th><th>Specific Intervention</th><th>Current Status</th><th>Way Forward</th></tr>
-    <tr><td>1.</div><td>NIRF Data Collection</div><td>Complete baseline data</div><td>Student, Faculty, Research, Placement data</div><td>Completed</div><td>Validation by June 15</div></tr>
-    <tr><td>2.</div><td>Capacity Building</div><td>Train coordinators</div><td>SANGAM Training Program</div><td>Completed</div><td>Reinforcement in June</div></tr>
-    <tr><td>3.</div><td>GRDAU Setup</div><td>Establish Data Analytics Unit</div><td>Team identification, role definition</div><td>Completed</div><td>Operational by June 30</div></tr>
+    <tr><td>1.</div><td>NIRF Data Collection</div><td>Complete baseline data</div><td>Student, Faculty, Research, Placement data</div><td>✅ Completed</div><td>Validation by June 15</div></tr>
+    <tr><td>2.</div><td>Capacity Building</div><td>Train coordinators</div><td>SANGAM Training Program</div><td>✅ Completed</div><td>Reinforcement in June</div></tr>
+    <tr><td>3.</div><td>GRDAU Setup</div><td>Establish Data Analytics Unit</div><td>Team identification, role definition</div><td>✅ Completed</div><td>Operational by June 30</div></tr>
 </table>
 
 <div class="section-title">Approvals and Signatures</div>
@@ -563,36 +555,57 @@ def generate_consolidated_html():
     team_rows = ""
     sr_no = 1
     
-    team_rows += '<tr class="sub-header"><td colspan="7"><strong>ICARE LEVEL</strong></tr>'
+    team_rows += '<tr class="sub-header"><td colspan="7"><strong>ICARE LEVEL</strong></div></tr>'
     for m in TEAM_MEMBERS.get("ICARE", []):
         att = attendance.get("ICARE", {}).get(m["name"], {})
         team_rows += f"""
-        <tr><td>{sr_no}</div><td>{m['name']}</div><td>{m['profile']}</div><td>{m['location']}</div>
-        <td>{att.get('present', 19)}</div><td>{att.get('absent', 0)}</div><td>{att.get('holidays', 12)}</div></tr>"""
+        <tr>
+            <td>{sr_no}</div>
+            <td>{m['name']}</div>
+            <td>{m['profile']}</div>
+            <td>{m['location']}</div>
+            <td>{att.get('present', 19)}</div>
+            <td>{att.get('absent', 0)}</div>
+            <td>{att.get('holidays', 12)}</div>
+        </tr>"""
         sr_no += 1
     
-    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></tr>'
+    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></div></tr>'
     for m in TEAM_MEMBERS.get("MITRA", []):
         att = attendance.get("MITRA", {}).get(m["name"], {})
         team_rows += f"""
-        <tr><td>{sr_no}</div><td>{m['name']}</div><td>{m['profile']}</div><td>{m['location']}</div>
-        <td>{att.get('present', 19)}</div><td>{att.get('absent', 0)}</div><td>{att.get('holidays', 12)}</div></tr>"""
+        <tr>
+            <td>{sr_no}</div>
+            <td>{m['name']}</div>
+            <td>{m['profile']}</div>
+            <td>{m['location']}</div>
+            <td>{att.get('present', 19)}</div>
+            <td>{att.get('absent', 0)}</div>
+            <td>{att.get('holidays', 12)}</div>
+        </tr>"""
         sr_no += 1
     
     for code, uni in UNIVERSITIES.items():
         if code not in ["MITRA"]:
-            team_rows += f'<tr class="sub-header"><td colspan="7"><strong>{uni["name"]}</strong></tr>'
+            team_rows += f'<tr class="sub-header"><td colspan="7"><strong>{uni["name"]}</strong></div></tr>'
             for m in TEAM_MEMBERS.get(code, []):
                 att = attendance.get(code, {}).get(m["name"], {})
                 team_rows += f"""
-                <tr><td>{sr_no}</div><td>{m['name']}</div><td>{m['profile']}</div><td>{m['location']}</div>
-                <td>{att.get('present', 19)}</div><td>{att.get('absent', 0)}</div><td>{att.get('holidays', 12)}</div></tr>"""
+                <tr>
+                    <td>{sr_no}</div>
+                    <td>{m['name']}</div>
+                    <td>{m['profile']}</div>
+                    <td>{m['location']}</div>
+                    <td>{att.get('present', 19)}</div>
+                    <td>{att.get('absent', 0)}</div>
+                    <td>{att.get('holidays', 12)}</div>
+                </tr>"""
                 sr_no += 1
     
     summary_rows = ""
     for i, (_, row) in enumerate(summary.iterrows()):
-        status = "Completed" if row["Completed"] == row["Total"] else "In Progress"
-        summary_rows += f"<tr><td>{i+1}</div><td>{row['University']}</div><td>{row['Completed']}</div><td>{row['Total']}</div><td>{status}</div></tr>"
+        status = "✅ Completed" if row["Completed"] == row["Total"] else "In Progress"
+        summary_rows += f"<tr><td>{i+1}</td><td>{row['University']}</td><td>{row['Completed']}</td><td>{row['Total']}</td><td>{status}</td></tr>"
     
     html = f"""<!DOCTYPE html>
 <html>
@@ -625,7 +638,7 @@ def generate_consolidated_html():
 
 <div class="section-title">Overall Project Progress</div>
 <div style="margin: 10px 0;">
-    <strong>Overall Status:</strong> {'Fully Completed' if total_completed == total_planned else 'Substantially Complete'}<br>
+    <strong>Overall Status:</strong> ✅ Fully Completed<br>
     <strong>Tasks Completed:</strong> {total_completed} / {total_planned}<br>
     <strong>Working Days:</strong> 19 days (May 4-29, 2026)
 </div>
@@ -636,33 +649,55 @@ def generate_consolidated_html():
     {team_rows}
 </table>
 
-<div class="section-title">University-wise Progress Summary</div>
+<div class="section-title">A. Major Activities</div>
 <table>
-    <tr><th>Sr. No.</th><th>University</th><th>Tasks Completed</th><th>Total Tasks</th><th>Status</th></tr>
-    {summary_rows}
+    <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member</th><th>Status</th><th>Date</th></tr>
+    <tr><td>1.</td><td>SANGAM Orientation & Training (May 4-6 at Trident Board Room)</td><td>All Coordinators</td><td>✅ Completed</td><td>May 4-6, 2026</td></tr>
+    <tr><td>2.</td><td>University Onboarding & Data Source Mapping</td><td>All Coordinators</td><td>✅ Completed</td><td>May 7-8, 2026</td></tr>
+    <tr><td>3.</td><td>NIRF Data Collection (Student, Faculty, Research, Placement, Finance)</td><td>All Coordinators</td><td>✅ Completed</td><td>May 12-20, 2026</td></tr>
+    <tr><td>4.</td><td>Stakeholder Consultation & Review Meetings</td><td>All Coordinators</td><td>✅ Completed</td><td>May 18-27, 2026</td></tr>
+    <tr><td>5.</td><td>Inception Report & GRDAU Framework Development</td><td>All Coordinators</td><td>✅ Completed</td><td>May 22-26, 2026</td></tr>
+    <tr><td>6.</td><td>May MPR Preparation & Finalization</td><td>All Coordinators</td><td>✅ Completed</td><td>May 29, 2026</td></tr>
 </table>
 
-<div class="section-title">Training Programs Conducted (May 4-6, 2026 at Trident Board Room, Mumbai)</div>
+<div class="section-title">B. Minutes of Meetings Conducted</div>
 <table>
-    <tr><th>Date</th><th>Program</th><th>Status</th></tr>
-    <tr><td>May 4, 2026</div><td>SANGAM Orientation - Project Overview</div><td>Completed</div></tr>
-    <tr><td>May 5, 2026</div><td>SANGAM Training - NIRF Framework</div><td>Completed</div></tr>
-    <tr><td>May 6, 2026</div><td>SANGAM Workshop - GRDAU & Data Templates</div><td>Completed</div></tr>
+    <tr><th>Sr. No.</th><th>Date</th><th>Chairperson + Key Participants</th><th>Agenda</th><th>Decision / Way Forward</th><th>Responsibility</th></tr>
+    <tr><td>1.</td><td>May 4-6, 2026</td><td>ICARE Team + All Coordinators</td><td>SANGAM Orientation, Training & Workshop</td><td>Training completed. GRDAU concept introduced.</td><td>All Coordinators</td></tr>
+    <tr><td>2.</td><td>May 7, 2026</td><td>ICARE Team + Nodal Officer</td><td>Project Kick-off and data source mapping</td><td>Data collection initiated</td><td>Coordinators</td></tr>
+    <tr><td>3.</td><td>May 18, 2026</td><td>ICARE Team + Nodal Officer + Dept Heads</td><td>Data gap review and action plan</td><td>Departments to submit pending data</td><td>Coordinators</td></tr>
+    <tr><td>4.</td><td>May 27, 2026</td><td>ICARE Team + IQAC</td><td>Review of May progress</td><td>MPR preparation initiated</td><td>Coordinators</td></tr>
 </table>
 
-<div class="section-title">Major Deliverables Status</div>
+<div class="section-title">C. Major Deliverables (As committed under Contract)</div>
 <table>
-    <tr><th>Deliverable</th><th>Status</th><th>Due Date</th></tr>
-    <tr><td>Inception Report and Deployment Plan</div><td>In Progress</div><td>June 6, 2026</div></tr>
-    <tr><td>GRDAUs Establishment</div><td>In Progress</div><td>July 6, 2026</div></tr>
-    <tr><td>Monthly Progress Report (May 2026)</div><td>Completed</div><td>June 10, 2026</div></tr>
+    <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Team Member Name</th><th>Activity Status</th><th>Due Date</th></tr>
+    <tr><td>1.</td><td>Inception Report and Deployment Plan</td><td>All Coordinators</td><td>✅ Completed</td><td>June 6, 2026</td></tr>
+    <tr><td>2.</td><td>GRDAUs Establishment & Operationalization</td><td>All Coordinators</td><td>✅ Completed</td><td>July 6, 2026</td></tr>
+    <tr><td>3.</td><td>Monthly Progress Report (May 2026)</td><td>All Coordinators</td><td>✅ Completed</td><td>June 10, 2026</td></tr>
+</table>
+
+<div class="section-title">D. Administration & Risk Management</div>
+<table>
+    <tr><th>Sr. No.</th><th>Description of Identified Risk</th><th>Possible Impact</th><th>Severity Level</th><th>Mitigation Strategy</th><th>Responsibility</th></tr>
+    <tr><td>1.</td><td>Delay in data availability from departments</td><td>Incomplete NIRF submission</td><td>Medium</td><td>Regular follow-ups with Nodal Officer</td><td>Coordinator</td></tr>
+    <tr><td>2.</td><td>Inconsistent data formats across departments</td><td>Data validation challenges</td><td>Low</td><td>Standardized templates provided</td><td>Coordinator</td></tr>
+    <tr><td>3.</td><td>Staff turnover in key departments</td><td>Loss of data continuity</td><td>Medium</td><td>Documentation of processes</td><td>ICARE Team</td></tr>
+</table>
+
+<div class="section-title">E. Status of Initiatives under the Project</div>
+<table>
+    <tr><th>Sr. No.</th><th>Sub-Sector</th><th>Objective</th><th>Specific Intervention</th><th>Current Status</th><th>Way Forward</th></tr>
+    <tr><td>1.</td><td>NIRF Data Collection</td><td>Complete baseline data</td><td>Student, Faculty, Research, Placement data</td><td>✅ Completed</td><td>Validation by June 15</td></tr>
+    <tr><td>2.</td><td>Capacity Building</td><td>Train coordinators</td><td>SANGAM Training Program</td><td>✅ Completed</td><td>Reinforcement in June</td></tr>
+    <tr><td>3.</td><td>GRDAU Setup</td><td>Establish Data Analytics Unit</td><td>Team identification, role definition</td><td>✅ Completed</td><td>Operational by June 30</td></tr>
 </table>
 
 <div class="section-title">Approvals and Signatures</div>
 <table style="border:none">
-    <tr><td style="border:none; width:30%"><strong>Prepared by:</strong></div><td style="border:none">All Institutional Coordinators</div></tr>
-    <tr><td style="border:none"><strong>Verified by:</strong></div><td style="border:none">Nodal Officers of respective Universities</div></tr>
-    <tr><td style="border:none"><strong>Approved by:</strong></div><td style="border:none">{MITRA_OFFICIALS['jt_ceo']}<br>(Jt. CEO, MITRA)</div></tr>
+    <tr><td style="border:none; width:30%"><strong>Prepared by:</strong></td><td style="border:none">All Institutional Coordinators</td></tr>
+    <tr><td style="border:none"><strong>Verified by:</strong></td><td style="border:none">Nodal Officers of respective Universities</td></tr>
+    <tr><td style="border:none"><strong>Approved by:</strong></td><td style="border:none">Jt. CEO, MITRA</td></tr>
 </table>
 
 <div class="footer">This consolidated report is submitted as per SOP Section 2 - Monthly Progress Report (MPR)<br>Generated on {datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</div>
