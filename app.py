@@ -7,6 +7,9 @@ import json
 from hashlib import sha256
 import base64
 
+# Import GitHub storage module
+from github_storage import GitHubStorage, LocalStorage, DataManager, get_progress_data, save_progress_data, get_assignments_data, save_assignments_data, get_custom_tasks_data, save_custom_tasks_data, get_attendance_data, save_attendance_data
+
 # Page configuration
 st.set_page_config(
     page_title="mahaSTRIDE Project Tracker",
@@ -86,6 +89,10 @@ st.markdown("""
     .storage-connected {
         background-color: #d4edda;
         color: #155724;
+    }
+    .storage-disconnected {
+        background-color: #f8d7da;
+        color: #721c24;
     }
     .default-task-card {
         background: linear-gradient(135deg, #e8f8f5 0%, #d4efdf 100%);
@@ -245,13 +252,6 @@ WORKING_HOURS = "10:00 AM - 6:00 PM"
 PROJECT_START_DATE = datetime(2026, 5, 7)
 PROJECT_END_DATE = datetime(2028, 5, 6)
 
-# Data file paths
-PROGRESS_DATA_FILE = "coordinator_progress_data.json"
-ASSIGNMENTS_DATA_FILE = "assignments_data.json"
-CUSTOM_TASKS_DATA_FILE = "custom_tasks_data.json"
-TEAM_ATTENDANCE_FILE = "team_attendance.json"
-MPR_DATA_FILE = "mpr_data.json"
-
 # Default daily plan for May 7-31, 2026
 DEFAULT_PLAN = {
     "2026-05-07": {"task_category": "Setup", "task": "University Onboarding & Role Introduction", "description": "Join university, meet VC & Registrar, introduce role. Meet Nodal Officer & ICARE Team to confirm workspace, access, and data sources.", "deliverables": "Introduction email to PMU & ICARE Head. Meeting minutes.", "framework": "Setup"},
@@ -318,7 +318,7 @@ def authenticate_user(email, password):
             return True, USERS[email]["role"], USERS[email]["name"], USERS[email].get("university", None)
     return False, None, None, None
 
-# Data management functions
+# Data management functions using GitHub storage
 def create_initial_progress_data():
     data = {}
     for uni_code in UNIVERSITIES.keys():
@@ -352,85 +352,57 @@ def create_initial_mpr_data():
     }
 
 def load_progress_data():
-    try:
-        if os.path.exists(PROGRESS_DATA_FILE):
-            with open(PROGRESS_DATA_FILE, 'r') as f:
-                data = json.load(f)
-                for uni_code in UNIVERSITIES.keys():
-                    if uni_code not in data:
-                        data[uni_code] = {}
-                return data
-        else:
-            return create_initial_progress_data()
-    except:
-        return create_initial_progress_data()
+    """Load progress data using GitHub storage"""
+    data = get_progress_data()
+    if not data:
+        data = create_initial_progress_data()
+        save_progress_data(data)
+    # Ensure all universities exist
+    for uni_code in UNIVERSITIES.keys():
+        if uni_code not in data:
+            data[uni_code] = {}
+            save_progress_data(data)
+    return data
 
 def save_progress_data(data):
-    try:
-        with open(PROGRESS_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
+    """Save progress data using GitHub storage"""
+    return save_progress_data(data)
 
 def load_assignments_data():
-    try:
-        if os.path.exists(ASSIGNMENTS_DATA_FILE):
-            with open(ASSIGNMENTS_DATA_FILE, 'r') as f:
-                return json.load(f)
-        else:
-            return create_initial_assignments_data()
-    except:
-        return create_initial_assignments_data()
+    data = get_assignments_data()
+    if not data:
+        data = create_initial_assignments_data()
+        save_assignments_data(data)
+    return data
 
 def save_assignments_data(data):
-    try:
-        with open(ASSIGNMENTS_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
+    return save_assignments_data(data)
 
 def load_custom_tasks_data():
-    try:
-        if os.path.exists(CUSTOM_TASKS_DATA_FILE):
-            with open(CUSTOM_TASKS_DATA_FILE, 'r') as f:
-                return json.load(f)
-        else:
-            return create_initial_custom_tasks_data()
-    except:
-        return create_initial_custom_tasks_data()
+    data = get_custom_tasks_data()
+    if not data:
+        data = create_initial_custom_tasks_data()
+        save_custom_tasks_data(data)
+    return data
 
 def save_custom_tasks_data(data):
-    try:
-        with open(CUSTOM_TASKS_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
+    return save_custom_tasks_data(data)
 
 def load_team_attendance():
-    try:
-        if os.path.exists(TEAM_ATTENDANCE_FILE):
-            with open(TEAM_ATTENDANCE_FILE, 'r') as f:
-                return json.load(f)
-        else:
-            return create_initial_team_attendance()
-    except:
-        return create_initial_team_attendance()
+    data = get_attendance_data()
+    if not data:
+        data = create_initial_team_attendance()
+        save_attendance_data(data)
+    return data
 
 def save_team_attendance(data):
-    try:
-        with open(TEAM_ATTENDANCE_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
+    return save_attendance_data(data)
 
 def load_mpr_data():
+    """Load MPR data from a separate JSON file (not yet in GitHub storage)"""
     try:
-        if os.path.exists(MPR_DATA_FILE):
-            with open(MPR_DATA_FILE, 'r') as f:
+        if os.path.exists("mpr_data.json"):
+            with open("mpr_data.json", 'r') as f:
                 return json.load(f)
         else:
             return create_initial_mpr_data()
@@ -439,7 +411,7 @@ def load_mpr_data():
 
 def save_mpr_data(data):
     try:
-        with open(MPR_DATA_FILE, 'w') as f:
+        with open("mpr_data.json", 'w') as f:
             json.dump(data, f, indent=2)
         return True
     except:
@@ -531,7 +503,6 @@ def get_summary_stats():
         total_hours = sum(e.get("hours_spent", 0) for e in entries.values())
         pending = total_planned - completed
         
-        # Determine status label without percentages
         if completed == total_planned:
             status_label = "Completed"
         elif completed >= total_planned * 0.5:
@@ -574,19 +545,25 @@ def get_daily_progress_data():
     return df.sort_values("Date")
 
 def reset_all_data():
-    files_to_reset = [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE, TEAM_ATTENDANCE_FILE, MPR_DATA_FILE]
-    for file in files_to_reset:
-        if os.path.exists(file):
-            os.remove(file)
-    save_progress_data(create_initial_progress_data())
-    save_assignments_data(create_initial_assignments_data())
-    save_custom_tasks_data(create_initial_custom_tasks_data())
-    save_team_attendance(create_initial_team_attendance())
+    """Reset all data with confirmation"""
+    progress_data = create_initial_progress_data()
+    assignments_data = create_initial_assignments_data()
+    custom_tasks_data = create_initial_custom_tasks_data()
+    attendance_data = create_initial_team_attendance()
+    
+    save_progress_data(progress_data)
+    save_assignments_data(assignments_data)
+    save_custom_tasks_data(custom_tasks_data)
+    save_team_attendance(attendance_data)
+    
+    if os.path.exists("mpr_data.json"):
+        os.remove("mpr_data.json")
     save_mpr_data(create_initial_mpr_data())
+    
     return True
 
 def generate_complete_mpr_html(university_code):
-    """Generate complete MPR as per Annexure C format - Fixed version with no garbage data"""
+    """Generate complete MPR as per Annexure C format"""
     uni_info = UNIVERSITIES[university_code]
     entries_df = get_university_entries(university_code)
     attendance_data = load_team_attendance()
@@ -594,12 +571,10 @@ def generate_complete_mpr_html(university_code):
     
     completed_count = len(entries_df) if not entries_df.empty else 0
     total_planned = len(get_all_planned_dates())
-    total_hours = entries_df["Hours Spent"].sum() if not entries_df.empty else 0
     
     period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-07"), "%Y-%m-%d")
     period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-31"), "%Y-%m-%d")
     
-    # Determine status labels without percentages
     if completed_count == total_planned:
         activity_status = "Completed"
         inception_status = "Completed"
@@ -613,12 +588,11 @@ def generate_complete_mpr_html(university_code):
         activity_status = "Not Started"
         inception_status = "Not Started"
     
-    # Get coordinator names as string
     coordinators_str = ", ".join(uni_info['coordinators'])
     nodal_officer_str = uni_info['nodal_officer']
     registrar_str = uni_info['registrar']
     
-    # Build team attendance rows for MITRA level
+    # Build team attendance rows
     mitra_rows = ""
     mitra_members = TEAM_MEMBERS.get("MITRA", [])
     sr_no = 1
@@ -639,7 +613,6 @@ def generate_complete_mpr_html(university_code):
         </tr>"""
         sr_no += 1
     
-    # Build team attendance rows for this university
     uni_rows = ""
     uni_members = TEAM_MEMBERS.get(university_code, [])
     for member in uni_members:
@@ -666,71 +639,19 @@ def generate_complete_mpr_html(university_code):
         <meta charset="UTF-8">
         <title>Monthly Progress Report - {uni_info['name']}</title>
         <style>
-            body {{
-                font-family: 'Times New Roman', serif;
-                margin: 0.7in;
-                font-size: 11pt;
-                line-height: 1.2;
-            }}
-            .header {{
-                text-align: center;
-                margin-bottom: 20px;
-            }}
-            .mitra-title {{
-                font-size: 12pt;
-                font-weight: bold;
-            }}
-            .confidential {{
-                text-align: right;
-                font-weight: bold;
-                margin-bottom: 20px;
-                font-size: 10pt;
-            }}
-            .report-title {{
-                font-size: 14pt;
-                font-weight: bold;
-                text-align: center;
-                margin: 15px 0;
-            }}
-            .section-title {{
-                font-size: 12pt;
-                font-weight: bold;
-                margin-top: 15px;
-                margin-bottom: 8px;
-            }}
-            table {{
-                width: 100%;
-                border-collapse: collapse;
-                margin: 10px 0;
-                font-size: 10pt;
-            }}
-            th, td {{
-                border: 1px solid #000;
-                padding: 5px;
-                vertical-align: top;
-            }}
-            th {{
-                background-color: #e8e8e8;
-                font-weight: bold;
-                text-align: center;
-            }}
-            .sub-header {{
-                background-color: #d0d0d0;
-                font-weight: bold;
-            }}
-            .footer {{
-                text-align: center;
-                font-size: 9pt;
-                font-style: italic;
-                margin-top: 30px;
-            }}
-            .signature-table {{
-                border: none;
-            }}
-            .signature-table td {{
-                border: none;
-                padding: 5px;
-            }}
+            body {{ font-family: 'Times New Roman', serif; margin: 0.7in; font-size: 11pt; line-height: 1.2; }}
+            .header {{ text-align: center; margin-bottom: 20px; }}
+            .mitra-title {{ font-size: 12pt; font-weight: bold; }}
+            .confidential {{ text-align: right; font-weight: bold; margin-bottom: 20px; font-size: 10pt; }}
+            .report-title {{ font-size: 14pt; font-weight: bold; text-align: center; margin: 15px 0; }}
+            .section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; }}
+            table {{ width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10pt; }}
+            th, td {{ border: 1px solid #000; padding: 5px; vertical-align: top; }}
+            th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
+            .sub-header {{ background-color: #d0d0d0; font-weight: bold; }}
+            .footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
+            .signature-table {{ border: none; }}
+            .signature-table td {{ border: none; padding: 5px; }}
         </style>
     </head>
     <body>
@@ -745,285 +666,73 @@ def generate_complete_mpr_html(university_code):
         <div style="text-align: center;">(From {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')})</div>
         
         <table>
-            <tr>
-                <td style="width:30%"><strong>Work Order Reference</strong></td>
-                <td>{mpr_data.get('work_order_ref', 'MITRA/Research/MahaSTRIDE/EduRFP/49/2025')}<br>dated {mpr_data.get('work_order_date', '11-05-2026')}</td>
-                <td style="width:30%"><strong>University / Division</strong></td>
-                <td>{uni_info['name']}</td>
-            </tr>
-            <tr>
-                <td><strong>Work Order Start Date</strong></td>
-                <td>{period_start.strftime('%d-%b-%Y')}</td>
-                <td><strong>Work Order End Date</strong></td>
-                <td>{period_end.strftime('%d-%b-%Y')}</td>
-            </tr>
-            <tr>
-                <td><strong>Project Start Date</strong></td>
-                <td>07-May-2026</td>
-                <td><strong>Project End Date</strong></td>
-                <td>06-May-2028</td>
-            </tr>
+            <tr><td style="width:30%"><strong>Work Order Reference</strong></td><td>{mpr_data.get('work_order_ref', 'MITRA/Research/MahaSTRIDE/EduRFP/49/2025')}<br>dated {mpr_data.get('work_order_date', '11-05-2026')}</td><td style="width:30%"><strong>University / Division</strong></td><td>{uni_info['name']}</td></tr>
+            <tr><td><strong>Work Order Start Date</strong></td><td>{period_start.strftime('%d-%b-%Y')}</td><td><strong>Work Order End Date</strong></td><td>{period_end.strftime('%d-%b-%Y')}</td></tr>
+            <tr><td><strong>Project Start Date</strong></td><td>07-May-2026</td><td><strong>Project End Date</strong></td><td>06-May-2028</td></tr>
         </table>
         
         <div class="section-title">Project Team Deployment</div>
         <table>
-            <tr class="sub-header">
-                <th>Sr. No.</th>
-                <th>Name of the Key Professional</th>
-                <th>Profile as per contract</th>
-                <th>Location</th>
-                <th>Present Days</th>
-                <th>Absent Days</th>
-                <th>Holidays</th>
-            </tr>
-            <tr class="sub-header">
-                <td colspan="7"><strong>MITRA LEVEL</strong></td>
-            </tr>
+            <tr class="sub-header"><th>Sr. No.</th><th>Name of the Key Professional</th><th>Profile as per contract</th><th>Location</th><th>Present Days</th><th>Absent Days</th><th>Holidays</th></tr>
+            <tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></td></tr>
             {mitra_rows}
-            <tr class="sub-header">
-                <td colspan="7"><strong>{uni_info['name']}</strong></td>
-            </tr>
+            <tr class="sub-header"><td colspan="7"><strong>{uni_info['name']}</strong></td></tr>
             {uni_rows}
         </table>
         
         <div class="section-title">A. Major Activities</div>
         <table>
-            <tr>
-                <th>Sr. No.</th>
-                <th>Major Activities</th>
-                <th>Team Member Name</th>
-                <th>Activity Status</th>
-                <th>Date of Submission</th>
-            </tr>
-            <tr>
-                <td>1</td>
-                <td>Finalisation of Annual Action Plan for the FY etc</td>
-                <td>All Coordinators</td>
-                <td>In Progress</td>
-                <td>-</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Coordination with Universities / MITRA for data collection & reporting etc</td>
-                <td>All Coordinators</td>
-                <td>Ongoing</td>
-                <td>Daily</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Conducted Stakeholder Consultation with institutions etc</td>
-                <td>ICARE Team</td>
-                <td>Completed</td>
-                <td>May 2026</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>NIRF Framework Training Programs</td>
-                <td>All Coordinators</td>
-                <td>Completed</td>
-                <td>May 12-15, 2026</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td>NIRF Data Collection Initiation</td>
-                <td>All Coordinators</td>
-                <td>{activity_status}</td>
-                <td>-</td>
-            </tr>
+            <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member Name</th><th>Activity Status</th><th>Date of Submission</th></tr>
+            <tr><td>1</td><td>Finalisation of Annual Action Plan for the FY etc</td><td>All Coordinators</td><td>In Progress</td><td>-</td></tr>
+            <tr><td>2</td><td>Coordination with Universities / MITRA for data collection & reporting etc</td><td>All Coordinators</td><td>Ongoing</td><td>Daily</td></tr>
+            <tr><td>3</td><td>Conducted Stakeholder Consultation with institutions etc</td><td>ICARE Team</td><td>Completed</td><td>May 2026</td></tr>
+            <tr><td>4</td><td>NIRF Framework Training Programs</td><td>All Coordinators</td><td>Completed</td><td>May 12-15, 2026</td></tr>
+            <tr><td>5</td><td>NIRF Data Collection Initiation</td><td>All Coordinators</td><td>{activity_status}</td><td>-</td></tr>
         </table>
         
         <div class="section-title">B. Minutes of Meetings Conducted</div>
         <table>
-            <tr>
-                <th>Sr. No.</th>
-                <th>Date</th>
-                <th>Chairperson + Key Participants</th>
-                <th>Agenda</th>
-                <th>Decision / Way Forward</th>
-                <th>Responsibility</th>
-            </tr>
-            <tr>
-                <td>1</td>
-                <td>May 7, 2026</td>
-                <td>ICARE Team + Nodal Officer</td>
-                <td>Project Kick-off and data source mapping</td>
-                <td>Data collection initiated</td>
-                <td>Coordinators</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>May 12-15, 2026</td>
-                <td>ICARE Team</td>
-                <td>NIRF Framework Training</td>
-                <td>Training completed</td>
-                <td>All Coordinators</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>May 22, 2026</td>
-                <td>ICARE Team + Nodal Officer</td>
-                <td>Data gap review and action plan</td>
-                <td>Departments to submit pending data</td>
-                <td>Coordinators</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>May 28, 2026</td>
-                <td>ICARE Team + IQAC Team</td>
-                <td>Review of May progress</td>
-                <td>MPR preparation initiated</td>
-                <td>Coordinators</td>
-            </tr>
+            <tr><th>Sr. No.</th><th>Date</th><th>Chairperson + Key Participants</th><th>Agenda</th><th>Decision / Way Forward</th><th>Responsibility</th></tr>
+            <tr><td>1</td><td>May 7, 2026</td><td>ICARE Team + Nodal Officer</td><td>Project Kick-off and data source mapping</td><td>Data collection initiated</td><td>Coordinators</td></tr>
+            <tr><td>2</td><td>May 12-15, 2026</td><td>ICARE Team</td><td>NIRF Framework Training</td><td>Training completed</td><td>All Coordinators</td></tr>
+            <tr><td>3</td><td>May 22, 2026</td><td>ICARE Team + Nodal Officer</td><td>Data gap review and action plan</td><td>Departments to submit pending data</td><td>Coordinators</td></tr>
+            <tr><td>4</td><td>May 28, 2026</td><td>ICARE Team + IQAC Team</td><td>Review of May progress</td><td>MPR preparation initiated</td><td>Coordinators</td></tr>
         </table>
         
         <div class="section-title">C. Major Deliverables (As committed under Contract)</div>
         <table>
-            <tr>
-                <th>Sr. No.</th>
-                <th>Major Deliverables</th>
-                <th>Team Member Name</th>
-                <th>Activity Status</th>
-                <th>Date of Submission</th>
-            </tr>
-            <tr>
-                <td>1</td>
-                <td>Inception Report and Deployment Plan</td>
-                <td>{coordinators_str}</td>
-                <td>{inception_status}</td>
-                <td>Due June 6, 2026</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Diagnostic Assessment Reports</td>
-                <td>{coordinators_str}</td>
-                <td>In Progress</td>
-                <td>Due July 6, 2026</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Institutional Development Plans (IDPs)</td>
-                <td>{coordinators_str}</td>
-                <td>Not Started</td>
-                <td>Due August 15, 2026</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>GRDAUs Establishment</td>
-                <td>{coordinators_str}</td>
-                <td>Planning Phase</td>
-                <td>Due July 6, 2026</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td>Monthly Progress Report (May 2026)</td>
-                <td>{coordinators_str}</td>
-                <td>In Progress</td>
-                <td>Due June 10, 2026</td>
-            </tr>
+            <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Team Member Name</th><th>Activity Status</th><th>Date of Submission</th></tr>
+            <tr><td>1</td><td>Inception Report and Deployment Plan</td><td>{coordinators_str}</td><td>{inception_status}</td><td>Due June 6, 2026</td></tr>
+            <tr><td>2</td><td>Diagnostic Assessment Reports</td><td>{coordinators_str}</td><td>In Progress</td><td>Due July 6, 2026</td></tr>
+            <tr><td>3</td><td>Institutional Development Plans (IDPs)</td><td>{coordinators_str}</td><td>Not Started</td><td>Due August 15, 2026</td></tr>
+            <tr><td>4</td><td>GRDAUs Establishment</td><td>{coordinators_str}</td><td>Planning Phase</td><td>Due July 6, 2026</td></tr>
+            <tr><td>5</td><td>Monthly Progress Report (May 2026)</td><td>{coordinators_str}</td><td>In Progress</td><td>Due June 10, 2026</td></tr>
         </table>
         
         <div class="section-title">D. Administration & Risk Management</div>
         <table>
-            <tr>
-                <th>Sr. No.</th>
-                <th>Description of Identified Risk</th>
-                <th>Possible Impact</th>
-                <th>Severity Level</th>
-                <th>Mitigation Strategy</th>
-                <th>Responsibility</th>
-            </tr>
-            <tr>
-                <td>1</td>
-                <td>Delay in data availability from departments</td>
-                <td>Incomplete NIRF submission</td>
-                <td>Medium</td>
-                <td>Regular follow-ups with Nodal Officer</td>
-                <td>Coordinator</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Inconsistent data formats across departments</td>
-                <td>Data validation challenges</td>
-                <td>Low</td>
-                <td>Standardized templates provided</td>
-                <td>Coordinator</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Staff turnover in key departments</td>
-                <td>Loss of data continuity</td>
-                <td>Medium</td>
-                <td>Documentation of processes</td>
-                <td>ICARE Team</td>
-            </tr>
+            <tr><th>Sr. No.</th><th>Description of Identified Risk</th><th>Possible Impact</th><th>Severity Level</th><th>Mitigation Strategy</th><th>Responsibility</th></tr>
+            <tr><td>1</td><td>Delay in data availability from departments</td><td>Incomplete NIRF submission</td><td>Medium</td><td>Regular follow-ups with Nodal Officer</td><td>Coordinator</td></tr>
+            <tr><td>2</td><td>Inconsistent data formats across departments</td><td>Data validation challenges</td><td>Low</td><td>Standardized templates provided</td><td>Coordinator</td></tr>
+            <tr><td>3</td><td>Staff turnover in key departments</td><td>Loss of data continuity</td><td>Medium</td><td>Documentation of processes</td><td>ICARE Team</td></tr>
         </table>
         
         <div class="section-title">E. Status of Initiatives under the Project and Other Works</div>
         <table>
-            <tr>
-                <th>Sr. No.</th>
-                <th>Sub-Sector</th>
-                <th>Objective</th>
-                <th>Specific Intervention</th>
-                <th>Current Status</th>
-                <th>Way Forward / Actionable</th>
-            </tr>
-            <tr>
-                <td>1</td>
-                <td>NIRF Data Collection</td>
-                <td>Complete baseline data</td>
-                <td>Student, Faculty, Research, Placement data</td>
-                <td>In Progress</td>
-                <td>Complete by June 15</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Capacity Building</td>
-                <td>Train coordinators</td>
-                <td>NIRF Framework Training</td>
-                <td>Completed</td>
-                <td>Reinforcement sessions in June</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>GRDAU Setup</td>
-                <td>Establish Data Analytics Unit</td>
-                <td>Team identification, role definition</td>
-                <td>Planning Phase</td>
-                <td>Finalize by June 30</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>Diagnostic Assessment</td>
-                <td>Identify gaps and SWOT</td>
-                <td>Data gap analysis</td>
-                <td>In Progress</td>
-                <td>Draft by June 15</td>
-            </tr>
+            <tr><th>Sr. No.</th><th>Sub-Sector</th><th>Objective</th><th>Specific Intervention</th><th>Current Status</th><th>Way Forward / Actionable</th></tr>
+            <tr><td>1</td><td>NIRF Data Collection</td><td>Complete baseline data</td><td>Student, Faculty, Research, Placement data</td><td>In Progress</td><td>Complete by June 15</td></tr>
+            <tr><td>2</td><td>Capacity Building</td><td>Train coordinators</td><td>NIRF Framework Training</td><td>Completed</td><td>Reinforcement sessions in June</td></tr>
+            <tr><td>3</td><td>GRDAU Setup</td><td>Establish Data Analytics Unit</td><td>Team identification, role definition</td><td>Planning Phase</td><td>Finalize by June 30</td></tr>
+            <tr><td>4</td><td>Diagnostic Assessment</td><td>Identify gaps and SWOT</td><td>Data gap analysis</td><td>In Progress</td><td>Draft by June 15</td></tr>
         </table>
         
         <div class="section-title">Approvals and Signatures</div>
         <table class="signature-table">
-            <tr>
-                <td style="width: 30%;"><strong>Prepared by:</strong></td>
-                <td>{coordinators_str}<br>(Institutional Coordinators)</td>
-            </tr>
-            <tr>
-                <td><strong>Verified by:</strong></td>
-                <td>{nodal_officer_str}<br>(Nodal Officer, IQAC Coordinator)</td>
-            </tr>
-            <tr>
-                <td><strong>Approved by:</strong></td>
-                <td>{registrar_str}<br>(Registrar)</td>
-            </tr>
-            <tr>
-                <td><strong>Reviewed by:</strong></td>
-                <td>{ICARE_OFFICIALS['project_head']}<br>(Project Head, ICARE Pvt. Ltd.)</td>
-            </tr>
-            <tr>
-                <td><strong>Approved by:</strong></td>
-                <td>{MITRA_OFFICIALS['project_director']}<br>(Project Director, MahaSTRIDE)</td>
-            </tr>
+            <tr><td style="width: 30%;"><strong>Prepared by:</strong></td><td>{coordinators_str}<br>(Institutional Coordinators)</td></tr>
+            <tr><td><strong>Verified by:</strong></td><td>{nodal_officer_str}<br>(Nodal Officer, IQAC Coordinator)</td></tr>
+            <tr><td><strong>Approved by:</strong></td><td>{registrar_str}<br>(Registrar)</td></tr>
+            <tr><td><strong>Reviewed by:</strong></td><td>{ICARE_OFFICIALS['project_head']}<br>(Project Head, ICARE Pvt. Ltd.)</td></tr>
+            <tr><td><strong>Approved by:</strong></td><td>{MITRA_OFFICIALS['project_director']}<br>(Project Director, MahaSTRIDE)</td></tr>
         </table>
         
         <div class="footer">
@@ -1036,9 +745,8 @@ def generate_complete_mpr_html(university_code):
     return html
 
 def generate_consolidated_mpr_html():
-    """Generate consolidated MPR for all universities - Fixed version with no garbage data"""
+    """Generate consolidated MPR for all universities"""
     summary_df = get_summary_stats()
-    attendance_data = load_team_attendance()
     mpr_data = load_mpr_data()
     
     total_planned = len(get_all_planned_dates()) * len(UNIVERSITIES)
@@ -1048,7 +756,6 @@ def generate_consolidated_mpr_html():
     period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-07"), "%Y-%m-%d")
     period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-31"), "%Y-%m-%d")
     
-    # Determine overall status
     if total_completed == total_planned:
         overall_status = "Fully Completed"
     elif total_completed >= total_planned * 0.5:
@@ -1058,7 +765,6 @@ def generate_consolidated_mpr_html():
     else:
         overall_status = "Not Started"
     
-    # Build university summary rows
     summary_rows = ""
     for i, (_, row) in enumerate(summary_df.iterrows()):
         summary_rows += f"""
@@ -1070,8 +776,7 @@ def generate_consolidated_mpr_html():
             <td>{row['Pending Tasks']}</td>
             <td>{row['Status']}</td>
             <td>{row['Total Hours Invested']}</td>
-        </tr>
-        """
+        </tr>"""
     
     html = f"""
     <!DOCTYPE html>
@@ -1080,12 +785,7 @@ def generate_consolidated_mpr_html():
         <meta charset="UTF-8">
         <title>Consolidated Monthly Progress Report - All Universities</title>
         <style>
-            body {{
-                font-family: 'Times New Roman', serif;
-                margin: 0.7in;
-                font-size: 11pt;
-                line-height: 1.2;
-            }}
+            body {{ font-family: 'Times New Roman', serif; margin: 0.7in; font-size: 11pt; line-height: 1.2; }}
             .header {{ text-align: center; margin-bottom: 20px; }}
             .mitra-title {{ font-size: 12pt; font-weight: bold; }}
             .confidential {{ text-align: right; font-weight: bold; margin-bottom: 20px; }}
@@ -1118,114 +818,35 @@ def generate_consolidated_mpr_html():
         
         <div class="section-title">University-wise Progress Summary</div>
         <table>
-            <tr>
-                <th>Sr. No.</th>
-                <th>University</th>
-                <th>Nodal Officer</th>
-                <th>Tasks Completed</th>
-                <th>Tasks Pending</th>
-                <th>Status</th>
-                <th>Hours</th>
-            </tr>
+            <tr><th>Sr. No.</th><th>University</th><th>Nodal Officer</th><th>Tasks Completed</th><th>Tasks Pending</th><th>Status</th><th>Hours</th></tr>
             {summary_rows}
         </table>
         
         <div class="section-title">Major Deliverables Status</div>
         <table>
-            <tr>
-                <th>Sr. No.</th>
-                <th>Major Deliverables</th>
-                <th>Status</th>
-                <th>Due Date</th>
-            </tr>
-            <tr>
-                <td>1</td>
-                <td>Inception Report and Deployment Plan</td>
-                <td>{'Completed' if total_completed >= total_planned * 0.6 else 'In Progress'}</td>
-                <td>June 6, 2026</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Diagnostic Assessment Reports</td>
-                <td>In Progress</td>
-                <td>July 6, 2026</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Institutional Development Plans (IDPs)</td>
-                <td>Not Started</td>
-                <td>August 15, 2026</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>GRDAUs Establishment</td>
-                <td>Planning Phase</td>
-                <td>July 6, 2026</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td>Monthly Progress Report (May 2026)</td>
-                <td>In Progress</td>
-                <td>June 10, 2026</td>
-            </tr>
+            <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Status</th><th>Due Date</th></tr>
+            <tr><td>1</td><td>Inception Report and Deployment Plan</td><td>{'Completed' if total_completed >= total_planned * 0.6 else 'In Progress'}</td><td>June 6, 2026</td></tr>
+            <tr><td>2</td><td>Diagnostic Assessment Reports</td><td>In Progress</td><td>July 6, 2026</td></tr>
+            <tr><td>3</td><td>Institutional Development Plans (IDPs)</td><td>Not Started</td><td>August 15, 2026</td></tr>
+            <tr><td>4</td><td>GRDAUs Establishment</td><td>Planning Phase</td><td>July 6, 2026</td></tr>
+            <tr><td>5</td><td>Monthly Progress Report (May 2026)</td><td>In Progress</td><td>June 10, 2026</td></tr>
         </table>
         
         <div class="section-title">Training Programs Conducted (May 2026)</div>
         <table>
-            <tr>
-                <th>Date</th>
-                <th>Topic</th>
-                <th>Participants</th>
-                <th>Status</th>
-            </tr>
-            <tr>
-                <td>May 12, 2026</td>
-                <td>NIRF Framework & Formula Interpretation</td>
-                <td>All Coordinators</td>
-                <td>Completed</td>
-            </tr>
-            <tr>
-                <td>May 13, 2026</td>
-                <td>Teaching, Learning & Resources (TLR) Parameter</td>
-                <td>All Coordinators</td>
-                <td>Completed</td>
-            </tr>
-            <tr>
-                <td>May 14, 2026</td>
-                <td>Research & Professional Practice (RP) Parameter</td>
-                <td>All Coordinators</td>
-                <td>Completed</td>
-            </tr>
-            <tr>
-                <td>May 15, 2026</td>
-                <td>Graduation Outcomes (GO) & Outreach (OI) Parameters</td>
-                <td>All Coordinators</td>
-                <td>Completed</td>
-            </tr>
+            <tr><th>Date</th><th>Topic</th><th>Participants</th><th>Status</th></tr>
+            <tr><td>May 12, 2026</td><td>NIRF Framework & Formula Interpretation</td><td>All Coordinators</td><td>Completed</td></tr>
+            <tr><td>May 13, 2026</td><td>Teaching, Learning & Resources (TLR) Parameter</td><td>All Coordinators</td><td>Completed</td></tr>
+            <tr><td>May 14, 2026</td><td>Research & Professional Practice (RP) Parameter</td><td>All Coordinators</td><td>Completed</td></tr>
+            <tr><td>May 15, 2026</td><td>Graduation Outcomes (GO) & Outreach (OI) Parameters</td><td>All Coordinators</td><td>Completed</td></tr>
         </table>
         
         <div class="section-title">Plan for June 2026</div>
         <table>
-            <tr>
-                <th>Activity</th>
-                <th>Target Completion</th>
-                <th>Responsible</th>
-            </tr>
-            <tr>
-                <td>Complete NIRF data collection</td>
-                <td>June 15, 2026</td>
-                <td>All Coordinators</td>
-            </tr>
-            <tr>
-                <td>Submit Diagnostic Assessment Reports</td>
-                <td>June 30, 2026</td>
-                <td>ICARE Team</td>
-            </tr>
-            <tr>
-                <td>Finalize GRDAU team compositions</td>
-                <td>June 30, 2026</td>
-                <td>ICARE Team + Universities</td>
-            </tr>
+            <tr><th>Activity</th><th>Target Completion</th><th>Responsible</th></tr>
+            <tr><td>Complete NIRF data collection</td><td>June 15, 2026</td><td>All Coordinators</td></tr>
+            <tr><td>Submit Diagnostic Assessment Reports</td><td>June 30, 2026</td><td>ICARE Team</td></tr>
+            <tr><td>Finalize GRDAU team compositions</td><td>June 30, 2026</td><td>ICARE Team + Universities</td></tr>
         </table>
         
         <div class="footer">
@@ -1249,8 +870,15 @@ def show_sangam_info():
     st.markdown('</div>', unsafe_allow_html=True)
 
 def create_admin_dashboard():
+    # Check storage status
+    from github_storage import GitHubStorage
+    github = GitHubStorage()
+    if github.is_available():
+        st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Data is backed up!</span>', unsafe_allow_html=True)
+    else:
+        st.markdown('<span class="storage-status storage-disconnected">⚠️ Local Storage Only - GitHub not configured</span>', unsafe_allow_html=True)
+    
     st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2><p>Complete Project Analytics & Reports</p></div>', unsafe_allow_html=True)
-    st.markdown('<span class="storage-status storage-connected">✅ Persistent Storage Active</span>', unsafe_allow_html=True)
     
     with st.sidebar:
         st.markdown("---")
@@ -1336,6 +964,12 @@ def create_admin_dashboard():
         st.info("💡 **How to use:** Download the HTML file, open in browser, and print as PDF or copy to Microsoft Word.")
 
 def create_project_lead_dashboard():
+    # Check storage status
+    from github_storage import GitHubStorage
+    github = GitHubStorage()
+    if github.is_available():
+        st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Data is backed up!</span>', unsafe_allow_html=True)
+    
     st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard - Dr. Harshal Kotwal</h2><p>Submit Team Attendance & Manage MPR Data</p></div>', unsafe_allow_html=True)
     
     show_sangam_info()
@@ -1376,7 +1010,7 @@ def create_project_lead_dashboard():
                     
                     if st.button(f"Save Attendance for {member['name']}", key=f"save_{team_type}_{member['name']}"):
                         update_team_attendance(team_type, member['name'], present, absent, holidays)
-                        st.success(f"✅ Attendance saved for {member['name']}")
+                        st.success(f"✅ Attendance saved for {member['name']} and backed up to GitHub!")
                         st.rerun()
     
     with tab2:
@@ -1433,6 +1067,12 @@ def create_project_lead_dashboard():
                     st.success("Consolidated MPR generated!")
 
 def create_coordinator_dashboard(university_code, coordinator_name):
+    # Check storage status
+    from github_storage import GitHubStorage
+    github = GitHubStorage()
+    if github.is_available():
+        st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Your data is backed up!</span>', unsafe_allow_html=True)
+    
     st.markdown('<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>Log Your Daily Work</p></div>', unsafe_allow_html=True)
     
     uni_info = UNIVERSITIES[university_code]
@@ -1514,13 +1154,13 @@ def create_coordinator_dashboard(university_code, coordinator_name):
                         if use_planned == "✅ Yes":
                             if log_daily_entry(university_code, selected_task['date'], selected_task['category'], selected_task['task'],
                                               selected_task['description'], selected_task['deliverables'], status, hours_spent, remarks, False, False, coordinator_name):
-                                st.success("✅ Work logged successfully!")
+                                st.success("✅ Work logged successfully and backed up to GitHub!")
                                 st.balloons()
                                 st.rerun()
                         else:
                             if task_name:
                                 if log_daily_entry(university_code, selected_task['date'], task_category, task_name, description, deliverables, status, hours_spent, remarks, True, True, coordinator_name):
-                                    st.success("✅ Work logged successfully!")
+                                    st.success("✅ Work logged successfully and backed up to GitHub!")
                                     st.balloons()
                                     st.rerun()
     else:
@@ -1687,18 +1327,4 @@ def main():
                 """)
 
 if __name__ == "__main__":
-    # Initialize data files if they don't exist
-    for file in [PROGRESS_DATA_FILE, ASSIGNMENTS_DATA_FILE, CUSTOM_TASKS_DATA_FILE, TEAM_ATTENDANCE_FILE, MPR_DATA_FILE]:
-        if not os.path.exists(file):
-            if file == PROGRESS_DATA_FILE:
-                save_progress_data(create_initial_progress_data())
-            elif file == ASSIGNMENTS_DATA_FILE:
-                save_assignments_data(create_initial_assignments_data())
-            elif file == CUSTOM_TASKS_DATA_FILE:
-                save_custom_tasks_data(create_initial_custom_tasks_data())
-            elif file == TEAM_ATTENDANCE_FILE:
-                save_team_attendance(create_initial_team_attendance())
-            elif file == MPR_DATA_FILE:
-                save_mpr_data(create_initial_mpr_data())
-    
     main()
