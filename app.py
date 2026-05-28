@@ -7,8 +7,23 @@ import json
 from hashlib import sha256
 import base64
 
-# Import GitHub storage module
-from github_storage import GitHubStorage, LocalStorage, DataManager, get_progress_data, save_progress_data, get_assignments_data, save_assignments_data, get_custom_tasks_data, save_custom_tasks_data, get_attendance_data, save_attendance_data
+# Try to import GitHub storage, but handle gracefully if not available
+try:
+    from github_storage import (
+        get_progress_data as github_get_progress,
+        save_progress_data as github_save_progress,
+        get_assignments_data as github_get_assignments,
+        save_assignments_data as github_save_assignments,
+        get_custom_tasks_data as github_get_custom_tasks,
+        save_custom_tasks_data as github_save_custom_tasks,
+        get_attendance_data as github_get_attendance,
+        save_attendance_data as github_save_attendance,
+        GitHubStorage
+    )
+    GITHUB_AVAILABLE = True
+except ImportError:
+    GITHUB_AVAILABLE = False
+    st.warning("GitHub storage module not found. Using local file storage.")
 
 # Page configuration
 st.set_page_config(
@@ -318,7 +333,17 @@ def authenticate_user(email, password):
             return True, USERS[email]["role"], USERS[email]["name"], USERS[email].get("university", None)
     return False, None, None, None
 
-# Data management functions using GitHub storage
+# ============================================================
+# DATA MANAGEMENT FUNCTIONS - NO RECURSION
+# ============================================================
+
+# File paths for local storage
+PROGRESS_DATA_FILE = "coordinator_progress_data.json"
+ASSIGNMENTS_DATA_FILE = "assignments_data.json"
+CUSTOM_TASKS_DATA_FILE = "custom_tasks_data.json"
+ATTENDANCE_DATA_FILE = "attendance_data.json"
+MPR_DATA_FILE = "mpr_data.json"
+
 def create_initial_progress_data():
     data = {}
     for uni_code in UNIVERSITIES.keys():
@@ -331,7 +356,7 @@ def create_initial_assignments_data():
 def create_initial_custom_tasks_data():
     return {"date_specific_tasks": {}}
 
-def create_initial_team_attendance():
+def create_initial_attendance_data():
     data = {}
     for uni_code in UNIVERSITIES.keys():
         data[uni_code] = {}
@@ -352,70 +377,186 @@ def create_initial_mpr_data():
     }
 
 def load_progress_data():
-    """Load progress data using GitHub storage"""
-    data = get_progress_data()
-    if not data:
-        data = create_initial_progress_data()
-        save_progress_data(data)
-    # Ensure all universities exist
-    for uni_code in UNIVERSITIES.keys():
-        if uni_code not in data:
-            data[uni_code] = {}
-            save_progress_data(data)
-    return data
-
-def save_progress_data(data):
-    """Save progress data using GitHub storage"""
-    return save_progress_data(data)
-
-def load_assignments_data():
-    data = get_assignments_data()
-    if not data:
-        data = create_initial_assignments_data()
-        save_assignments_data(data)
-    return data
-
-def save_assignments_data(data):
-    return save_assignments_data(data)
-
-def load_custom_tasks_data():
-    data = get_custom_tasks_data()
-    if not data:
-        data = create_initial_custom_tasks_data()
-        save_custom_tasks_data(data)
-    return data
-
-def save_custom_tasks_data(data):
-    return save_custom_tasks_data(data)
-
-def load_team_attendance():
-    data = get_attendance_data()
-    if not data:
-        data = create_initial_team_attendance()
-        save_attendance_data(data)
-    return data
-
-def save_team_attendance(data):
-    return save_attendance_data(data)
-
-def load_mpr_data():
-    """Load MPR data from a separate JSON file (not yet in GitHub storage)"""
+    """Load progress data - tries GitHub first, falls back to local"""
+    # Try GitHub first if available
+    if GITHUB_AVAILABLE:
+        try:
+            data = github_get_progress()
+            if data is not None:
+                # Ensure all universities exist
+                for uni_code in UNIVERSITIES.keys():
+                    if uni_code not in data:
+                        data[uni_code] = {}
+                return data
+        except Exception as e:
+            st.warning(f"GitHub load failed: {e}")
+    
+    # Fallback to local file
     try:
-        if os.path.exists("mpr_data.json"):
-            with open("mpr_data.json", 'r') as f:
-                return json.load(f)
-        else:
-            return create_initial_mpr_data()
+        if os.path.exists(PROGRESS_DATA_FILE):
+            with open(PROGRESS_DATA_FILE, 'r') as f:
+                data = json.load(f)
+                for uni_code in UNIVERSITIES.keys():
+                    if uni_code not in data:
+                        data[uni_code] = {}
+                return data
     except:
-        return create_initial_mpr_data()
+        pass
+    
+    return create_initial_progress_data()
 
-def save_mpr_data(data):
+def save_progress_data_to_storage(data):
+    """Save progress data - tries GitHub first, falls back to local"""
+    success = False
+    
+    # Try GitHub first if available
+    if GITHUB_AVAILABLE:
+        try:
+            success = github_save_progress(data)
+            if success:
+                return True
+        except Exception as e:
+            st.warning(f"GitHub save failed: {e}")
+    
+    # Fallback to local file
     try:
-        with open("mpr_data.json", 'w') as f:
+        with open(PROGRESS_DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
         return True
     except:
         return False
+
+def load_assignments_data():
+    if GITHUB_AVAILABLE:
+        try:
+            data = github_get_assignments()
+            if data is not None:
+                return data
+        except:
+            pass
+    
+    try:
+        if os.path.exists(ASSIGNMENTS_DATA_FILE):
+            with open(ASSIGNMENTS_DATA_FILE, 'r') as f:
+                return json.load(f)
+    except:
+        pass
+    return create_initial_assignments_data()
+
+def save_assignments_data_to_storage(data):
+    if GITHUB_AVAILABLE:
+        try:
+            if github_save_assignments(data):
+                return True
+        except:
+            pass
+    
+    try:
+        with open(ASSIGNMENTS_DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except:
+        return False
+
+def load_custom_tasks_data():
+    if GITHUB_AVAILABLE:
+        try:
+            data = github_get_custom_tasks()
+            if data is not None:
+                return data
+        except:
+            pass
+    
+    try:
+        if os.path.exists(CUSTOM_TASKS_DATA_FILE):
+            with open(CUSTOM_TASKS_DATA_FILE, 'r') as f:
+                return json.load(f)
+    except:
+        pass
+    return create_initial_custom_tasks_data()
+
+def save_custom_tasks_data_to_storage(data):
+    if GITHUB_AVAILABLE:
+        try:
+            if github_save_custom_tasks(data):
+                return True
+        except:
+            pass
+    
+    try:
+        with open(CUSTOM_TASKS_DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except:
+        return False
+
+def load_attendance_data():
+    if GITHUB_AVAILABLE:
+        try:
+            data = github_get_attendance()
+            if data is not None:
+                return data
+        except:
+            pass
+    
+    try:
+        if os.path.exists(ATTENDANCE_DATA_FILE):
+            with open(ATTENDANCE_DATA_FILE, 'r') as f:
+                return json.load(f)
+    except:
+        pass
+    return create_initial_attendance_data()
+
+def save_attendance_data_to_storage(data):
+    if GITHUB_AVAILABLE:
+        try:
+            if github_save_attendance(data):
+                return True
+        except:
+            pass
+    
+    try:
+        with open(ATTENDANCE_DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except:
+        return False
+
+def load_mpr_data():
+    try:
+        if os.path.exists(MPR_DATA_FILE):
+            with open(MPR_DATA_FILE, 'r') as f:
+                return json.load(f)
+    except:
+        pass
+    return create_initial_mpr_data()
+
+def save_mpr_data_to_storage(data):
+    try:
+        with open(MPR_DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except:
+        return False
+
+# Wrapper functions for backward compatibility
+def save_progress_data(data):
+    return save_progress_data_to_storage(data)
+
+def save_assignments_data(data):
+    return save_assignments_data_to_storage(data)
+
+def save_custom_tasks_data(data):
+    return save_custom_tasks_data_to_storage(data)
+
+def save_team_attendance(data):
+    return save_attendance_data_to_storage(data)
+
+def load_team_attendance():
+    return load_attendance_data()
+
+def save_mpr_data(data):
+    return save_mpr_data_to_storage(data)
 
 def update_team_attendance(team_type, member_name, present_days, absent_days, holidays):
     attendance = load_team_attendance()
@@ -432,7 +573,7 @@ def update_team_attendance(team_type, member_name, present_days, absent_days, ho
 
 def get_plan_for_date(date_str):
     custom_tasks = load_custom_tasks_data()
-    if date_str in custom_tasks["date_specific_tasks"]:
+    if date_str in custom_tasks.get("date_specific_tasks", {}):
         return custom_tasks["date_specific_tasks"][date_str]
     return DEFAULT_PLAN.get(date_str, None)
 
@@ -526,7 +667,6 @@ def get_summary_stats():
     return pd.DataFrame(stats)
 
 def get_daily_progress_data():
-    """Aggregate progress data across all universities for daily charts"""
     data = load_progress_data()
     all_records = []
     for uni_code, entries in data.items():
@@ -546,24 +686,14 @@ def get_daily_progress_data():
 
 def reset_all_data():
     """Reset all data with confirmation"""
-    progress_data = create_initial_progress_data()
-    assignments_data = create_initial_assignments_data()
-    custom_tasks_data = create_initial_custom_tasks_data()
-    attendance_data = create_initial_team_attendance()
-    
-    save_progress_data(progress_data)
-    save_assignments_data(assignments_data)
-    save_custom_tasks_data(custom_tasks_data)
-    save_team_attendance(attendance_data)
-    
-    if os.path.exists("mpr_data.json"):
-        os.remove("mpr_data.json")
+    save_progress_data(create_initial_progress_data())
+    save_assignments_data(create_initial_assignments_data())
+    save_custom_tasks_data(create_initial_custom_tasks_data())
+    save_team_attendance(create_initial_attendance_data())
     save_mpr_data(create_initial_mpr_data())
-    
     return True
 
 def generate_complete_mpr_html(university_code):
-    """Generate complete MPR as per Annexure C format"""
     uni_info = UNIVERSITIES[university_code]
     entries_df = get_university_entries(university_code)
     attendance_data = load_team_attendance()
@@ -592,7 +722,6 @@ def generate_complete_mpr_html(university_code):
     nodal_officer_str = uni_info['nodal_officer']
     registrar_str = uni_info['registrar']
     
-    # Build team attendance rows
     mitra_rows = ""
     mitra_members = TEAM_MEMBERS.get("MITRA", [])
     sr_no = 1
@@ -745,7 +874,6 @@ def generate_complete_mpr_html(university_code):
     return html
 
 def generate_consolidated_mpr_html():
-    """Generate consolidated MPR for all universities"""
     summary_df = get_summary_stats()
     mpr_data = load_mpr_data()
     
@@ -769,13 +897,7 @@ def generate_consolidated_mpr_html():
     for i, (_, row) in enumerate(summary_df.iterrows()):
         summary_rows += f"""
         <tr>
-            <td>{i+1}</td>
-            <td>{row['University']}</td>
-            <td>{row['Nodal Officer']}</td>
-            <td>{row['Completed Tasks']}</td>
-            <td>{row['Pending Tasks']}</td>
-            <td>{row['Status']}</td>
-            <td>{row['Total Hours Invested']}</td>
+            <td>{i+1}</td><td>{row['University']}</td><td>{row['Nodal Officer']}</td><td>{row['Completed Tasks']}</td><td>{row['Pending Tasks']}</td><td>{row['Status']}</td><td>{row['Total Hours Invested']}</td>
         </tr>"""
     
     html = f"""
@@ -870,13 +992,12 @@ def show_sangam_info():
     st.markdown('</div>', unsafe_allow_html=True)
 
 def create_admin_dashboard():
-    # Check storage status
-    from github_storage import GitHubStorage
-    github = GitHubStorage()
-    if github.is_available():
-        st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Data is backed up!</span>', unsafe_allow_html=True)
-    else:
-        st.markdown('<span class="storage-status storage-disconnected">⚠️ Local Storage Only - GitHub not configured</span>', unsafe_allow_html=True)
+    if GITHUB_AVAILABLE:
+        github = GitHubStorage()
+        if github.is_available():
+            st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Data is backed up!</span>', unsafe_allow_html=True)
+        else:
+            st.markdown('<span class="storage-status storage-disconnected">⚠️ Local Storage Only - GitHub not configured</span>', unsafe_allow_html=True)
     
     st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2><p>Complete Project Analytics & Reports</p></div>', unsafe_allow_html=True)
     
@@ -964,11 +1085,10 @@ def create_admin_dashboard():
         st.info("💡 **How to use:** Download the HTML file, open in browser, and print as PDF or copy to Microsoft Word.")
 
 def create_project_lead_dashboard():
-    # Check storage status
-    from github_storage import GitHubStorage
-    github = GitHubStorage()
-    if github.is_available():
-        st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Data is backed up!</span>', unsafe_allow_html=True)
+    if GITHUB_AVAILABLE:
+        github = GitHubStorage()
+        if github.is_available():
+            st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Data is backed up!</span>', unsafe_allow_html=True)
     
     st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard - Dr. Harshal Kotwal</h2><p>Submit Team Attendance & Manage MPR Data</p></div>', unsafe_allow_html=True)
     
@@ -1010,7 +1130,7 @@ def create_project_lead_dashboard():
                     
                     if st.button(f"Save Attendance for {member['name']}", key=f"save_{team_type}_{member['name']}"):
                         update_team_attendance(team_type, member['name'], present, absent, holidays)
-                        st.success(f"✅ Attendance saved for {member['name']} and backed up to GitHub!")
+                        st.success(f"✅ Attendance saved for {member['name']}!")
                         st.rerun()
     
     with tab2:
@@ -1067,11 +1187,10 @@ def create_project_lead_dashboard():
                     st.success("Consolidated MPR generated!")
 
 def create_coordinator_dashboard(university_code, coordinator_name):
-    # Check storage status
-    from github_storage import GitHubStorage
-    github = GitHubStorage()
-    if github.is_available():
-        st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Your data is backed up!</span>', unsafe_allow_html=True)
+    if GITHUB_AVAILABLE:
+        github = GitHubStorage()
+        if github.is_available():
+            st.markdown('<span class="storage-status storage-connected">✅ GitHub Cloud Storage Active - Your data is backed up!</span>', unsafe_allow_html=True)
     
     st.markdown('<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>Log Your Daily Work</p></div>', unsafe_allow_html=True)
     
@@ -1154,13 +1273,13 @@ def create_coordinator_dashboard(university_code, coordinator_name):
                         if use_planned == "✅ Yes":
                             if log_daily_entry(university_code, selected_task['date'], selected_task['category'], selected_task['task'],
                                               selected_task['description'], selected_task['deliverables'], status, hours_spent, remarks, False, False, coordinator_name):
-                                st.success("✅ Work logged successfully and backed up to GitHub!")
+                                st.success("✅ Work logged successfully!")
                                 st.balloons()
                                 st.rerun()
                         else:
                             if task_name:
                                 if log_daily_entry(university_code, selected_task['date'], task_category, task_name, description, deliverables, status, hours_spent, remarks, True, True, coordinator_name):
-                                    st.success("✅ Work logged successfully and backed up to GitHub!")
+                                    st.success("✅ Work logged successfully!")
                                     st.balloons()
                                     st.rerun()
     else:
