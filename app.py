@@ -223,7 +223,7 @@ MPR_DATA_FILE = "mpr_data.json"
 # ============================================================
 # DEFAULT PLAN - 19 WORKING DAYS (May 4-29, 2026)
 # May 4,5,6: SANGAM at Trident Board Room (ALL TOGETHER)
-# Remaining days: Work at respective universities (NO WORK FROM HOME)
+# Remaining days: Work at respective universities
 # ============================================================
 
 DEFAULT_PLAN = {
@@ -231,7 +231,7 @@ DEFAULT_PLAN = {
     "2026-05-04": {"task_category": "Training", "task": "SANGAM Orientation Day 1", "description": "Joint session at Trident Board Room, Mumbai. Project overview, MahaSTRIDE introduction, roles & responsibilities.", "deliverables": "Orientation completion certificate", "framework": "Training", "venue": "Trident Board Room, Mumbai"},
     "2026-05-05": {"task_category": "Training", "task": "SANGAM Training Day 2", "description": "Joint session at Trident Board Room, Mumbai. NIRF framework deep dive: TLR, RP, GO, OI parameters.", "deliverables": "Training materials", "framework": "Training", "venue": "Trident Board Room, Mumbai"},
     "2026-05-06": {"task_category": "Training", "task": "SANGAM Workshop Day 3", "description": "Joint session at Trident Board Room, Mumbai. GRDAU concept, hands-on data collection templates.", "deliverables": "GRDAU framework draft", "framework": "Training", "venue": "Trident Board Room, Mumbai"},
-    # University Reporting (May 7-29 - NO WORK FROM HOME)
+    # University Reporting (May 7-29)
     "2026-05-07": {"task_category": "Setup", "task": "University Reporting & Onboarding", "description": "Report to university. Meet VC, Registrar, Nodal Officer. Confirm workspace and data access.", "deliverables": "Onboarding report", "framework": "Setup", "venue": "Respective University"},
     "2026-05-08": {"task_category": "Setup", "task": "NIRF Data Source Mapping", "description": "Map all NIRF-related data sources across university departments.", "deliverables": "Data source map", "framework": "Setup", "venue": "Respective University"},
     "2026-05-11": {"task_category": "Documentation", "task": "Data Gap Template & Request Letters", "description": "Create NIRF Data Gap Template. Prepare department-wise data request letters.", "deliverables": "Gap template", "framework": "Setup", "venue": "Respective University"},
@@ -262,27 +262,23 @@ TASK_CATEGORIES = {
 }
 
 # ============================================================
-# TEAM MEMBERS - UPDATED
-# MITRA Level: Dr. Harshal Kotwal (Project Director), Shubham (Coordinator), ICARE Team
-# Mumbai University: Ms Sneha, Mr Sagar
+# TEAM MEMBERS - UPDATED (MITRA Level: Only Dr. Harshal Kotwal and Shubham)
 # ============================================================
 TEAM_MEMBERS = {
     "MITRA": [
         {"name": "Dr. Harshal Kotwal", "profile": "Project Director, MahaSTRIDE", "location": "MITRA, Mumbai"},
-        {"name": "Shubham", "profile": "Coordinator, MITRA", "location": "MITRA, Mumbai"},
-        {"name": "Shri Karthick Sridhar", "profile": "Project Head, ICARE", "location": "MITRA, Mumbai"},
-        {"name": "Data Analytics Specialist", "profile": "Data Analytics Specialist", "location": "MITRA, Mumbai"}
+        {"name": "Shubham", "profile": "Coordinator, MITRA", "location": "MITRA, Mumbai"}
     ],
     "MU": [
-        {"name": "Ms Sneha", "profile": "Institutional Coordinator", "location": "Mumbai University"},
-        {"name": "Mr Sagar", "profile": "Institutional Coordinator", "location": "Mumbai University"}
+        {"name": "Ms Sneha", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"},
+        {"name": "Mr Sagar", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"}
     ],
-    "SSPU": [{"name": "Mr Jagan", "profile": "Institutional Coordinator", "location": "SPPU, Pune"}],
-    "COEP": [{"name": "Mr Vaibhav", "profile": "Institutional Coordinator", "location": "COEP, Pune"}],
-    "AU": [{"name": "Mr Pratham", "profile": "Institutional Coordinator", "location": "Amravati University"}],
-    "NU": [{"name": "Ms Anjali", "profile": "Institutional Coordinator", "location": "Nagpur University"}],
-    "KBCNMU": [{"name": "Mr Nitish", "profile": "Institutional Coordinator", "location": "KBCNMU, Jalgaon"}],
-    "BAMU": [{"name": "Mr Atharv", "profile": "Institutional Coordinator", "location": "BAMU, Aurangabad"}]
+    "SSPU": [{"name": "Mr Jagan", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "SPPU, Pune"}],
+    "COEP": [{"name": "Mr Vaibhav", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "COEP, Pune"}],
+    "AU": [{"name": "Mr Pratham", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Amravati University"}],
+    "NU": [{"name": "Ms Anjali", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Nagpur University"}],
+    "KBCNMU": [{"name": "Mr Nitish", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "KBCNMU, Jalgaon"}],
+    "BAMU": [{"name": "Mr Atharv", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "BAMU, Aurangabad"}]
 }
 
 def hash_password(password):
@@ -507,153 +503,168 @@ def initialize_all_data():
     save_team_attendance(attendance)
     return True
 
-def get_status_text(completed_count, total_planned):
-    if completed_count == total_planned:
-        return "✅ Completed"
-    elif completed_count >= 15:
-        return "🟢 Substantially Complete"
-    elif completed_count >= 10:
-        return "🟡 In Progress"
-    elif completed_count >= 5:
-        return "🔵 Initiated"
-    else:
-        return "⚪ Not Started"
+# ============================================================
+# MPR GENERATION FUNCTIONS - EXACTLY AS PER SOP ANNEXURE C (PAGES 6-7)
+# ============================================================
 
 def generate_complete_mpr_html(university_code):
+    """Generate complete MPR as per SOP Annexure C format (Pages 6-7)"""
     uni_info = UNIVERSITIES[university_code]
-    entries_df = get_university_entries(university_code)
     attendance_data = load_team_attendance()
     mpr_data = load_mpr_data()
-    completed_count = len(entries_df) if not entries_df.empty else 0
-    total_planned = len(get_all_planned_dates())
-    
-    task_status = get_status_text(completed_count, total_planned)
     
     period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-04"), "%Y-%m-%d")
     period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-29"), "%Y-%m-%d")
     
-    html = f"""<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>Monthly Progress Report - {uni_info['name']}</title>
-<style>
-body {{ font-family: 'Times New Roman', serif; margin: 0.7in; font-size: 11pt; }}
-.header {{ text-align: center; margin-bottom: 20px; }}
-.mitra-title {{ font-size: 12pt; font-weight: bold; }}
-.confidential {{ text-align: right; font-weight: bold; margin-bottom: 20px; }}
-.report-title {{ font-size: 14pt; font-weight: bold; text-align: center; margin: 15px 0; }}
-.section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; background-color: #f0f0f0; padding: 5px; }}
-table {{ width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10pt; }}
-th, td {{ border: 1px solid #000; padding: 5px; vertical-align: top; }}
-th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
-.sub-header {{ background-color: #d0d0d0; font-weight: bold; }}
-.footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
-</style>
-</head>
-<body>
-<div class="confidential">Confidential</div>
-<div class="header"><div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div><div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div><div>Email: pmu.mahastride@mahamitra.org</div></div>
-<div class="report-title">MONTHLY PROGRESS REPORT</div>
-<div style="text-align: center;">(From {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')})</div>
-<table>
-    <tr><td style="width:30%"><strong>Work Order Reference</strong></td><td>{mpr_data.get('work_order_ref')}<br>dated {mpr_data.get('work_order_date')}</td><td style="width:30%"><strong>University</strong></td><td>{uni_info['name']}</td></tr>
-    <tr><td><strong>Work Order Start Date</strong></td><td>{period_start.strftime('%d-%b-%Y')}</td><td><strong>Work Order End Date</strong></td><td>{period_end.strftime('%d-%b-%Y')}</td></tr>
-    <tr><td><strong>Project Start Date</strong></td><td>04-May-2026</td><td><strong>Project End Date</strong></td><td>06-May-2028</td></tr>
-</table>
-
-<div class="section-title">Project Team Deployment</div>
-<table>
-    <tr class="sub-header"><th>Sr. No.</th><th>Name</th><th>Profile</th><th>Location</th><th>Present</th><th>Absent</th><th>Holidays</th></tr>"""
-    
+    # Build Project Team Deployment table as per SOP Page 6
+    team_rows = ""
     sr_no = 1
-    html += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></td></tr>'
+    
+    # MITRA LEVEL
+    team_rows += '<tr class="sub-header"><td colspan="6"><strong>MITRA LEVEL</strong></td></tr>'
     for member in TEAM_MEMBERS.get("MITRA", []):
         att = attendance_data.get("MITRA", {}).get(member["name"], {})
-        html += f"<tr><td>{sr_no}</td><td>{member['name']}</td><td>{member['profile']}</td><td>{member['location']}</td><td>{att.get('present_days', 19)}</td><td>{att.get('absent_days', 0)}</td><td>{att.get('holidays', 12)}</td></tr>"
+        present = att.get('present_days', 19)
+        absent = att.get('absent_days', 0)
+        holidays = att.get('holidays', 12)
+        team_rows += f"""
+        <tr>
+            <td>{sr_no}</td>
+            <td>{member['name']}</td>
+            <td>{member['profile']}</td>
+            <td>{member['location']}</td>
+            <td>{present}</td>
+            <td>{absent}</td>
+            <td>{holidays}</td>
+        </tr>"""
         sr_no += 1
     
-    html += f'<tr class="sub-header"><td colspan="7"><strong>{uni_info["name"]}</strong></td></tr>'
+    # UNIVERSITY Section
+    team_rows += f'<tr class="sub-header"><td colspan="6"><strong>{uni_info["name"]}</strong></td></tr>'
     for member in TEAM_MEMBERS.get(university_code, []):
         att = attendance_data.get(university_code, {}).get(member["name"], {})
-        html += f"<tr><td>{sr_no}</td><td>{member['name']}</td><td>{member['profile']}</td><td>{member['location']}</td><td>{att.get('present_days', 19)}</td><td>{att.get('absent_days', 0)}</td><td>{att.get('holidays', 12)}</td></tr>"
+        present = att.get('present_days', 19)
+        absent = att.get('absent_days', 0)
+        holidays = att.get('holidays', 12)
+        team_rows += f"""
+        <tr>
+            <td>{sr_no}</td>
+            <td>{member['name']}</td>
+            <td>{member['profile']}</td>
+            <td>{member['location']}</td>
+            <td>{present}</td>
+            <td>{absent}</td>
+            <td>{holidays}</td>
+        </tr>"""
         sr_no += 1
     
-    html += f"""</table>
-
-<div class="section-title">A. Major Activities</div>
-<table>
-    <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member</th><th>Status</th><th>Date</th></tr>
-    <tr><td>1</td><td>SANGAM Orientation & Training (May 4-6 at Trident Board Room)</div>
-    <tr><td style="border: none; width: 30%;"><strong>Prepared by:</strong></div>
-    <tr><td style="border: none;">{', '.join(uni_info['coordinators'])}<br>(Institutional Coordinators)</div>
-    <tr><td style="border: none;"><strong>Verified by:</strong></div>
-    <tr><td style="border: none;">{uni_info['nodal_officer']}<br>(Nodal Officer, IQAC Coordinator)</div>
-    <tr><td style="border: none;"><strong>Approved by:</strong></div>
-    <tr><td style="border: none;">{uni_info['registrar']}<br>(Registrar)</div>
-    <tr><td style="border: none;"><strong>Reviewed by:</strong></div>
-    <tr><td style="border: none;">{ICARE_OFFICIALS['project_head']}<br>(Project Head, ICARE Pvt. Ltd.)</div>
-    <tr><td style="border: none;"><strong>Approved by:</strong></div>
-    <tr><td style="border: none;">{MITRA_OFFICIALS['project_director']}<br>(Project Director, MahaSTRIDE)</div>
-    </table>
-
-<div class="footer">This report is submitted as per SOP Section 2 - Monthly Progress Report (MPR)<br>Generated on {datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</div>
-</body></html>"""
-    return html
-
-def generate_consolidated_mpr_html():
-    summary_df = get_summary_stats()
-    attendance_data = load_team_attendance()
-    mpr_data = load_mpr_data()
-    total_completed = summary_df["Completed"].sum() if not summary_df.empty else 0
-    total_planned = len(get_all_planned_dates()) * len(UNIVERSITIES)
-    
-    if total_completed == total_planned:
-        overall_status = "✅ Fully Completed"
-    elif total_completed >= total_planned * 0.75:
-        overall_status = "🟢 Substantially Complete"
-    elif total_completed >= total_planned * 0.5:
-        overall_status = "🟡 In Progress"
-    elif total_completed >= total_planned * 0.25:
-        overall_status = "🔵 Initiated"
-    else:
-        overall_status = "⚪ Not Started"
-    
-    period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-04"), "%Y-%m-%d")
-    period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-29"), "%Y-%m-%d")
+    coordinators_str = ", ".join(uni_info['coordinators'])
+    nodal_officer_str = uni_info['nodal_officer']
+    registrar_str = uni_info['registrar']
     
     html = f"""<!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><title>Consolidated Monthly Progress Report</title>
-<style>
-body {{ font-family: 'Times New Roman', serif; margin: 0.7in; font-size: 11pt; }}
-.header {{ text-align: center; margin-bottom: 20px; }}
-.mitra-title {{ font-size: 12pt; font-weight: bold; }}
-.confidential {{ text-align: right; font-weight: bold; margin-bottom: 20px; }}
-.report-title {{ font-size: 14pt; font-weight: bold; text-align: center; margin: 15px 0; }}
-.section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; background-color: #f0f0f0; padding: 5px; }}
-table {{ width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10pt; }}
-th, td {{ border: 1px solid #000; padding: 5px; vertical-align: top; }}
-th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
-.footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
-</style>
+<head>
+    <meta charset="UTF-8">
+    <title>Monthly Progress Report - {uni_info['name']}</title>
+    <style>
+        body {{
+            font-family: 'Times New Roman', serif;
+            margin: 0.7in;
+            font-size: 11pt;
+            line-height: 1.2;
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 20px;
+        }}
+        .mitra-title {{
+            font-size: 12pt;
+            font-weight: bold;
+        }}
+        .confidential {{
+            text-align: right;
+            font-weight: bold;
+            margin-bottom: 20px;
+            font-size: 10pt;
+        }}
+        .report-title {{
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+        }}
+        .section-title {{
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 10pt;
+        }}
+        th, td {{
+            border: 1px solid #000;
+            padding: 5px;
+            vertical-align: top;
+        }}
+        th {{
+            background-color: #e8e8e8;
+            font-weight: bold;
+            text-align: center;
+        }}
+        .sub-header {{
+            background-color: #d0d0d0;
+            font-weight: bold;
+        }}
+        .footer {{
+            text-align: center;
+            font-size: 9pt;
+            font-style: italic;
+            margin-top: 30px;
+        }}
+        .signature-table {{
+            border: none;
+        }}
+        .signature-table td {{
+            border: none;
+            padding: 5px;
+        }}
+    </style>
 </head>
 <body>
-<div class="confidential">Confidential</div>
-<div class="header"><div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div><div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div></div>
-<div class="report-title">CONSOLIDATED MONTHLY PROGRESS REPORT</div>
-<div style="text-align: center;">All Maharashtra State Universities</div>
-<div style="text-align: center;">Reporting Period: {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')}</div>
-
-<div class="section-title">Overall Project Status</div>
-<table>
-    <tr><th>Metric</th><th>Status</th></tr>
-    <tr><td>Overall Project Progress</div>
-    <tr><td style="border: none;">{overall_status}</div>
-    <tr><td style="border: none;"><strong>Approved by:</strong></div>
-    <tr><td style="border: none;">{MITRA_OFFICIALS['project_director']}<br>(Project Director, MahaSTRIDE)</div>
-    <tr></table>
-
-<div class="footer">This consolidated report is submitted as per SOP Section 2 - Monthly Progress Report (MPR)<br>Generated on {datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</div>
-</body></html>"""
+    <div class="confidential">Confidential</div>
+    <div class="header">
+        <div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div>
+        <div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div>
+        <div>Office Tel. No. 022 69979440 | Email: pmu.mahastride@mahamitra.org</div>
+    </div>
+    
+    <div class="report-title">MONTHLY PROGRESS REPORT</div>
+    <div style="text-align: center;">(From {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')})</div>
+    
+    <table>
+        <tr>
+            <td style="width:30%"><strong>Work Order Reference</strong></td>
+            <td>{mpr_data.get('work_order_ref')}<br>dated {mpr_data.get('work_order_date')}</td>
+            <td style="width:30%"><strong>University / Division</strong></td>
+            <td>{uni_info['name']}</td>
+         </tr>
+        <tr>
+            <td><strong>Work Order Start Date</strong></td>
+            <td>{period_start.strftime('%d-%b-%Y')}</td>
+            <td><strong>Work Order End Date</strong></td>
+            <td>{period_end.strftime('%d-%b-%Y')}</td>
+         </tr>
+        <tr>
+            <td><strong>Project Start Date</strong></td>
+            <td>04-May-2026</div>
+     </div>
+    </body>
+    </html>"""
     return html
 
 def get_html_download_link(html_content, filename):
