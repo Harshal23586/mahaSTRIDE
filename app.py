@@ -88,6 +88,23 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
+    .credentials-box {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    .credentials-box h4 {
+        margin-top: 0;
+        color: #1e3c72;
+    }
+    .cred-row {
+        font-family: monospace;
+        font-size: 12px;
+        padding: 4px 0;
+        border-bottom: 1px solid #eee;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -429,7 +446,7 @@ def initialize_all_data():
     return True
 
 # ============================================================
-# MPR GENERATION - EXACTLY AS PER SOP ANNEXURE C (IMAGES PROVIDED)
+# MPR GENERATION - EXACTLY AS PER SOP ANNEXURE C
 # ============================================================
 
 def generate_complete_mpr_html(university_code):
@@ -445,7 +462,7 @@ def generate_complete_mpr_html(university_code):
     sr_no = 1
     
     # MITRA LEVEL
-    team_rows += '<tr class="sub-header"><td colspan="6"><strong>MITRA LEVEL</strong></td></tr>'
+    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></td></tr>'
     for member in TEAM_MEMBERS.get("MITRA", []):
         att = attendance_data.get("MITRA", {}).get(member["name"], {})
         present = att.get('present_days', 19)
@@ -457,258 +474,7 @@ def generate_complete_mpr_html(university_code):
             <td>{member['name']}</td>
             <td>{member['profile']}</td>
             <td>{member['location']}</td>
-            <td>{present}</td>
-            <td>{absent}</td>
-            <td>{holidays}</td>
-        </tr>"""
-        sr_no += 1
-    
-    # UNIVERSITY Section
-    team_rows += f'<tr class="sub-header"><td colspan="6"><strong>{uni_info["name"]}</strong></td></tr>'
-    for member in TEAM_MEMBERS.get(university_code, []):
-        att = attendance_data.get(university_code, {}).get(member["name"], {})
-        present = att.get('present_days', 19)
-        absent = att.get('absent_days', 0)
-        holidays = att.get('holidays', 12)
-        team_rows += f"""
-        <tr>
-            <td>{sr_no}</td>
-            <td>{member['name']}</td>
-            <td>{member['profile']}</td>
-            <td>{member['location']}</td>
-            <td>{present}</td>
-            <td>{absent}</td>
-            <td>{holidays}</td>
-        </tr>"""
-        sr_no += 1
-    
-    coordinators_str = ", ".join(uni_info['coordinators'])
-    nodal_officer_str = uni_info['nodal_officer']
-    registrar_str = uni_info['registrar']
-    
-    html = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Monthly Progress Report - {uni_info['name']}</title>
-    <style>
-        body {{
-            font-family: 'Times New Roman', serif;
-            margin: 0.7in;
-            font-size: 11pt;
-            line-height: 1.2;
-        }}
-        .header {{
-            text-align: center;
-            margin-bottom: 20px;
-        }}
-        .mitra-title {{
-            font-size: 12pt;
-            font-weight: bold;
-        }}
-        .confidential {{
-            text-align: right;
-            font-weight: bold;
-            margin-bottom: 20px;
-            font-size: 10pt;
-        }}
-        .report-title {{
-            font-size: 14pt;
-            font-weight: bold;
-            text-align: center;
-            margin: 15px 0;
-        }}
-        .section-title {{
-            font-size: 12pt;
-            font-weight: bold;
-            margin-top: 15px;
-            margin-bottom: 8px;
-            background-color: #f0f0f0;
-            padding: 5px;
-        }}
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
-            font-size: 10pt;
-        }}
-        th, td {{
-            border: 1px solid #000;
-            padding: 6px;
-            vertical-align: top;
-        }}
-        th {{
-            background-color: #e8e8e8;
-            font-weight: bold;
-            text-align: center;
-        }}
-        .sub-header {{
-            background-color: #d0d0d0;
-            font-weight: bold;
-        }}
-        .footer {{
-            text-align: center;
-            font-size: 9pt;
-            font-style: italic;
-            margin-top: 30px;
-        }}
-        .signature-table {{
-            border: none;
-        }}
-        .signature-table td {{
-            border: none;
-            padding: 5px;
-        }}
-    </style>
-</head>
-<body>
-    <div class="confidential">Confidential</div>
-    <div class="header">
-        <div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div>
-        <div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div>
-        <div>Office Tel. No. 022 69979440 | Email: pmu.mahastride@mahamitra.org</div>
-    </div>
-    
-    <div class="report-title">MONTHLY PROGRESS REPORT</div>
-    <div style="text-align: center;">(From {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')})</div>
-    
-    <table>
-        <tr>
-            <td style="width:30%"><strong>Work Order Reference</strong></td>
-            <td>{mpr_data.get('work_order_ref')}<br>dated {mpr_data.get('work_order_date')}</td>
-            <td style="width:30%"><strong>University / Division</strong></td>
-            <td>{uni_info['name']}</td>
-        </tr>
-        <tr>
-            <td><strong>Work Order Start Date</strong></td>
-            <td>{period_start.strftime('%d-%b-%Y')}</td>
-            <td><strong>Work Order End Date</strong></td>
-            <td>{period_end.strftime('%d-%b-%Y')}</td>
-        </tr>
-        <tr>
-            <td><strong>Project Start Date</strong></td>
-            <td>04-May-2026</td>
-            <td><strong>Project End Date</strong></td>
-            <td>06-May-2028</td>
-        </tr>
-    </table>
-
-    <div class="section-title">Project Team Deployment</div>
-    <table>
-        <tr>
-            <th>Sr. No.</th>
-            <th>Name of the Key Professional</th>
-            <th>Profile as per contract</th>
-            <th>Location</th>
-            <th>Total Present Days</th>
-            <th>Total Absent Days</th>
-            <th>Total Holidays/ Weekly offs</th>
-        </tr>
-        {team_rows}
-    </table>
-
-    <div class="section-title">A. Major Activities</div>
-    <table>
-        <tr>
-            <th>Sr. No.</th>
-            <th>Major Activities</th>
-            <th>Team Member Name</th>
-            <th>Activity Status</th>
-            <th>Date of Submission</th>
-        </tr>
-        <tr>
-            <td>1.</td>
-            <td>Finalisation of Annual Action Plan for the FY etc</td>
-            <td>{coordinators_str}</td>
-            <td>In Progress</td>
-            <td>-</td>
-        </tr>
-        <tr>
-            <td>2.</td>
-            <td>Coordination with Universities / MITRA for data collection & reporting etc</td>
-            <td>{coordinators_str}</td>
-            <td>Ongoing</td>
-            <td>Daily</td>
-        </tr>
-        <tr>
-            <td>3.</td>
-            <td>Conducted Stakeholder Consultation with institutions etc</td>
-            <td>ICARE Team</td>
-            <td>Completed</td>
-            <td>May 2026</td>
-        </tr>
-        <tr>
-            <td>4.</td>
-            <td>NIRF Framework Training Programs (SANGAM)</td>
-            <td>All Coordinators</td>
-            <td>Completed</td>
-            <td>May 4-6, 2026</td>
-        </tr>
-        <tr>
-            <td>5.</td>
-            <td>NIRF Data Collection Initiation</td>
-            <td>All Coordinators</td>
-            <td>In Progress</td>
-            <td>-</td>
-        </tr>
-    </table>
-
-    <div class="section-title">B. Minutes of Meetings Conducted</div>
-    <table>
-        <tr>
-            <th>Sr. No.</th>
-            <th>Date</th>
-            <th>Chairperson + Key Participants</th>
-            <th>Agenda</th>
-            <th>Decision / Way Forward</th>
-            <th>Responsibility</th>
-        </tr>
-        <tr>
-            <td>1.</td>
-            <td>May 4-6, 2026</td>
-            <td>ICARE Team + All Coordinators</td>
-            <td>SANGAM Orientation, Training & Workshop</td>
-            <td>Training completed. GRDAU concept introduced.</td>
-            <td>All Coordinators</td>
-        </tr>
-        <tr>
-            <td>2.</td>
-            <td>May 7, 2026</td>
-            <td>ICARE Team + Nodal Officer</td>
-            <td>Project Kick-off and data source mapping</td>
-            <td>Data collection initiated</td>
-            <td>Coordinators</td>
-        </tr>
-        <tr>
-            <td>3.</td>
-            <td>May 22, 2026</td>
-            <td>ICARE Team + Nodal Officer</td>
-            <td>Data gap review and action plan</td>
-            <td>Departments to submit pending data</td>
-            <td>Coordinators</td>
-        </tr>
-        <tr>
-            <td>4.</td>
-            <td>May 27, 2026</td>
-            <td>ICARE Team + IQAC</td>
-            <td>Review of May progress</td>
-            <td>MPR preparation initiated</td>
-            <td>Coordinators</td>
-        </tr>
-    </table>
-
-    <div class="section-title">C. Major Deliverables (As committed under Contract)</div>
-    </table>
-        <tr>
-            <th>Sr. No.</th>
-            <th>Major Deliverables</th>
-            <th>Team Member Name</th>
-            <th>Activity Status</th>
-            <th>Date of Submission</th>
-        </tr>
-        <tr>
-            <td>1.</td>
-            <td>Inception Report and Deployment Plan</div>
+            <td>{present}</div>
      </div>
     </body>
     </html>"""
@@ -723,6 +489,23 @@ def show_sangam_info():
     st.markdown("### 🎉 SANGAM Orientation & Training Program")
     st.markdown("**Dates:** May 4-6, 2026 | **Venue:** Trident Board Room, Mumbai | ✅ **Status:** Completed")
     st.markdown('</div>', unsafe_allow_html=True)
+
+def show_credentials():
+    st.markdown("""
+    <div class="credentials-box">
+        <h4>🔐 Demo Credentials (Password: <strong>Name@2026</strong> for all)</h4>
+        <div class="cred-row"><strong>Admin:</strong> admin@mahastride.com</div>
+        <div class="cred-row"><strong>Project Lead:</strong> projectlead@mahastride.com</div>
+        <div class="cred-row"><strong>MITRA Coordinator:</strong> shubham@mitra.gov.in</div>
+        <div class="cred-row"><strong>Mumbai University:</strong> sneha@mu.edu | sagar@mu.edu</div>
+        <div class="cred-row"><strong>SPPU Pune:</strong> jagan@sspu.edu</div>
+        <div class="cred-row"><strong>COEP Pune:</strong> vaibhav@coep.edu</div>
+        <div class="cred-row"><strong>Amravati University:</strong> pratham@au.edu</div>
+        <div class="cred-row"><strong>Nagpur University:</strong> anjali@nu.edu</div>
+        <div class="cred-row"><strong>KBCNMU Jalgaon:</strong> nitish@kbcnmu.edu</div>
+        <div class="cred-row"><strong>BAMU Aurangabad:</strong> atharv@bamu.edu</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 def create_admin_dashboard():
     st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2><p>Complete Project Analytics & Reports</p></div>', unsafe_allow_html=True)
@@ -886,7 +669,209 @@ def create_coordinator_dashboard(university_code, coordinator_name):
     else:
         st.success("🎉 All tasks completed!")
 
+def generate_consolidated_mpr_html():
+    """Generate consolidated MPR for all universities"""
+    summary_df = get_summary_stats()
+    attendance_data = load_team_attendance()
+    mpr_data = load_mpr_data()
+    
+    total_planned = len(get_all_planned_dates()) * len(UNIVERSITIES)
+    total_completed = summary_df["Completed"].sum() if not summary_df.empty else 0
+    
+    period_start = datetime.strptime(mpr_data.get("period_start", "2026-05-04"), "%Y-%m-%d")
+    period_end = datetime.strptime(mpr_data.get("period_end", "2026-05-29"), "%Y-%m-%d")
+    
+    if total_completed == total_planned:
+        overall_status = "✅ Fully Completed"
+    elif total_completed >= total_planned * 0.75:
+        overall_status = "🟢 Substantially Complete"
+    elif total_completed >= total_planned * 0.5:
+        overall_status = "🟡 In Progress"
+    elif total_completed >= total_planned * 0.25:
+        overall_status = "🔵 Initiated"
+    else:
+        overall_status = "⚪ Not Started"
+    
+    # Build consolidated team deployment table
+    team_rows = ""
+    sr_no = 1
+    
+    # MITRA LEVEL
+    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></td></tr>'
+    for member in TEAM_MEMBERS.get("MITRA", []):
+        att = attendance_data.get("MITRA", {}).get(member["name"], {})
+        present = att.get('present_days', 19)
+        absent = att.get('absent_days', 0)
+        holidays = att.get('holidays', 12)
+        team_rows += f"""
+        <tr>
+            <td>{sr_no}</td>
+            <td>{member['name']}</td>
+            <td>{member['profile']}</td>
+            <td>{member['location']}</td>
+            <td>{present}</td>
+            <td>{absent}</td>
+            <td>{holidays}</td>
+        </tr>"""
+        sr_no += 1
+    
+    # All Universities
+    for uni_code, uni_info in UNIVERSITIES.items():
+        if uni_code != "MITRA":
+            team_rows += f'<tr class="sub-header"><td colspan="7"><strong>{uni_info["name"]}</strong></td></tr>'
+            for member in TEAM_MEMBERS.get(uni_code, []):
+                att = attendance_data.get(uni_code, {}).get(member["name"], {})
+                present = att.get('present_days', 19)
+                absent = att.get('absent_days', 0)
+                holidays = att.get('holidays', 12)
+                team_rows += f"""
+                <tr>
+                    <td>{sr_no}</td>
+                    <td>{member['name']}</td>
+                    <td>{member['profile']}</td>
+                    <td>{member['location']}</td>
+                    <td>{present}</td>
+                    <td>{absent}</td>
+                    <td>{holidays}</td>
+                </tr>"""
+                sr_no += 1
+    
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Consolidated Monthly Progress Report - All Universities</title>
+    <style>
+        body {{
+            font-family: 'Times New Roman', serif;
+            margin: 0.7in;
+            font-size: 11pt;
+            line-height: 1.2;
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 20px;
+        }}
+        .mitra-title {{
+            font-size: 12pt;
+            font-weight: bold;
+        }}
+        .confidential {{
+            text-align: right;
+            font-weight: bold;
+            margin-bottom: 20px;
+            font-size: 10pt;
+        }}
+        .report-title {{
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+        }}
+        .section-title {{
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            background-color: #f0f0f0;
+            padding: 5px;
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 10pt;
+        }}
+        th, td {{
+            border: 1px solid #000;
+            padding: 6px;
+            vertical-align: top;
+        }}
+        th {{
+            background-color: #e8e8e8;
+            font-weight: bold;
+            text-align: center;
+        }}
+        .sub-header {{
+            background-color: #d0d0d0;
+            font-weight: bold;
+        }}
+        .footer {{
+            text-align: center;
+            font-size: 9pt;
+            font-style: italic;
+            margin-top: 30px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="confidential">Confidential</div>
+    <div class="header">
+        <div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div>
+        <div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div>
+        <div>Office Tel. No. 022 69979440 | Email: pmu.mahastride@mahamitra.org</div>
+    </div>
+    
+    <div class="report-title">CONSOLIDATED MONTHLY PROGRESS REPORT</div>
+    <div style="text-align: center;">All Maharashtra State Universities</div>
+    <div style="text-align: center;">Reporting Period: {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')}</div>
+
+    <div class="section-title">Overall Project Progress</div>
+    <div style="margin: 10px 0;">
+        <strong>Overall Status: {overall_status}</strong><br>
+        <strong>Tasks Completed:</strong> {total_completed} / {total_planned}<br>
+        <strong>Working Days:</strong> 19 days (May 4-29, 2026, excluding weekends & holidays)
+    </div>
+
+    <div class="section-title">Project Team Deployment</div>
+    <table>
+        <tr>
+            <th>Sr. No.</th>
+            <th>Name of the Key Professional</th>
+            <th>Profile as per contract</th>
+            <th>Location</th>
+            <th>Present Days</th>
+            <th>Absent Days</th>
+            <th>Holidays</th>
+        </tr>
+        {team_rows}
+    </table>
+
+    <div class="section-title">University-wise Progress Summary</div>
+    <table>
+        <tr>
+            <th>Sr. No.</th>
+            <th>University</th>
+            <th>Tasks Completed</th>
+            <th>Total Tasks</th>
+            <th>Status</th>
+        </tr>"""
+    
+    for i, (_, row) in enumerate(summary_df.iterrows()):
+        status = "✅ Completed" if row["Completed"] == row["Total"] else "🟡 In Progress"
+        html += f"""
+        <tr>
+            <td>{i+1}</td>
+            <td>{row['University']}</td>
+            <td>{row['Completed']}</td>
+            <td>{row['Total']}</td>
+            <td>{status}</td>
+        </tr>"""
+    
+    html += f"""
+    </table>
+
+    <div class="section-title">Training Programs Conducted (May 4-6, 2026 at Trident Board Room, Mumbai)</div>
+    <table>
+        <tr><th>Date</th><th>Program</th><th>Participants</th><th>Status</th></tr>
+        <tr><td>May 4, 2026</div>
+     </div>
+    </body>
+    </html>"""
+    return html
+
 def main():
+    # Initialize data on first run
     if not os.path.exists(PROGRESS_DATA_FILE):
         initialize_all_data()
     
@@ -895,37 +880,53 @@ def main():
     
     if not st.session_state["authenticated"]:
         with st.container():
-            st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE Project Tracker</h1><p>May 4-29, 2026 (19 Working Days)</p></div>', unsafe_allow_html=True)
+            st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE NIRF Data Collection Tracker</h1><p>Phase 1: May 4-29, 2026 (19 Working Days)</p></div>', unsafe_allow_html=True)
+            
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
                 st.markdown("### Login")
-                email = st.text_input("Email")
-                password = st.text_input("Password", type="password")
-                if st.button("Login", use_container_width=True):
+                email = st.text_input("Email", placeholder="Enter your registered email")
+                password = st.text_input("Password", type="password", placeholder="Enter password")
+                
+                if st.button("Login", type="primary", use_container_width=True):
                     if email and password:
                         success, role, name, university = authenticate_user(email, password)
                         if success:
-                            st.session_state.update({"authenticated": True, "user_role": role, "user_name": name, "user_university": university})
+                            st.session_state["authenticated"] = True
+                            st.session_state["user_role"] = role
+                            st.session_state["user_name"] = name
+                            if university:
+                                st.session_state["user_university"] = university
                             st.rerun()
+                        else:
+                            st.error("❌ Invalid email or password")
                     else:
-                        st.error("Invalid credentials")
+                        st.warning("⚠️ Please enter both email and password")
                 
                 st.markdown("---")
-                st.markdown("**Demo Credentials** (Password: Name@2026)")
+                show_credentials()
         return
     
-    role, name, university = st.session_state["user_role"], st.session_state["user_name"], st.session_state.get("user_university")
+    # Main app after login
+    role = st.session_state["user_role"]
+    name = st.session_state["user_name"]
+    university = st.session_state.get("user_university")
     
     with st.sidebar:
         st.title("📊 mahaSTRIDE")
         st.markdown(f"**Welcome, {name}**")
+        st.markdown(f"**Today:** {datetime.now().strftime('%d-%b-%Y')}")
+        st.markdown("**Phase 1:** May 4-29, 2026")
         st.markdown("---")
+        
         if role == "admin":
             menu = st.radio("Navigation", ["📊 Admin Dashboard", "ℹ️ About"])
         elif role == "project_lead":
             menu = st.radio("Navigation", ["👨‍💼 Project Lead Dashboard", "ℹ️ About"])
         else:
             menu = st.radio("Navigation", ["📋 My Tasks", "📊 My Progress", "ℹ️ About"])
+        
+        st.markdown("---")
         if st.button("🚪 Logout", use_container_width=True):
             for key in ["authenticated", "user_role", "user_name", "user_university"]:
                 st.session_state.pop(key, None)
@@ -934,9 +935,43 @@ def main():
     if role == "admin":
         if menu == "📊 Admin Dashboard":
             create_admin_dashboard()
+        else:
+            st.title("ℹ️ About mahaSTRIDE")
+            st.markdown("""
+            ### Project Overview
+            
+            **mahaSTRIDE** is Maharashtra's flagship project for improving university rankings.
+            
+            **May 2026 Working Schedule (19 Days):**
+            - May 4-6: SANGAM Training at Trident Board Room, Mumbai
+            - May 7-29: Work at respective universities (19 working days)
+            
+            **Key Deliverables:**
+            1. Inception Report (Due: June 6, 2026)
+            2. GRDAUs Establishment (Due: July 6, 2026)
+            3. Monthly Progress Report (Due: 10th of each month)
+            """)
+    
     elif role == "project_lead":
         if menu == "👨‍💼 Project Lead Dashboard":
             create_project_lead_dashboard()
+        else:
+            st.title("ℹ️ Project Lead Dashboard")
+            st.markdown("""
+            **Your Responsibilities:**
+            1. Configure MPR header information
+            2. Generate MPR reports for all universities
+            
+            **The MPR includes:**
+            - Project Team Deployment table
+            - Major Activities section
+            - Minutes of Meetings
+            - Major Deliverables status
+            - Risk Management
+            - Status of Initiatives
+            - Approvals and Signatures
+            """)
+    
     else:
         if university:
             if menu == "📋 My Tasks":
@@ -946,6 +981,25 @@ def main():
                 df = get_university_entries(university)
                 if not df.empty:
                     st.dataframe(df, use_container_width=True)
+                    completed = len(df[df["Status"] == "COMPLETED"])
+                    total = len(get_all_planned_dates())
+                    st.metric("Completed Tasks", f"{completed}/{total}")
+                else:
+                    st.info("No entries logged yet")
+            else:
+                st.title("ℹ️ Coordinator Dashboard")
+                st.markdown("""
+                **How to Log Work:**
+                1. Select a date from pending tasks
+                2. Confirm if you completed the planned task
+                3. Add hours spent and submit
+                
+                **May 2026 Schedule:**
+                - May 4-6: SANGAM Training at Trident Board Room, Mumbai
+                - May 7-29: Work at respective universities
+                """)
+        else:
+            st.error("University not assigned. Please contact admin.")
 
 if __name__ == "__main__":
     main()
