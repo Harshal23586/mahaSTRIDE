@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime
 import calendar
 
 # Page configuration
@@ -22,38 +22,6 @@ st.markdown("""
         border-radius: 10px;
         color: white;
         margin-bottom: 2rem;
-    }
-    .status-completed {
-        background-color: #28a745;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        display: inline-block;
-    }
-    .status-in-progress {
-        background-color: #ffc107;
-        color: #333;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        display: inline-block;
-    }
-    .status-pending {
-        background-color: #dc3545;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        display: inline-block;
-    }
-    .status-upcoming {
-        background-color: #17a2b8;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        display: inline-block;
     }
     .metric-card {
         background-color: #f8f9fa;
@@ -120,7 +88,7 @@ UNIVERSITIES = [
     "Sant Gadge Baba Amravati University, Amravati"
 ]
 
-# May 2026 completed activities
+# May 2026 completed activities (from the MPR)
 COMPLETED_MAY_ACTIVITIES = [
     {"activity": "SANGAM Orientation & Training (May 4-6 at Trident Board Room)", "date": "May 4-6, 2026", "team": "ICARE Team", "status": "completed"},
     {"activity": "University Onboarding & Data Source Mapping", "date": "May 7-8, 2026", "team": "ICARE Team", "status": "completed"},
@@ -130,6 +98,7 @@ COMPLETED_MAY_ACTIVITIES = [
     {"activity": "May MPR Preparation & Finalization", "date": "May 29, 2026", "team": "ICARE Team", "status": "completed"},
 ]
 
+# May 2026 meetings completed (from the MPR)
 COMPLETED_MAY_MEETINGS = [
     {"date": "May 4-6, 2026", "agenda": "SANGAM Orientation, Training & Workshop", "outcome": "Training completed. GRDAU concept introduced."},
     {"date": "May 7, 2026", "agenda": "Project Kick-off and data source mapping", "outcome": "Data collection initiated"},
@@ -137,6 +106,7 @@ COMPLETED_MAY_MEETINGS = [
     {"date": "May 27, 2026", "agenda": "Review of May progress", "outcome": "MPR preparation initiated"},
 ]
 
+# Team structure (from MPR)
 TEAM_STRUCTURE = {
     "MITRA Level": [
         {"role": "Project Lead", "name": "Dr. Harshal Kotwal", "location": "MITRA, Mumbai", "present_days_may": 19, "absent": 0, "holidays": 12},
@@ -154,14 +124,15 @@ TEAM_STRUCTURE = {
     ]
 }
 
+# Milestones
 MILESTONES = [
-    {"id": 1, "name": "Establishment of Sustainable Data & Quality Systems", "percentage": 10, "target_date": "2026-09-30", "status": "pending", "value": CONTRACT_VALUE * 0.10 * 0.30},
-    {"id": 2, "name": "Institutional Development Plans and Execution Monitoring", "percentage": 10, "target_date": "2026-10-31", "status": "pending", "value": CONTRACT_VALUE * 0.10 * 0.30},
-    {"id": 3, "name": "Capacity Building Participation", "percentage": 10, "target_date": "2026-12-31", "status": "pending", "value": CONTRACT_VALUE * 0.10 * 0.30},
-    {"id": 4, "name": "Minimum 10% Improvement in Performance Indicators", "percentage": 15, "target_date": "2027-06-30", "status": "pending", "value": CONTRACT_VALUE * 0.15 * 0.30},
-    {"id": 5, "name": "Minimum 20% Improvement in Performance Indicators", "percentage": 25, "target_date": "2027-12-31", "status": "pending", "value": CONTRACT_VALUE * 0.25 * 0.30},
-    {"id": 6, "name": "Enhanced Global Rankings Participation of 10 colleges", "percentage": 20, "target_date": "2028-02-29", "status": "pending", "value": CONTRACT_VALUE * 0.20 * 0.30},
-    {"id": 7, "name": "Final Evaluation and Reporting", "percentage": 10, "target_date": "2028-04-30", "status": "pending", "value": CONTRACT_VALUE * 0.10 * 0.30}
+    {"id": 1, "name": "Establishment of Sustainable Data & Quality Systems", "percentage": 10, "target_date": "2026-09-30", "status": "pending"},
+    {"id": 2, "name": "Institutional Development Plans and Execution Monitoring", "percentage": 10, "target_date": "2026-10-31", "status": "pending"},
+    {"id": 3, "name": "Capacity Building Participation", "percentage": 10, "target_date": "2026-12-31", "status": "pending"},
+    {"id": 4, "name": "Minimum 10% Improvement in Performance Indicators", "percentage": 15, "target_date": "2027-06-30", "status": "pending"},
+    {"id": 5, "name": "Minimum 20% Improvement in Performance Indicators", "percentage": 25, "target_date": "2027-12-31", "status": "pending"},
+    {"id": 6, "name": "Enhanced Global Rankings Participation of 10 colleges", "percentage": 20, "target_date": "2028-02-29", "status": "pending"},
+    {"id": 7, "name": "Final Evaluation and Reporting", "percentage": 10, "target_date": "2028-04-30", "status": "pending"}
 ]
 
 def create_monthly_plan():
@@ -429,17 +400,19 @@ def create_activities_by_month():
 
 ACTIVITIES_BY_MONTH = create_activities_by_month()
 
+# Contract deliverables timeline
 CONTRACT_DELIVERABLES = [
-    {"deliverable": "Inception Report and Deployment Plan", "due_days": 30, "due_date": "2026-06-05", "status": "completed", "actual_date": "2026-05-26"},
-    {"deliverable": "Diagnostic Assessment Reports (Institution-wise)", "due_days": 60, "due_date": "2026-07-05", "status": "pending", "actual_date": None},
-    {"deliverable": "Institutional Development Plans (IDPs)", "due_days": 100, "due_date": "2026-08-14", "status": "pending", "actual_date": None},
-    {"deliverable": "GRDAUs Established and Operationalized", "due_days": 60, "due_date": "2026-07-05", "status": "pending", "actual_date": None},
-    {"deliverable": "Mid-term Progress Report", "due_days": 180, "due_date": "2026-11-02", "status": "pending", "actual_date": None},
-    {"deliverable": "Training and Capacity Building Reports", "due_days": "Quarterly", "due_date": "Quarterly", "status": "pending", "actual_date": None},
-    {"deliverable": "Dashboard Reports and Analytics", "due_days": "Monthly", "due_date": "Monthly from day 60", "status": "in_progress", "actual_date": None},
-    {"deliverable": "Final Closure Report and Recommendations", "due_days": "End of 24 months", "due_date": "2028-05-06", "status": "pending", "actual_date": None}
+    {"deliverable": "Inception Report and Deployment Plan", "due_date": "2026-06-05", "status": "completed", "actual_date": "2026-05-26"},
+    {"deliverable": "Diagnostic Assessment Reports (Institution-wise)", "due_date": "2026-07-05", "status": "pending", "actual_date": None},
+    {"deliverable": "Institutional Development Plans (IDPs)", "due_date": "2026-08-14", "status": "pending", "actual_date": None},
+    {"deliverable": "GRDAUs Established and Operationalized", "due_date": "2026-07-05", "status": "pending", "actual_date": None},
+    {"deliverable": "Mid-term Progress Report", "due_date": "2026-11-02", "status": "pending", "actual_date": None},
+    {"deliverable": "Training and Capacity Building Reports", "due_date": "Quarterly", "status": "pending", "actual_date": None},
+    {"deliverable": "Dashboard Reports and Analytics", "due_date": "Monthly from day 60", "status": "in_progress", "actual_date": None},
+    {"deliverable": "Final Closure Report and Recommendations", "due_date": "2028-05-06", "status": "pending", "actual_date": None}
 ]
 
+# Risk Register
 RISK_REGISTER = [
     {"risk": "Data availability and quality issues from universities", "probability": "High", "impact": "High", "mitigation": "Early data audit, continuous validation, escalation mechanism", "owner": "Project Lead"},
     {"risk": "Delay in GRDAU establishment due to university bureaucracy", "probability": "Medium", "impact": "High", "mitigation": "Regular follow-ups, escalation to MITRA, weekly coordination meetings", "owner": "Institutional Coordinators"},
@@ -459,7 +432,7 @@ def render_sidebar():
             "✅ May 2026": "may",
             "📅 24-Month Plan": "plan",
             "👥 Team": "team",
-            "💰 Payments": "payments",
+            "🎯 Milestones": "milestones",
             "📋 Deliverables": "deliverables",
             "⚠️ Risks": "risks"
         }
@@ -483,11 +456,11 @@ def render_sidebar():
         
         st.info(f"""
         **Project Details**
-        - 💰 Value: ₹{CONTRACT_VALUE:,.0f}
-        - 📅 Start: 06 May 2026
-        - 📅 End: 06 May 2028
+        - 📅 Start Date: 06 May 2026
+        - 📅 End Date: 06 May 2028
         - 🏫 Universities: 7
-        - 👥 Team: 11 members
+        - 👥 Team Size: 11 members
+        - 📊 Duration: 24 months
         """)
         
         upcoming = [m for m in MILESTONES if m["status"] == "pending"][:3]
@@ -552,10 +525,11 @@ def render_dashboard():
         st.caption(f"{progress_percent:.1f}% complete")
     
     with col2:
-        st.subheader("💰 Milestone Progress")
-        milestone_progress = 0
+        st.subheader("🎯 Milestone Progress")
+        completed_milestones = sum(1 for m in MILESTONES if m["status"] == "completed")
+        milestone_progress = (completed_milestones / len(MILESTONES)) * 100
         st.progress(milestone_progress / 100)
-        st.caption("0% complete (pending milestones)")
+        st.caption(f"{completed_milestones}/{len(MILESTONES)} milestones completed ({milestone_progress:.0f}%)")
     
     st.markdown("---")
     
@@ -791,7 +765,7 @@ def render_team():
             "Prior written approval for any resource change",
             "15 days advance notice for replacement with CV",
             "MITRA reserves right to reject replacement",
-            "Unauthorized substitution may attract penalty (up to 10%)",
+            "Unauthorized substitution may attract penalty",
             "All personnel bound by confidentiality",
             "Monthly attendance and MPR mandatory for payment"
         ]
@@ -812,99 +786,91 @@ def render_team():
         st.write("1. Obtain leave approval on email from Project Head (ICARE)")
         st.write("2. Project Head to copy Sector Expert, HR, MITRA")
 
-def render_payments():
-    st.header("💰 Milestones & Payment Structure")
+def render_milestones():
+    st.header("🎯 Milestones Tracker")
     st.markdown("---")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("📊 Payment Distribution")
+        st.subheader("📊 Milestone Distribution")
         
         fig = go.Figure(data=[go.Pie(
-            labels=['Monthly Fee (70%)', 'Milestone-Based (30%)'],
-            values=[70, 30],
+            labels=[m["name"][:30] + "..." for m in MILESTONES],
+            values=[m["percentage"] for m in MILESTONES],
             hole=0.4,
-            marker_colors=['#2a5298', '#28a745']
+            marker_colors=['#2a5298', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6f42c1', '#fd7e14']
         )])
-        fig.update_layout(title="Payment Structure", height=400)
+        fig.update_layout(title="Milestone Weightage Distribution", height=450)
         st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        st.subheader("📈 Milestone Status")
         
-        monthly_total = CONTRACT_VALUE * 0.70
-        monthly_amount = monthly_total / 24
+        milestone_df = pd.DataFrame([{
+            "Milestone": m["name"][:35] + ("..." if len(m["name"]) > 35 else ""),
+            "Target Date": m["target_date"],
+            "Status": m["status"].upper(),
+            "Weight": f"{m['percentage']}%"
+        } for m in MILESTONES])
+        
+        def color_status(val):
+            if val == "COMPLETED":
+                return 'background-color: #d4edda'
+            elif val == "IN_PROGRESS":
+                return 'background-color: #fff3cd'
+            else:
+                return 'background-color: #f8f9fa'
+        
+        st.dataframe(milestone_df.style.applymap(color_status, subset=["Status"]), use_container_width=True, hide_index=True)
+    
+    st.markdown("---")
+    
+    st.subheader("📅 Milestone Timeline")
+    
+    timeline_data = []
+    for m in MILESTONES:
+        timeline_data.append({
+            "Milestone": m["name"],
+            "Target Date": m["target_date"],
+            "Status": m["status"]
+        })
+    
+    for item in timeline_data:
+        if item["Status"] == "completed":
+            icon = "✅"
+        elif item["Status"] == "in_progress":
+            icon = "🔄"
+        else:
+            icon = "⏳"
+        
+        st.markdown(f"""
+        <div class="timeline-item" style="padding: 0.75rem; border-left: 3px solid #2a5298; margin-bottom: 0.5rem; background-color: #f8f9fa;">
+            <strong>{icon} {item['Milestone']}</strong><br>
+            📅 Target: {item['Target Date']} | Status: {item['Status'].upper()}
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    st.subheader("📋 Expected Outcomes (Performance-Linked)")
+    
+    outcomes = {
+        "Enhanced Global Rankings Participation": "Successful participation of institutions on minimum two global ranking platforms",
+        "Minimum 20% Improvement": "Validation of comparative data between baseline and endline diagnostics",
+        "Establishment of Sustainable Data & Quality Systems": "Certification of GRDAU readiness and dashboard deployment",
+        "Institutional Development Plans": "Finalization and institutional sign-off of all IDPs",
+        "Capacity Building Participation": "Minimum 60% participation of IQAC faculty and staff",
+        "Final Evaluation": "Approval of final report and satisfactory project closure"
+    }
+    
+    for outcome, metric in outcomes.items():
         st.markdown(f"""
         <div class="info-card">
-            <strong>💰 Monthly Payment (70% of contract)</strong><br>
-            Total: ₹{monthly_total:,.0f}<br>
-            Monthly: ₹{monthly_amount:,.0f} (over 24 months)<br>
-            *Based on attendance and MPR approval*
+            <strong>🏆 {outcome}</strong><br>
+            📊 {metric}
         </div>
         """, unsafe_allow_html=True)
-    
-    with col2:
-        st.subheader("📈 Milestone Breakdown (30% of Contract)")
-        
-        milestone_data = []
-        for m in MILESTONES:
-            milestone_data.append({
-                "Milestone": m["name"][:40] + ("..." if len(m["name"]) > 40 else ""),
-                "Percentage": f"{m['percentage']}%",
-                "Amount": f"₹{m['value']:,.0f}",
-                "Target Date": m["target_date"],
-                "Status": m["status"].upper()
-            })
-        
-        milestone_df = pd.DataFrame(milestone_data)
-        st.dataframe(milestone_df, use_container_width=True, hide_index=True)
-        
-        total_milestone = sum(m["value"] for m in MILESTONES)
-        st.markdown(f"""
-        <div class="success-card">
-            <strong>🎯 Total Milestone Payout: ₹{total_milestone:,.0f}</strong>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    st.subheader("💰 Payment Terms (as per contract)")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("""
-        <div class="warning-card">
-            <strong>📅 Monthly Payment (70%) - Conditions</strong><br>
-            • Based on attendance and MPR approval<br>
-            • Distributed across 24 months<br>
-            • No advance payment<br>
-            • TDS deducted as applicable<br>
-            • Payment within 60 days of valid invoice
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-        <div class="success-card">
-            <strong>🏆 Milestone Payment (30%) - Conditions</strong><br>
-            • Payable on achievement of milestones<br>
-            • Documentary evidence required<br>
-            • PMU confirmation before release<br>
-            • Subject to availability of funds<br>
-            • Disputed deliverables may be withheld
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    st.subheader("🔒 Performance Bank Guarantee")
-    st.info(f"""
-    - **Amount:** 5% of Contract Value = ₹{CONTRACT_VALUE * 0.05:,.0f}
-    - **Submission:** Within 15 days of LoA or prior to contract signing
-    - **Validity:** 90 days after expiration of all contractual obligations
-    - **Bank:** Scheduled or Nationalized bank
-    - **Format:** As per Annexure X of RFP
-    - **Charges:** Premium, commission borne by Consultant
-    """)
 
 def render_deliverables():
     st.header("📋 Contract Deliverables Tracker")
@@ -935,33 +901,14 @@ def render_deliverables():
             icon = "⏳"
             color = "#f8f9fa"
         
+        actual_text = f"<br>✅ Actual Submission: {deliverable['actual_date']}" if deliverable.get('actual_date') else ""
+        
         st.markdown(f"""
         <div style="background-color:{color}; padding:1rem; margin:0.5rem 0; border-radius:8px;">
             <strong>{icon} {deliverable['deliverable']}</strong><br>
             📅 Due: {deliverable['due_date']}<br>
             📊 Status: {deliverable['status'].upper()}
-            {f"<br>✅ Actual Submission: {deliverable['actual_date']}" if deliverable.get('actual_date') else ""}
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    st.subheader("🎯 Expected Outcomes (Performance-Linked)")
-    
-    outcomes = {
-        "Enhanced Global Rankings Participation": "Successful participation of institutions on minimum two global ranking platforms",
-        "Minimum 20% Improvement": "Validation of comparative data between baseline and endline diagnostics",
-        "Establishment of Sustainable Data & Quality Systems": "Certification of GRDAU readiness and dashboard deployment",
-        "Institutional Development Plans": "Finalization and institutional sign-off of all IDPs",
-        "Capacity Building Participation": "Minimum 60% participation of IQAC faculty and staff",
-        "Final Evaluation": "Approval of final report and satisfactory project closure"
-    }
-    
-    for outcome, metric in outcomes.items():
-        st.markdown(f"""
-        <div class="info-card">
-            <strong>🏆 {outcome}</strong><br>
-            📊 {metric}
+            {actual_text}
         </div>
         """, unsafe_allow_html=True)
 
@@ -986,7 +933,9 @@ def render_risks():
             "Risk": risk["risk"][:40],
             "Probability Score": prob_score,
             "Impact Score": impact_score,
-            "Risk Score": prob_score * impact_score
+            "Risk Score": prob_score * impact_score,
+            "Probability": risk["probability"],
+            "Impact": risk["impact"]
         })
     
     risk_df2 = pd.DataFrame(risk_data)
@@ -999,6 +948,19 @@ def render_risks():
     fig.update_traces(textposition="top center")
     st.plotly_chart(fig, use_container_width=True)
     
+    # Risk summary
+    col1, col2, col3 = st.columns(3)
+    high_risks = [r for r in RISK_REGISTER if r["probability"] == "High" and r["impact"] == "High"]
+    medium_risks = [r for r in RISK_REGISTER if r["probability"] == "Medium" or r["impact"] == "Medium"]
+    low_risks = [r for r in RISK_REGISTER if r["probability"] == "Low" and r["impact"] == "Low"]
+    
+    with col1:
+        st.metric("🔴 High Priority Risks", len(high_risks))
+    with col2:
+        st.metric("🟡 Medium Priority Risks", len(medium_risks))
+    with col3:
+        st.metric("🟢 Low Priority Risks", len(low_risks))
+    
     st.markdown("---")
     
     st.subheader("⚖️ Penalty Provisions")
@@ -1009,7 +971,7 @@ def render_risks():
         st.markdown("""
         <div class="warning-card">
             <strong>⚠️ Milestone Penalty</strong><br>
-            • Fine up to 10% of milestone value for non-completion<br>
+            • Fine up to applicable percentage of milestone value for non-completion<br>
             • Applicable if compliance report not submitted as described
         </div>
         """, unsafe_allow_html=True)
@@ -1018,7 +980,7 @@ def render_risks():
         st.markdown("""
         <div class="warning-card">
             <strong>⚠️ Overall Penalty</strong><br>
-            • Maximum 10% of total contract value<br>
+            • Maximum penalty as per contract terms<br>
             • For breach of contract conditions<br>
             • For unsatisfactory performance<br>
             • For delay in prescribed timelines
@@ -1046,7 +1008,7 @@ def render_risks():
     st.subheader("🔒 Fraud and Corruption Compliance")
     st.info("""
     **World Bank Guidelines on Preventing and Combating Fraud and Corruption**
-    - Program-for-Results Financing guidelines dated 1 Feb 2012 (revised 10 July 2015)
+    - Program-for-Results Financing guidelines
     - Anti-Corruption Guidelines shall prevail in case of conflict
     - MITRA as nodal agency ensures compliance
     """)
@@ -1057,7 +1019,7 @@ def render_risks():
     st.warning("""
     - **Governing Law:** Laws in force in India
     - **Exclusive Jurisdiction:** Courts at Mumbai, India
-    - **Arbitration:** Mumbai Centre for Arbitration (as per Arbitration and Conciliation Act, 2015)
+    - **Arbitration:** As per Arbitration and Conciliation Act
     """)
     
     st.markdown("---")
@@ -1070,6 +1032,7 @@ def render_risks():
     - Confidentiality survives termination of contract
     """)
 
+# Main execution
 selected = render_sidebar()
 
 if selected == "dashboard":
@@ -1080,18 +1043,19 @@ elif selected == "plan":
     render_plan()
 elif selected == "team":
     render_team()
-elif selected == "payments":
-    render_payments()
+elif selected == "milestones":
+    render_milestones()
 elif selected == "deliverables":
     render_deliverables()
 elif selected == "risks":
     render_risks()
 
+# Footer
 st.markdown("---")
 st.markdown(f"""
 <div style="text-align: center; color: #666; font-size: 0.8rem;">
     <p>© 2026 Maharashtra Institution for Transformation (MITRA) | MahaSTRIDE Project | World Bank Loan No: IBRD 9737-IN</p>
     <p>Last Updated: {datetime.now().strftime('%d %B %Y, %H:%M:%S')}</p>
-    <p>ICARE Pvt. Ltd. - Consultant | Contract Value: ₹{CONTRACT_VALUE:,.0f} | Duration: 24 months</p>
+    <p>ICARE Pvt. Ltd. - Consultant | Duration: 24 months (May 2026 - April 2028)</p>
 </div>
 """, unsafe_allow_html=True)
