@@ -107,7 +107,6 @@ st.markdown("""
 PROJECT_NAME = "MahaSTRIDE - University Ranking Framework Project"
 CLIENT = "Maharashtra Institution for Transformation (MITRA)"
 CONSULTANT = "Indian Centre for Academic Rankings & Excellence - ICARE Pvt. Ltd."
-CONTRACT_VALUE = 44841888  # Rs.
 CONTRACT_START = datetime(2026, 5, 6)
 CONTRACT_END = datetime(2028, 5, 6)
 CURRENT_DATE = datetime(2026, 6, 4)  # Today's date
