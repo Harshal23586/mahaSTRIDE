@@ -814,40 +814,27 @@ def render_milestones():
             "Weight": f"{m['percentage']}%"
         } for m in MILESTONES])
         
-        def color_status(val):
-            if val == "COMPLETED":
-                return 'background-color: #d4edda'
-            elif val == "IN_PROGRESS":
-                return 'background-color: #fff3cd'
-            else:
-                return 'background-color: #f8f9fa'
-        
-        st.dataframe(milestone_df.style.applymap(color_status, subset=["Status"]), use_container_width=True, hide_index=True)
+        st.dataframe(milestone_df, use_container_width=True, hide_index=True)
     
     st.markdown("---")
     
     st.subheader("📅 Milestone Timeline")
     
-    timeline_data = []
     for m in MILESTONES:
-        timeline_data.append({
-            "Milestone": m["name"],
-            "Target Date": m["target_date"],
-            "Status": m["status"]
-        })
-    
-    for item in timeline_data:
-        if item["Status"] == "completed":
+        if m["status"] == "completed":
             icon = "✅"
-        elif item["Status"] == "in_progress":
+            color = "#d4edda"
+        elif m["status"] == "in_progress":
             icon = "🔄"
+            color = "#fff3cd"
         else:
             icon = "⏳"
+            color = "#f8f9fa"
         
         st.markdown(f"""
-        <div class="timeline-item" style="padding: 0.75rem; border-left: 3px solid #2a5298; margin-bottom: 0.5rem; background-color: #f8f9fa;">
-            <strong>{icon} {item['Milestone']}</strong><br>
-            📅 Target: {item['Target Date']} | Status: {item['Status'].upper()}
+        <div style="background-color:{color}; padding:0.75rem; border-left:3px solid #2a5298; margin-bottom:0.5rem; border-radius:5px;">
+            <strong>{icon} {m['name']}</strong><br>
+            📅 Target: {m['target_date']} | Status: {m['status'].upper()} | Weight: {m['percentage']}%
         </div>
         """, unsafe_allow_html=True)
     
