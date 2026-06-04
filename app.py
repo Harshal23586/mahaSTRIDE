@@ -1,15 +1,14 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
-import os
-import json
-from hashlib import sha256
-import base64
+import plotly.graph_objects as go
+from datetime import datetime, timedelta
+import calendar
+from streamlit_option_menu import option_menu
 
 # Page configuration
 st.set_page_config(
-    page_title="mahaSTRIDE Project Tracker",
+    page_title="MahaSTRIDE - ICARE Project Dashboard",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -19,893 +18,1010 @@ st.set_page_config(
 st.markdown("""
 <style>
     .main-header {
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        padding: 2rem;
+        background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+        padding: 1.5rem;
         border-radius: 10px;
+        color: white;
         margin-bottom: 2rem;
+    }
+    .status-completed {
+        background-color: #28a745;
         color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        display: inline-block;
     }
-    .info-card {
-        background-color: #d1ecf1;
-        border-left: 4px solid #17a2b8;
-        padding: 1rem;
-        border-radius: 5px;
-        margin: 1rem 0;
+    .status-in-progress {
+        background-color: #ffc107;
+        color: #333;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        display: inline-block;
     }
-    .admin-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .status-pending {
+        background-color: #dc3545;
         color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        display: inline-block;
     }
-    .projectlead-card {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    .status-upcoming {
+        background-color: #17a2b8;
         color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        display: inline-block;
     }
-    .sangam-card {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-    }
-    .stButton > button {
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        color: white;
-        border: none;
-        padding: 0.5rem 2rem;
-        border-radius: 5px;
-    }
-    .default-task-card {
-        background: linear-gradient(135deg, #e8f8f5 0%, #d4efdf 100%);
-        border-left: 4px solid #27ae60;
-        padding: 1.2rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-    }
-    .credentials-box {
+    .metric-card {
         background-color: #f8f9fa;
-        border: 1px solid #ddd;
         border-radius: 10px;
         padding: 1rem;
-        margin-top: 1rem;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .credentials-box h4 {
-        margin-top: 0;
-        color: #1e3c72;
+    .deliverable-card {
+        background-color: white;
+        border-left: 4px solid #2a5298;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .cred-row {
-        font-family: monospace;
-        font-size: 12px;
-        padding: 4px 0;
-        border-bottom: 1px solid #eee;
+    .completed-badge {
+        background-color: #28a745;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+    .month-header-completed {
+        background-color: #d4edda;
+        border-left: 4px solid #28a745;
+        padding: 0.5rem 1rem;
+        margin: 0.5rem 0;
+        border-radius: 5px;
+    }
+    .month-header-current {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 0.5rem 1rem;
+        margin: 0.5rem 0;
+        border-radius: 5px;
+    }
+    .month-header-upcoming {
+        background-color: #e7f3ff;
+        border-left: 4px solid #17a2b8;
+        padding: 0.5rem 1rem;
+        margin: 0.5rem 0;
+        border-radius: 5px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# USER CREDENTIALS
-# ============================================================
-USERS = {
-    "admin@mahastride.com": {
-        "password": sha256("Admin@2026".encode()).hexdigest(),
-        "role": "admin",
-        "name": "Admin"
-    },
-    "projectlead@mahastride.com": {
-        "password": sha256("ProjectLead@2026".encode()).hexdigest(),
-        "role": "project_lead",
-        "name": "Dr. Harshal Kotwal"
-    },
-    "shubham@mitra.gov.in": {
-        "password": sha256("Shubham@2026".encode()).hexdigest(),
-        "role": "coordinator",
-        "name": "Shubham",
-        "university": "MITRA"
-    },
-    "sneha@mu.edu": {
-        "password": sha256("Sneha@2026".encode()).hexdigest(),
-        "role": "coordinator",
-        "name": "Ms Sneha",
-        "university": "MU"
-    },
-    "sagar@mu.edu": {
-        "password": sha256("Sagar@2026".encode()).hexdigest(),
-        "role": "coordinator",
-        "name": "Mr Sagar",
-        "university": "MU"
-    },
-    "jagan@sspu.edu": {
-        "password": sha256("Jagan@2026".encode()).hexdigest(),
-        "role": "coordinator",
-        "name": "Mr Jagan",
-        "university": "SSPU"
-    },
-    "vaibhav@coep.edu": {
-        "password": sha256("Vaibhav@2026".encode()).hexdigest(),
-        "role": "coordinator",
-        "name": "Mr Vaibhav",
-        "university": "COEP"
-    },
-    "pratham@au.edu": {
-        "password": sha256("Pratham@2026".encode()).hexdigest(),
-        "role": "coordinator",
-        "name": "Mr Pratham",
-        "university": "AU"
-    },
-    "anjali@nu.edu": {
-        "password": sha256("Anjali@2026".encode()).hexdigest(),
-        "role": "coordinator",
-        "name": "Ms Anjali",
-        "university": "NU"
-    },
-    "nitish@kbcnmu.edu": {
-        "password": sha256("Nitish@2026".encode()).hexdigest(),
-        "role": "coordinator",
-        "name": "Mr Nitish",
-        "university": "KBCNMU"
-    },
-    "atharv@bamu.edu": {
-        "password": sha256("Atharv@2026".encode()).hexdigest(),
-        "role": "coordinator",
-        "name": "Mr Atharv",
-        "university": "BAMU"
+# Project Constants
+PROJECT_NAME = "MahaSTRIDE - University Ranking Framework Project"
+CLIENT = "Maharashtra Institution for Transformation (MITRA)"
+CONSULTANT = "Indian Centre for Academic Rankings & Excellence - ICARE Pvt. Ltd."
+CONTRACT_START = datetime(2026, 5, 6)
+CONTRACT_END = datetime(2028, 5, 6)
+CURRENT_DATE = datetime(2026, 6, 4)  # Today's date
+
+UNIVERSITIES = [
+    "Mumbai University, Mumbai",
+    "Savitribai Phule Pune University, Pune",
+    "COEP Technological University, Pune",
+    "Kavayitri Bahinabai Chaudhari North Maharashtra University, Jalgaon",
+    "Dr. Babasaheb Ambedkar Marathwada University, Chhatrapati Sambhajinagar",
+    "Rashtrasant Tukadoji Maharaj Nagpur University, Nagpur",
+    "Sant Gadge Baba Amravati University, Amravati"
+]
+
+# May 2026 completed activities (from the MPR)
+COMPLETED_MAY_ACTIVITIES = [
+    {"activity": "SANGAM Orientation & Training (May 4-6 at Trident Board Room)", "date": "May 4-6, 2026", "team": "ICARE Team", "status": "completed"},
+    {"activity": "University Onboarding & Data Source Mapping", "date": "May 7-8, 2026", "team": "ICARE Team", "status": "completed"},
+    {"activity": "NIRF Data Collection (Student, Faculty, Research, Placement, Finance)", "date": "May 12-20, 2026", "team": "ICARE Team", "status": "completed"},
+    {"activity": "Stakeholder Consultation & Review Meetings", "date": "May 18-27, 2026", "team": "ICARE Team", "status": "completed"},
+    {"activity": "Inception Report & GRDAU Framework Development", "date": "May 22-26, 2026", "team": "ICARE Team", "status": "completed"},
+    {"activity": "May MPR Preparation & Finalization", "date": "May 29, 2026", "team": "ICARE Team", "status": "completed"},
+]
+
+# May 2026 meetings completed (from the MPR)
+COMPLETED_MAY_MEETINGS = [
+    {"date": "May 4-6, 2026", "agenda": "SANGAM Orientation, Training & Workshop", "outcome": "Training completed. GRDAU concept introduced."},
+    {"date": "May 7, 2026", "agenda": "Project Kick-off and data source mapping", "outcome": "Data collection initiated"},
+    {"date": "May 18, 2026", "agenda": "Data gap review and action plan", "outcome": "Departments to submit pending data"},
+    {"date": "May 27, 2026", "agenda": "Review of May progress", "outcome": "MPR preparation initiated"},
+]
+
+# Team structure (from MPR)
+TEAM_STRUCTURE = {
+    "MITRA Level": [
+        {"role": "Project Lead", "name": "Dr. Harshal Kotwal", "location": "MITRA, Mumbai", "present_days_may": 19, "absent": 0, "holidays": 12},
+        {"role": "Data Analytics and Dashboard Specialist", "name": "Mr. Shubham Singh", "location": "MITRA, Mumbai", "present_days_may": 19, "absent": 0, "holidays": 12},
+    ],
+    "University Level": [
+        {"role": "Statistician & Program Designer", "name": "Mr. Sagar Teli", "university": "Mumbai University", "present_days_may": 19, "absent": 0, "holidays": 12},
+        {"role": "Institutional Coordinator cum Research & Innovation Officer", "name": "Ms. Sneha Kashitkar", "university": "Mumbai University", "present_days_may": 19, "absent": 0, "holidays": 12},
+        {"role": "Institutional Coordinator cum Research & Innovation Officer", "name": "Mr. Nitish Kumbhar", "university": "Kavayitri Bahinabai Chaudhari North Maharashtra University", "present_days_may": 19, "absent": 0, "holidays": 12},
+        {"role": "Institutional Coordinator cum Research & Innovation Officer", "name": "Ms. Anjali Singh", "university": "Rashtrasant Tukadoji Maharaj Nagpur University", "present_days_may": 19, "absent": 0, "holidays": 12},
+        {"role": "Institutional Coordinator cum Research & Innovation Officer", "name": "Mr. Vaibhav Ambekar", "university": "COEP Technological University", "present_days_may": 19, "absent": 0, "holidays": 12},
+        {"role": "Institutional Coordinator cum Research & Innovation Officer", "name": "Mr. Atharav Paturkar", "university": "Dr. Babasaheb Ambedkar Marathwada University", "present_days_may": 19, "absent": 0, "holidays": 12},
+        {"role": "Institutional Coordinator cum Research & Innovation Officer", "name": "Mr. Prathamesh Babhulkar", "university": "Sant Gadge Baba Amravati University", "present_days_may": 19, "absent": 0, "holidays": 12},
+        {"role": "Institutional Coordinator cum Research & Innovation Officer", "name": "Mr. Jagan Sridhar", "university": "Savitribai Phule Pune University", "present_days_may": 19, "absent": 0, "holidays": 12},
+    ]
+}
+
+# Milestone payments (30% of contract)
+MILESTONES = [
+    {"id": 1, "name": "Establishment of Sustainable Data & Quality Systems", "percentage": 10, "target_date": "2026-09-30", "status": "pending"},
+    {"id": 2, "name": "Institutional Development Plans and Execution Monitoring", "percentage": 10, "target_date": "2026-10-31", "status": "pending"},
+    {"id": 3, "name": "Capacity Building Participation", "percentage": 10, "target_date": "2026-12-31", "status": "pending"},
+    {"id": 4, "name": "Minimum 10% Improvement in Performance Indicators in 5% of colleges across 7 Universities", "percentage": 15, "target_date": "2027-06-30", "status": "pending"},
+    {"id": 5, "name": "Minimum 20% Improvement in Performance Indicators in 20% of colleges across 7 Universities", "percentage": 25, "target_date": "2027-12-31", "status": "pending"},
+    {"id": 6, "name": "Enhanced Global Rankings Participation of 10 colleges", "percentage": 20, "target_date": "2028-02-29", "status": "pending"},
+    {"id": 7, "name": "Final Evaluation and Reporting", "percentage": 10, "target_date": "2028-04-30", "status": "pending"}
+]
+
+# Create comprehensive 24-month activity plan (including May 2026)
+def create_monthly_plan():
+    months = []
+    start_date = CONTRACT_START
+    
+    for i in range(24):
+        month_end = start_date.replace(day=calendar.monthrange(start_date.year, start_date.month)[1])
+        is_completed = start_date < CURRENT_DATE or (start_date.year == CURRENT_DATE.year and start_date.month < CURRENT_DATE.month)
+        is_current = start_date.year == CURRENT_DATE.year and start_date.month == CURRENT_DATE.month
+        
+        months.append({
+            "month_num": i + 1,
+            "start_date": start_date,
+            "end_date": month_end,
+            "year": start_date.year,
+            "month_name": start_date.strftime("%B"),
+            "short_name": start_date.strftime("%b %Y"),
+            "quarter": ((start_date.month - 1) // 3) + 1,
+            "is_completed": is_completed,
+            "is_current": is_current
+        })
+        
+        # Move to next month
+        if start_date.month == 12:
+            start_date = start_date.replace(year=start_date.year + 1, month=1)
+        else:
+            start_date = start_date.replace(month=start_date.month + 1)
+    
+    return months
+
+MONTHLY_PLAN = create_monthly_plan()
+
+# Comprehensive activities for entire 24 months
+def create_activities_by_month():
+    activities = {
+        # Month 1: May 2026 - COMPLETED
+        1: {
+            "month": "May 2026",
+            "status": "completed",
+            "activities": [
+                {"activity": "SANGAM Orientation & Training", "deliverable": "Training Completed", "due_date": "May 6, 2026", "status": "completed"},
+                {"activity": "University Onboarding & Data Source Mapping", "deliverable": "Data Source Inventory", "due_date": "May 8, 2026", "status": "completed"},
+                {"activity": "NIRF Data Collection", "deliverable": "NIRF Data Repository", "due_date": "May 20, 2026", "status": "completed"},
+                {"activity": "Stakeholder Consultation Meetings", "deliverable": "Meeting Minutes", "due_date": "May 27, 2026", "status": "completed"},
+                {"activity": "Inception Report & GRDAU Framework", "deliverable": "Inception Report", "due_date": "May 26, 2026", "status": "completed"},
+                {"activity": "Monthly Progress Report Submission", "deliverable": "MPR May 2026", "due_date": "May 29, 2026", "status": "completed"},
+            ]
+        },
+        # Month 2: June 2026
+        2: {
+            "month": "June 2026",
+            "status": "current",
+            "activities": [
+                {"activity": "Complete Diagnostic Assessments across all 7 universities", "deliverable": "7 Diagnostic Reports", "due_date": "June 30, 2026", "status": "in_progress"},
+                {"activity": "Continue baseline data collection and validation", "deliverable": "Validated Baseline Data", "due_date": "June 25, 2026", "status": "in_progress"},
+                {"activity": "Establish GRDAU framework documentation", "deliverable": "GRDAU SOP Document", "due_date": "June 20, 2026", "status": "pending"},
+                {"activity": "Conduct initial GRDAU training for university coordinators", "deliverable": "Training Session 1 Completed", "due_date": "June 15, 2026", "status": "in_progress"},
+                {"activity": "Submit June MPR", "deliverable": "MPR June 2026", "due_date": "June 30, 2026", "status": "pending"},
+            ]
+        },
+        # Month 3: July 2026
+        3: {
+            "month": "July 2026",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Complete gap analysis against NIRF/NAAC/Global Rankings", "deliverable": "Gap Analysis Report", "due_date": "July 15, 2026", "status": "pending"},
+                {"activity": "SWOT analysis for each university", "deliverable": "7 SWOT Reports", "due_date": "July 20, 2026", "status": "pending"},
+                {"activity": "Finalize GRDAU establishment in all universities", "deliverable": "7 GRDAUs Operational", "due_date": "July 31, 2026", "status": "pending"},
+                {"activity": "Submit July MPR", "deliverable": "MPR July 2026", "due_date": "July 31, 2026", "status": "pending"},
+            ]
+        },
+        # Month 4: August 2026
+        4: {
+            "month": "August 2026",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Develop Institutional Development Plans (IDPs)", "deliverable": "IDP Drafts", "due_date": "August 15, 2026", "status": "pending"},
+                {"activity": "Stakeholder review of IDPs", "deliverable": "Stakeholder Feedback", "due_date": "August 25, 2026", "status": "pending"},
+                {"activity": "Design data portal architecture", "deliverable": "Portal Design Document", "due_date": "August 31, 2026", "status": "pending"},
+                {"activity": "Submit August MPR", "deliverable": "MPR August 2026", "due_date": "August 31, 2026", "status": "pending"},
+            ]
+        },
+        # Month 5: September 2026
+        5: {
+            "month": "September 2026",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Finalize IDPs with university approval", "deliverable": "7 Approved IDPs", "due_date": "September 15, 2026", "status": "pending"},
+                {"activity": "Create performance monitoring dashboard mockups", "deliverable": "Dashboard Designs", "due_date": "September 20, 2026", "status": "pending"},
+                {"activity": "MILESTONE 1: Establishment of Sustainable Data & Quality Systems", "deliverable": "Milestone Achievement Report", "due_date": "September 30, 2026", "status": "pending"},
+                {"activity": "Submit September MPR", "deliverable": "MPR September 2026", "due_date": "September 30, 2026", "status": "pending"},
+            ]
+        },
+        # Month 6: October 2026
+        6: {
+            "month": "October 2026",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Complete dashboard development", "deliverable": "Dashboard Beta Version", "due_date": "October 15, 2026", "status": "pending"},
+                {"activity": "MILESTONE 2: Institutional Development Plans and Execution Monitoring", "deliverable": "Milestone Achievement Report", "due_date": "October 31, 2026", "status": "pending"},
+                {"activity": "Mid-term review preparation", "deliverable": "Mid-term Review Materials", "due_date": "October 25, 2026", "status": "pending"},
+                {"activity": "Submit October MPR", "deliverable": "MPR October 2026", "due_date": "October 31, 2026", "status": "pending"},
+            ]
+        },
+        # Month 7: November 2026
+        7: {
+            "month": "November 2026",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Deploy data portal MVP", "deliverable": "Data Portal Live", "due_date": "November 15, 2026", "status": "pending"},
+                {"activity": "Mid-term Progress Report submission", "deliverable": "Mid-term Report", "due_date": "November 30, 2026", "status": "pending"},
+                {"activity": "Training needs assessment completion", "deliverable": "Training Needs Report", "due_date": "November 20, 2026", "status": "pending"},
+                {"activity": "Submit November MPR", "deliverable": "MPR November 2026", "due_date": "November 30, 2026", "status": "pending"},
+            ]
+        },
+        # Month 8: December 2026
+        8: {
+            "month": "December 2026",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Launch performance dashboards", "deliverable": "Dashboards Deployed", "due_date": "December 10, 2026", "status": "pending"},
+                {"activity": "Develop training modules", "deliverable": "Training Curriculum", "due_date": "December 15, 2026", "status": "pending"},
+                {"activity": "MILESTONE 3: Capacity Building Participation", "deliverable": "Milestone Achievement Report", "due_date": "December 31, 2026", "status": "pending"},
+                {"activity": "Submit December MPR", "deliverable": "MPR December 2026", "due_date": "December 31, 2026", "status": "pending"},
+            ]
+        },
+        # Month 9: January 2027
+        9: {
+            "month": "January 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "First round of training programs across all universities", "deliverable": "Training Completion Report", "due_date": "January 25, 2027", "status": "pending"},
+                {"activity": "Data quality framework implementation", "deliverable": "Data Quality Framework", "due_date": "January 20, 2027", "status": "pending"},
+                {"activity": "Submit January MPR", "deliverable": "MPR January 2027", "due_date": "January 31, 2027", "status": "pending"},
+            ]
+        },
+        # Month 10: February 2027
+        10: {
+            "month": "February 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Data validation and quality improvement cycles", "deliverable": "Data Quality Report", "due_date": "February 20, 2027", "status": "pending"},
+                {"activity": "Research output enhancement initiatives", "deliverable": "Research Enhancement Plan", "due_date": "February 25, 2027", "status": "pending"},
+                {"activity": "Submit February MPR", "deliverable": "MPR February 2027", "due_date": "February 28, 2027", "status": "pending"},
+            ]
+        },
+        # Month 11: March 2027
+        11: {
+            "month": "March 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "International collaboration framework development", "deliverable": "Collaboration Framework", "due_date": "March 15, 2027", "status": "pending"},
+                {"activity": "Outcome-based education (OBE) implementation support", "deliverable": "OBE Guidelines", "due_date": "March 20, 2027", "status": "pending"},
+                {"activity": "Submit March MPR", "deliverable": "MPR March 2027", "due_date": "March 31, 2027", "status": "pending"},
+            ]
+        },
+        # Month 12: April 2027
+        12: {
+            "month": "April 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Accreditation preparedness assessment", "deliverable": "Accreditation Readiness Report", "due_date": "April 15, 2027", "status": "pending"},
+                {"activity": "Quality assurance framework implementation", "deliverable": "QA Framework", "due_date": "April 25, 2027", "status": "pending"},
+                {"activity": "Submit April MPR", "deliverable": "MPR April 2027", "due_date": "April 30, 2027", "status": "pending"},
+            ]
+        },
+        # Month 13: May 2027 - Year 2 begins
+        13: {
+            "month": "May 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Year 1 performance review", "deliverable": "Annual Performance Report", "due_date": "May 15, 2027", "status": "pending"},
+                {"activity": "Enhanced data collection and reporting", "deliverable": "Enhanced Data Repository", "due_date": "May 20, 2027", "status": "pending"},
+                {"activity": "Submit May MPR", "deliverable": "MPR May 2027", "due_date": "May 31, 2027", "status": "pending"},
+            ]
+        },
+        # Month 14: June 2027
+        14: {
+            "month": "June 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "MILESTONE 4: Minimum 10% Improvement in Performance Indicators", "deliverable": "Milestone Achievement Report", "due_date": "June 30, 2027", "status": "pending"},
+                {"activity": "Mid-year performance assessment", "deliverable": "Mid-year Assessment", "due_date": "June 25, 2027", "status": "pending"},
+                {"activity": "Submit June MPR", "deliverable": "MPR June 2027", "due_date": "June 30, 2027", "status": "pending"},
+            ]
+        },
+        # Month 15: July 2027
+        15: {
+            "month": "July 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Advanced training programs for GRDAU staff", "deliverable": "Advanced Training Report", "due_date": "July 20, 2027", "status": "pending"},
+                {"activity": "Research publication support and tracking", "deliverable": "Publication Report", "due_date": "July 25, 2027", "status": "pending"},
+                {"activity": "Submit July MPR", "deliverable": "MPR July 2027", "due_date": "July 31, 2027", "status": "pending"},
+            ]
+        },
+        # Month 16: August 2027
+        16: {
+            "month": "August 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "International ranking agency engagement", "deliverable": "Engagement Report", "due_date": "August 20, 2027", "status": "pending"},
+                {"activity": "Dashboard enhancements based on feedback", "deliverable": "Enhanced Dashboards", "due_date": "August 25, 2027", "status": "pending"},
+                {"activity": "Submit August MPR", "deliverable": "MPR August 2027", "due_date": "August 31, 2027", "status": "pending"},
+            ]
+        },
+        # Month 17: September 2027
+        17: {
+            "month": "September 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Citation analysis and improvement strategies", "deliverable": "Citation Report", "due_date": "September 15, 2027", "status": "pending"},
+                {"activity": "Employer perception enhancement initiatives", "deliverable": "Employer Engagement Report", "due_date": "September 20, 2027", "status": "pending"},
+                {"activity": "Submit September MPR", "deliverable": "MPR September 2027", "due_date": "September 30, 2027", "status": "pending"},
+            ]
+        },
+        # Month 18: October 2027
+        18: {
+            "month": "October 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Academic reputation building strategies", "deliverable": "Reputation Strategy Document", "due_date": "October 15, 2027", "status": "pending"},
+                {"activity": "IPR and patent filing support", "deliverable": "IPR Status Report", "due_date": "October 25, 2027", "status": "pending"},
+                {"activity": "Submit October MPR", "deliverable": "MPR October 2027", "due_date": "October 31, 2027", "status": "pending"},
+            ]
+        },
+        # Month 19: November 2027
+        19: {
+            "month": "November 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "SDG-aligned research promotion", "deliverable": "SDG Research Report", "due_date": "November 15, 2027", "status": "pending"},
+                {"activity": "International student enrollment strategies", "deliverable": "Internationalization Plan", "due_date": "November 20, 2027", "status": "pending"},
+                {"activity": "Submit November MPR", "deliverable": "MPR November 2027", "due_date": "November 30, 2027", "status": "pending"},
+            ]
+        },
+        # Month 20: December 2027
+        20: {
+            "month": "December 2027",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "MILESTONE 5: Minimum 20% Improvement in Performance Indicators", "deliverable": "Milestone Achievement Report", "due_date": "December 31, 2027", "status": "pending"},
+                {"activity": "Year-end performance review", "deliverable": "Year-end Report", "due_date": "December 20, 2027", "status": "pending"},
+                {"activity": "Submit December MPR", "deliverable": "MPR December 2027", "due_date": "December 31, 2027", "status": "pending"},
+            ]
+        },
+        # Month 21: January 2028
+        21: {
+            "month": "January 2028",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Global ranking submission preparation", "deliverable": "Ranking Submission Package", "due_date": "January 20, 2028", "status": "pending"},
+                {"activity": "Final round of capacity building", "deliverable": "Final Training Report", "due_date": "January 25, 2028", "status": "pending"},
+                {"activity": "Submit January MPR", "deliverable": "MPR January 2028", "due_date": "January 31, 2028", "status": "pending"},
+            ]
+        },
+        # Month 22: February 2028
+        22: {
+            "month": "February 2028",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "MILESTONE 6: Enhanced Global Rankings Participation of 10 colleges", "deliverable": "Milestone Achievement Report", "due_date": "February 29, 2028", "status": "pending"},
+                {"activity": "Final dashboard and portal review", "deliverable": "Final System Review", "due_date": "February 25, 2028", "status": "pending"},
+                {"activity": "Submit February MPR", "deliverable": "MPR February 2028", "due_date": "February 29, 2028", "status": "pending"},
+            ]
+        },
+        # Month 23: March 2028
+        23: {
+            "month": "March 2028",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "Sustainability planning and handover documentation", "deliverable": "Sustainability Plan", "due_date": "March 15, 2028", "status": "pending"},
+                {"activity": "Lessons learned documentation", "deliverable": "Lessons Learned Report", "due_date": "March 20, 2028", "status": "pending"},
+                {"activity": "Submit March MPR", "deliverable": "MPR March 2028", "due_date": "March 31, 2028", "status": "pending"},
+            ]
+        },
+        # Month 24: April 2028
+        24: {
+            "month": "April 2028",
+            "status": "upcoming",
+            "activities": [
+                {"activity": "MILESTONE 7: Final Evaluation and Reporting", "deliverable": "Final Closure Report", "due_date": "April 30, 2028", "status": "pending"},
+                {"activity": "Project closure and knowledge transfer", "deliverable": "Knowledge Transfer Report", "due_date": "April 25, 2028", "status": "pending"},
+                {"activity": "Final MPR submission", "deliverable": "Final MPR", "due_date": "April 30, 2028", "status": "pending"},
+                {"activity": "Handover of all project materials to MITRA", "deliverable": "Complete Project Documentation", "due_date": "April 30, 2028", "status": "pending"},
+            ]
+        }
     }
-}
+    return activities
 
-# ============================================================
-# UNIVERSITY DETAILS
-# ============================================================
-UNIVERSITIES = {
-    "MU": {"name": "Mumbai University", "coordinators": ["Ms Sneha", "Mr Sagar"], "nodal_officer": "Dr. Varsha Kelkar Mane", "registrar": "_________"},
-    "SSPU": {"name": "Savitribai Phule Pune University", "coordinators": ["Mr Jagan"], "nodal_officer": "Prof. Vinayak Joshi", "registrar": "_________"},
-    "COEP": {"name": "COEP Technological University, Pune", "coordinators": ["Mr Vaibhav"], "nodal_officer": "Dr. Uttam Chaskar", "registrar": "_________"},
-    "AU": {"name": "Sant Gadge Baba Amravati University", "coordinators": ["Mr Pratham"], "nodal_officer": "Dr. A. B. Naik", "registrar": "_________"},
-    "NU": {"name": "Rashtrasant Tukadoji Maharaj Nagpur University", "coordinators": ["Ms Anjali"], "nodal_officer": "Prof. Nandkishor Karade", "registrar": "_________"},
-    "KBCNMU": {"name": "KBCNMU, Jalgaon", "coordinators": ["Mr Nitish"], "nodal_officer": "Prof. Sameer Narkhede", "registrar": "_________"},
-    "BAMU": {"name": "Dr. Babasaheb Ambedkar Marathwada University", "coordinators": ["Mr Atharv"], "nodal_officer": "Prof. G.D. Khedkar", "registrar": "_________"},
-    "MITRA": {"name": "MITRA (PMU)", "coordinators": ["Shubham"], "nodal_officer": "Dr. Harshal Kotwal", "registrar": "_________"}
-}
+ACTIVITIES_BY_MONTH = create_activities_by_month()
 
-# Officials
-ICARE_OFFICIALS = {
-    "project_director": "Dr. Harshal Kotwal, Project Director, ICARE Pvt. Ltd."
-}
+# Contract deliverables timeline (from contract document)
+CONTRACT_DELIVERABLES = [
+    {"deliverable": "Inception Report and Deployment Plan", "due_days": 30, "due_date": "2026-06-05", "status": "completed", "actual_date": "2026-05-26"},
+    {"deliverable": "Diagnostic Assessment Reports (Institution-wise)", "due_days": 60, "due_date": "2026-07-05", "status": "pending", "actual_date": None},
+    {"deliverable": "Institutional Development Plans (IDPs)", "due_days": 100, "due_date": "2026-08-14", "status": "pending", "actual_date": None},
+    {"deliverable": "GRDAUs Established and Operationalized", "due_days": 60, "due_date": "2026-07-05", "status": "pending", "actual_date": None},
+    {"deliverable": "Mid-term Progress Report", "due_days": 180, "due_date": "2026-11-02", "status": "pending", "actual_date": None},
+    {"deliverable": "Training and Capacity Building Reports", "due_days": "Quarterly", "due_date": "Quarterly", "status": "pending", "actual_date": None},
+    {"deliverable": "Dashboard Reports and Analytics", "due_days": "Monthly", "due_date": "Monthly from day 60", "status": "in_progress", "actual_date": None},
+    {"deliverable": "Final Closure Report and Recommendations", "due_days": "End of 24 months", "due_date": "2028-05-06", "status": "pending", "actual_date": None}
+]
 
-MITRA_OFFICIALS = {
-    "jt_ceo": "Jt. CEO, MITRA"
-}
-
-WORKING_HOURS = "10:00 AM - 6:00 PM"
-
-# ============================================================
-# DATA FILE PATHS
-# ============================================================
-PROGRESS_DATA_FILE = "progress_data.json"
-TEAM_ATTENDANCE_FILE = "attendance_data.json"
-MPR_DATA_FILE = "mpr_data.json"
-
-# ============================================================
-# DEFAULT PLAN - 19 WORKING DAYS
-# ============================================================
-DEFAULT_PLAN = {
-    "2026-05-04": {"task": "SANGAM Orientation Day 1", "category": "Training", "description": "Project overview, MahaSTRIDE introduction", "venue": "Trident Board Room, Mumbai"},
-    "2026-05-05": {"task": "SANGAM Training Day 2", "category": "Training", "description": "NIRF framework deep dive", "venue": "Trident Board Room, Mumbai"},
-    "2026-05-06": {"task": "SANGAM Workshop Day 3", "category": "Training", "description": "GRDAU concept, data templates", "venue": "Trident Board Room, Mumbai"},
-    "2026-05-07": {"task": "University Reporting & Onboarding", "category": "Setup", "description": "Report to university, meet VC & Registrar", "venue": "Respective University"},
-    "2026-05-08": {"task": "NIRF Data Source Mapping", "category": "Setup", "description": "Map data sources across departments", "venue": "Respective University"},
-    "2026-05-11": {"task": "Data Gap Template", "category": "Documentation", "description": "Create gap template and request letters", "venue": "Respective University"},
-    "2026-05-12": {"task": "Student & Faculty Data", "category": "Data Collection", "description": "Collect enrollment and faculty data", "venue": "Respective University"},
-    "2026-05-13": {"task": "Research & Placement Data", "category": "Data Collection", "description": "Collect publications and placement data", "venue": "Respective University"},
-    "2026-05-14": {"task": "Financial & Infrastructure Data", "category": "Data Collection", "description": "Collect finance and infrastructure data", "venue": "Respective University"},
-    "2026-05-15": {"task": "Data Consolidation", "category": "Analysis", "description": "Consolidate and validate data", "venue": "Respective University"},
-    "2026-05-18": {"task": "Stakeholder Consultation", "category": "Meetings", "description": "Meeting with department heads", "venue": "Respective University"},
-    "2026-05-19": {"task": "Missing Data Follow-up", "category": "Data Collection", "description": "Follow up for missing data", "venue": "Respective University"},
-    "2026-05-20": {"task": "NIRF Template Preparation", "category": "Analysis", "description": "Prepare draft NIRF submission", "venue": "Respective University"},
-    "2026-05-21": {"task": "SWOT Analysis & Gap Report", "category": "Documentation", "description": "Prepare SWOT and gap report", "venue": "Respective University"},
-    "2026-05-22": {"task": "Inception Report Drafting", "category": "Reporting", "description": "Draft Inception Report", "venue": "Respective University"},
-    "2026-05-25": {"task": "GRDAU Team Identification", "category": "Documentation", "description": "Identify GRDAU team members", "venue": "Respective University"},
-    "2026-05-26": {"task": "GRDAU Operational Framework", "category": "Documentation", "description": "Finalize GRDAU framework", "venue": "Respective University"},
-    "2026-05-27": {"task": "Review Meeting with ICARE", "category": "Meetings", "description": "Review May progress", "venue": "Respective University"},
-    "2026-05-29": {"task": "May MPR Finalization", "category": "Reporting", "description": "Finalize May MPR", "venue": "Respective University"}
-}
-
-TASK_CATEGORIES = {
-    "Setup": ["Onboarding", "Data mapping"],
-    "Training": ["SANGAM", "NIRF training"],
-    "Data Collection": ["Student", "Faculty", "Research", "Placement"],
-    "Analysis": ["Consolidation", "Validation", "Gap analysis"],
-    "Reporting": ["NIRF template", "Inception Report", "MPR"],
-    "Meetings": ["Consultation", "Review"],
-    "Documentation": ["Gap template", "SWOT", "GRDAU"],
-    "Coordination": ["Follow-up"]
-}
-
-# ============================================================
-# TEAM MEMBERS - Updated titles
-# ============================================================
-TEAM_MEMBERS = {
-    "ICARE": [
-        {"name": "Dr. Harshal Kotwal", "profile": "Project Director, ICARE Pvt. Ltd.", "location": "ICARE, Mumbai"}
-    ],
-    "MITRA": [
-        {"name": "Shubham", "profile": "Data Analytics and Dashboard Specialist", "location": "MITRA, Mumbai"}
-    ],
-    "MU": [
-        {"name": "Ms Sneha", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"},
-        {"name": "Mr Sagar", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Mumbai University"}
-    ],
-    "SSPU": [{"name": "Mr Jagan", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "SPPU, Pune"}],
-    "COEP": [{"name": "Mr Vaibhav", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "COEP, Pune"}],
-    "AU": [{"name": "Mr Pratham", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Amravati University"}],
-    "NU": [{"name": "Ms Anjali", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "Nagpur University"}],
-    "KBCNMU": [{"name": "Mr Nitish", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "KBCNMU, Jalgaon"}],
-    "BAMU": [{"name": "Mr Atharv", "profile": "Institutional Coordinator cum Research & Innovation Officer", "location": "BAMU, Aurangabad"}]
-}
-
-def hash_password(password):
-    return sha256(password.encode()).hexdigest()
-
-def authenticate_user(email, password):
-    if email in USERS and USERS[email]["password"] == hash_password(password):
-        return True, USERS[email]["role"], USERS[email]["name"], USERS[email].get("university")
-    return False, None, None, None
-
-# ============================================================
-# DATA MANAGEMENT
-# ============================================================
-
-def load_progress():
-    try:
-        if os.path.exists(PROGRESS_DATA_FILE):
-            with open(PROGRESS_DATA_FILE, 'r') as f:
-                return json.load(f)
-    except:
-        pass
-    return {}
-
-def save_progress(data):
-    try:
-        with open(PROGRESS_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
-
-def load_attendance():
-    try:
-        if os.path.exists(TEAM_ATTENDANCE_FILE):
-            with open(TEAM_ATTENDANCE_FILE, 'r') as f:
-                return json.load(f)
-    except:
-        pass
-    return {}
-
-def save_attendance(data):
-    try:
-        with open(TEAM_ATTENDANCE_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
-
-def load_mpr_config():
-    try:
-        if os.path.exists(MPR_DATA_FILE):
-            with open(MPR_DATA_FILE, 'r') as f:
-                return json.load(f)
-    except:
-        pass
-    return {"work_order_ref": "MITRA/Research/MahaSTRIDE/EduRFP/49/2025", "work_order_date": "11-05-2026", "period_start": "2026-05-04", "period_end": "2026-05-29"}
-
-def save_mpr_config(data):
-    try:
-        with open(MPR_DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except:
-        return False
-
-def get_all_dates():
-    return list(DEFAULT_PLAN.keys())
-
-def get_pending(university):
-    data = load_progress()
-    completed = set(data.get(university, {}).keys())
-    pending = []
-    for date in get_all_dates():
-        if date not in completed:
-            plan = DEFAULT_PLAN.get(date)
-            if plan:
-                pending.append({"date": date, "task": plan["task"], "category": plan["category"], "description": plan["description"], "venue": plan["venue"]})
-    return pending
-
-def log_work(university, date, category, task, description, hours, remarks, user):
-    data = load_progress()
-    if university not in data:
-        data[university] = {}
-    data[university][date] = {"category": category, "task": task, "description": description, "status": "completed", "hours": hours, "remarks": remarks, "updated_by": user, "updated_at": datetime.now().isoformat()}
-    return save_progress(data)
-
-def mark_all_completed(university):
-    data = load_progress()
-    if university not in data:
-        data[university] = {}
-    for date, plan in DEFAULT_PLAN.items():
-        data[university][date] = {"category": plan["category"], "task": plan["task"], "description": plan["description"], "status": "completed", "hours": 8.0, "remarks": "Completed", "updated_by": "system", "updated_at": datetime.now().isoformat()}
-    return save_progress(data)
-
-def get_entries(university):
-    data = load_progress()
-    if university not in data:
-        return pd.DataFrame()
-    records = []
-    for date, entry in data[university].items():
-        records.append({"Date": date, "Task": entry.get("task", ""), "Status": entry.get("status", "").upper(), "Hours": entry.get("hours", 0)})
-    return pd.DataFrame(records).sort_values("Date")
-
-def get_summary():
-    data = load_progress()
-    stats = []
-    for code, info in UNIVERSITIES.items():
-        entries = data.get(code, {})
-        total = len(DEFAULT_PLAN)
-        completed = sum(1 for e in entries.values() if e.get("status") == "completed")
-        stats.append({"University": info["name"], "Completed": completed, "Total": total})
-    return pd.DataFrame(stats)
-
-def init_all():
-    for code in UNIVERSITIES:
-        mark_all_completed(code)
-    attendance = {}
-    for team_type, members in TEAM_MEMBERS.items():
-        attendance[team_type] = {}
-        for member in members:
-            attendance[team_type][member["name"]] = {"present": 19, "absent": 0, "holidays": 12}
-    save_attendance(attendance)
-    return True
-
-def reset_all():
-    for f in [PROGRESS_DATA_FILE, TEAM_ATTENDANCE_FILE, MPR_DATA_FILE]:
-        if os.path.exists(f):
-            os.remove(f)
-    init_all()
-    return True
-
-# ============================================================
-# MPR GENERATION - All deliverables COMPLETED
-# ============================================================
-
-def generate_mpr_html(university_code):
-    uni = UNIVERSITIES[university_code]
-    attendance = load_attendance()
-    mpr = load_mpr_config()
+# Sidebar Navigation
+with st.sidebar:
+    st.image("https://via.placeholder.com/300x80?text=MITRA+ICARE", use_column_width=True)
+    st.title("📋 Navigation")
     
-    period_start = datetime.strptime(mpr.get("period_start", "2026-05-04"), "%Y-%m-%d")
-    period_end = datetime.strptime(mpr.get("period_end", "2026-05-29"), "%Y-%m-%d")
+    selected = option_menu(
+        menu_title=None,
+        options=["Dashboard", "May 2026 - Completed", "24-Month Plan", "Team & Resources", "Milestones & Payments", "Deliverables Tracker", "Risk & Compliance"],
+        icons=["house", "check-circle", "calendar-month", "people", "currency-dollar", "list-check", "shield"],
+        menu_icon="cast",
+        default_index=0,
+        styles={
+            "container": {"padding": "0!important", "background-color": "#fafafa"},
+            "icon": {"color": "#2a5298", "font-size": "1.2rem"},
+            "nav-link": {"font-size": "0.9rem", "text-align": "left", "margin": "0.1rem 0"},
+            "nav-link-selected": {"background-color": "#2a5298"},
+        }
+    )
     
-    # Build team table
-    team_rows = ""
-    sr_no = 1
-    
-    team_rows += '<tr class="sub-header"><td colspan="7"><strong>ICARE LEVEL</strong></td>'
-    for m in TEAM_MEMBERS.get("ICARE", []):
-        att = attendance.get("ICARE", {}).get(m["name"], {})
-        team_rows += f"""
-        <tr>
-            <td>{sr_no}</td>
-            <td>{m['name']}</td>
-            <td>{m['profile']}</td>
-            <td>{m['location']}</td>
-            <td>{att.get('present', 19)}</div>
-            <td>{att.get('absent', 0)}</div>
-            <td>{att.get('holidays', 12)}</div>
-        </tr>"""
-        sr_no += 1
-    
-    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></div></table>'
-    for m in TEAM_MEMBERS.get("MITRA", []):
-        att = attendance.get("MITRA", {}).get(m["name"], {})
-        team_rows += f"""
-        <tr>
-            <td>{sr_no}</div>
-            <td>{m['name']}</div>
-            <td>{m['profile']}</div>
-            <td>{m['location']}</div>
-            <td>{att.get('present', 19)}</div>
-            <td>{att.get('absent', 0)}</div>
-            <td>{att.get('holidays', 12)}</div>
-        </tr>"""
-        sr_no += 1
-    
-    team_rows += f'<tr class="sub-header"><td colspan="7"><strong>{uni["name"]}</strong></div></tr>'
-    for m in TEAM_MEMBERS.get(university_code, []):
-        att = attendance.get(university_code, {}).get(m["name"], {})
-        team_rows += f"""
-        <tr>
-            <td>{sr_no}</div>
-            <td>{m['name']}</div>
-            <td>{m['profile']}</div>
-            <td>{m['location']}</div>
-            <td>{att.get('present', 19)}</div>
-            <td>{att.get('absent', 0)}</div>
-            <td>{att.get('holidays', 12)}</div>
-        </tr>"""
-        sr_no += 1
-    
-    coordinators = ", ".join(uni["coordinators"])
-    
-    html = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Monthly Progress Report - {uni['name']}</title>
-    <style>
-        body {{ font-family: 'Times New Roman', serif; margin: 0.7in; font-size: 11pt; }}
-        .header {{ text-align: center; margin-bottom: 20px; }}
-        .mitra-title {{ font-size: 12pt; font-weight: bold; }}
-        .confidential {{ text-align: right; font-weight: bold; margin-bottom: 20px; }}
-        .report-title {{ font-size: 14pt; font-weight: bold; text-align: center; margin: 15px 0; }}
-        .section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; background-color: #f0f0f0; padding: 5px; }}
-        table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
-        th, td {{ border: 1px solid #000; padding: 6px; vertical-align: top; }}
-        th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
-        .sub-header {{ background-color: #d0d0d0; font-weight: bold; }}
-        .footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
-    </style>
-</head>
-<body>
-<div class="confidential">Confidential</div>
-<div class="header">
-    <div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div>
-    <div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div>
-    <div>Email: pmu.mahastride@mahamitra.org</div>
+    st.divider()
+    st.info(f"""
+    **Project Details**
+    - Contract Value: ₹{CONTRACT_VALUE:,.0f}
+    - Start Date: 06 May 2026
+    - End Date: 06 May 2028
+    - Duration: 24 months
+    """)
+
+# Main Content
+st.markdown(f"""
+<div class="main-header">
+    <h1>📊 {PROJECT_NAME}</h1>
+    <p><strong>Client:</strong> {CLIENT} | <strong>Consultant:</strong> {CONSULTANT}</p>
+    <p>World Bank Loan No: IBRD 9737-IN | RFP Ref: IN-MITRA(PMU)-PforR-Edu-QCBS</p>
 </div>
-<div class="report-title">MONTHLY PROGRESS REPORT</div>
-<div style="text-align: center;">(From {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')})</div>
+""", unsafe_allow_html=True)
 
-<table>
-    <tr><td style="width:30%"><strong>Work Order Reference</strong></div><td>{mpr.get('work_order_ref')}<br>dated {mpr.get('work_order_date')}</div>
-        <td style="width:30%"><strong>University / Division</strong></div><td>{uni['name']}</div></tr>
-    <tr><td><strong>Work Order Start Date</strong></div><td>{period_start.strftime('%d-%b-%Y')}</div>
-        <td><strong>Work Order End Date</strong></div><td>{period_end.strftime('%d-%b-%Y')}</div></tr>
-    <tr><td><strong>Project Start Date</strong></div><td>04-May-2026</div>
-        <td><strong>Project End Date</strong></div><td>06-May-2028</div></tr>
-</table>
-
-<div class="section-title">Project Team Deployment</div>
-<table>
-    <tr><th>Sr. No.</th><th>Name</th><th>Profile</th><th>Location</th><th>Present</th><th>Absent</th><th>Holidays</th></tr>
-    {team_rows}
-</table>
-
-<div class="section-title">A. Major Activities</div>
-<table>
-    <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member</th><th>Status</th><th>Date</th></tr>
-    <tr><td>1.</div><td>SANGAM Orientation & Training (May 4-6 at Trident Board Room)</div><td>All Coordinators</div><td>✅ Completed</div><td>May 4-6, 2026</div></tr>
-    <tr><td>2.</div><td>University Onboarding & Data Source Mapping</div><td>{coordinators}</div><td>✅ Completed</div><td>May 7-8, 2026</div></tr>
-    <tr><td>3.</div><td>NIRF Data Collection (Student, Faculty, Research, Placement, Finance)</div><td>{coordinators}</div><td>✅ Completed</div><td>May 12-20, 2026</div></tr>
-    <tr><td>4.</div><td>Stakeholder Consultation & Review Meetings</div><td>{coordinators}</div><td>✅ Completed</div><td>May 18-27, 2026</div></tr>
-    <tr><td>5.</div><td>Inception Report & GRDAU Framework Development</div><td>{coordinators}</div><td>✅ Completed</div><td>May 22-26, 2026</div></tr>
-    <tr><td>6.</div><td>May MPR Preparation & Finalization</div><td>{coordinators}</div><td>✅ Completed</div><td>May 29, 2026</div></tr>
-</table>
-
-<div class="section-title">B. Minutes of Meetings Conducted</div>
-</table>
-    <tr><th>Sr. No.</th><th>Date</th><th>Chairperson + Key Participants</th><th>Agenda</th><th>Decision / Way Forward</th><th>Responsibility</th></tr>
-    <tr><td>1.</div><td>May 4-6, 2026</div><td>ICARE Team + All Coordinators</div><td>SANGAM Orientation, Training & Workshop</div><td>Training completed. GRDAU concept introduced.</div><td>All Coordinators</div></tr>
-    <tr><td>2.</div><td>May 7, 2026</div><td>ICARE Team + Nodal Officer</div><td>Project Kick-off and data source mapping</div><td>Data collection initiated</div><td>Coordinators</div></tr>
-    <tr><td>3.</div><td>May 18, 2026</div><td>ICARE Team + Nodal Officer + Dept Heads</div><td>Data gap review and action plan</div><td>Departments to submit pending data</div><td>Coordinators</div></tr>
-    <tr><td>4.</div><td>May 27, 2026</div><td>ICARE Team + IQAC</div><td>Review of May progress</div><td>MPR preparation initiated</div><td>Coordinators</div></tr>
-</table>
-
-<div class="section-title">C. Major Deliverables (As committed under Contract)</div>
-68.
-    <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Team Member Name</th><th>Activity Status</th><th>Due Date</th></tr>
-    <tr><td>1.</div><td>Inception Report and Deployment Plan</div><td>{coordinators}</div><td>✅ Completed</div><td>June 6, 2026</div></tr>
-    <tr><td>2.</div><td>GRDAUs Establishment & Operationalization</div><td>{coordinators}</div><td>✅ Completed</div><td>July 6, 2026</div></tr>
-    <tr><td>3.</div><td>Monthly Progress Report (May 2026)</div><td>{coordinators}</div><td>✅ Completed</div><td>June 10, 2026</div></tr>
-</table>
-
-<div class="section-title">D. Administration & Risk Management</div>
-68.
-    <tr><th>Sr. No.</th><th>Description of Identified Risk</th><th>Possible Impact</th><th>Severity Level</th><th>Mitigation Strategy</th><th>Responsibility</th></tr>
-    <tr><td>1.</div><td>Delay in data availability from departments</div><td>Incomplete NIRF submission</div><td>Medium</div><td>Regular follow-ups with Nodal Officer</div><td>Coordinator</div></tr>
-    <tr><td>2.</div><td>Inconsistent data formats across departments</div><td>Data validation challenges</div><td>Low</div><td>Standardized templates provided</div><td>Coordinator</div></tr>
-    <tr><td>3.</div><td>Staff turnover in key departments</div><td>Loss of data continuity</div><td>Medium</div><td>Documentation of processes</div><td>ICARE Team</div></tr>
-</table>
-
-<div class="section-title">E. Status of Initiatives under the Project</div>
-68.
-    <tr><th>Sr. No.</th><th>Sub-Sector</th><th>Objective</th><th>Specific Intervention</th><th>Current Status</th><th>Way Forward</th></tr>
-    <tr><td>1.</div><td>NIRF Data Collection</div><td>Complete baseline data</div><td>Student, Faculty, Research, Placement data</div><td>✅ Completed</div><td>Validation by June 15</div></tr>
-    <tr><td>2.</div><td>Capacity Building</div><td>Train coordinators</div><td>SANGAM Training Program</div><td>✅ Completed</div><td>Reinforcement in June</div></tr>
-    <tr><td>3.</div><td>GRDAU Setup</div><td>Establish Data Analytics Unit</div><td>Team identification, role definition</div><td>✅ Completed</div><td>Operational by June 30</div></tr>
-</table>
-
-<div class="section-title">Approvals and Signatures</div>
-<table style="border:none">
-    <tr><td style="border:none; width:30%"><strong>Prepared by:</strong></div><td style="border:none">{coordinators}<br>(Institutional Coordinators)</div></tr>
-    <tr><td style="border:none"><strong>Verified by:</strong></div><td style="border:none">{uni['nodal_officer']}<br>(Nodal Officer, IQAC Coordinator)</div></tr>
-    <tr><td style="border:none"><strong>Approved by:</strong></div><td style="border:none">{uni['registrar']}<br>(Registrar)</div></tr>
-    <tr><td style="border:none"><strong>Approved by:</strong></div><td style="border:none">{MITRA_OFFICIALS['jt_ceo']}<br>(Jt. CEO, MITRA)</div></tr>
-</table>
-
-<div class="footer">This report is submitted as per SOP Section 2 - Monthly Progress Report (MPR)<br>Generated on {datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</div>
-</body>
-</html>"""
-    return html
-
-def generate_consolidated_html():
-    summary = get_summary()
-    attendance = load_attendance()
-    mpr = load_mpr_config()
-    
-    period_start = datetime.strptime(mpr.get("period_start", "2026-05-04"), "%Y-%m-%d")
-    period_end = datetime.strptime(mpr.get("period_end", "2026-05-29"), "%Y-%m-%d")
-    
-    total_planned = len(DEFAULT_PLAN) * len(UNIVERSITIES)
-    total_completed = summary["Completed"].sum() if not summary.empty else 0
-    
-    # Build consolidated team table
-    team_rows = ""
-    sr_no = 1
-    
-    team_rows += '<tr class="sub-header"><td colspan="7"><strong>ICARE LEVEL</strong></div></tr>'
-    for m in TEAM_MEMBERS.get("ICARE", []):
-        att = attendance.get("ICARE", {}).get(m["name"], {})
-        team_rows += f"""
-        <tr>
-            <td>{sr_no}</div>
-            <td>{m['name']}</div>
-            <td>{m['profile']}</div>
-            <td>{m['location']}</div>
-            <td>{att.get('present', 19)}</div>
-            <td>{att.get('absent', 0)}</div>
-            <td>{att.get('holidays', 12)}</div>
-        </tr>"""
-        sr_no += 1
-    
-    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></div></tr>'
-    for m in TEAM_MEMBERS.get("MITRA", []):
-        att = attendance.get("MITRA", {}).get(m["name"], {})
-        team_rows += f"""
-        <tr>
-            <td>{sr_no}</div>
-            <td>{m['name']}</div>
-            <td>{m['profile']}</div>
-            <td>{m['location']}</div>
-            <td>{att.get('present', 19)}</div>
-            <td>{att.get('absent', 0)}</div>
-            <td>{att.get('holidays', 12)}</div>
-        </tr>"""
-        sr_no += 1
-    
-    for code, uni in UNIVERSITIES.items():
-        if code not in ["MITRA"]:
-            team_rows += f'<tr class="sub-header"><td colspan="7"><strong>{uni["name"]}</strong></div></tr>'
-            for m in TEAM_MEMBERS.get(code, []):
-                att = attendance.get(code, {}).get(m["name"], {})
-                team_rows += f"""
-                <tr>
-                    <td>{sr_no}</div>
-                    <td>{m['name']}</div>
-                    <td>{m['profile']}</div>
-                    <td>{m['location']}</div>
-                    <td>{att.get('present', 19)}</div>
-                    <td>{att.get('absent', 0)}</div>
-                    <td>{att.get('holidays', 12)}</div>
-                </tr>"""
-                sr_no += 1
-    
-    summary_rows = ""
-    for i, (_, row) in enumerate(summary.iterrows()):
-        status = "✅ Completed" if row["Completed"] == row["Total"] else "In Progress"
-        summary_rows += f"<tr><td>{i+1}</td><td>{row['University']}</td><td>{row['Completed']}</td><td>{row['Total']}</td><td>{status}</td></tr>"
-    
-    html = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Consolidated Monthly Progress Report - All Universities</title>
-    <style>
-        body {{ font-family: 'Times New Roman', serif; margin: 0.7in; font-size: 11pt; }}
-        .header {{ text-align: center; margin-bottom: 20px; }}
-        .mitra-title {{ font-size: 12pt; font-weight: bold; }}
-        .confidential {{ text-align: right; font-weight: bold; margin-bottom: 20px; }}
-        .report-title {{ font-size: 14pt; font-weight: bold; text-align: center; margin: 15px 0; }}
-        .section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; background-color: #f0f0f0; padding: 5px; }}
-        table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
-        th, td {{ border: 1px solid #000; padding: 6px; vertical-align: top; }}
-        th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
-        .sub-header {{ background-color: #d0d0d0; font-weight: bold; }}
-        .footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
-    </style>
-</head>
-<body>
-<div class="confidential">Confidential</div>
-<div class="header">
-    <div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div>
-    <div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div>
-</div>
-<div class="report-title">CONSOLIDATED MONTHLY PROGRESS REPORT</div>
-<div style="text-align: center;">All Maharashtra State Universities</div>
-<div style="text-align: center;">Reporting Period: {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')}</div>
-
-<div class="section-title">Overall Project Progress</div>
-<div style="margin: 10px 0;">
-    <strong>Overall Status:</strong> ✅ Fully Completed<br>
-    <strong>Tasks Completed:</strong> {total_completed} / {total_planned}<br>
-    <strong>Working Days:</strong> 19 days (May 4-29, 2026)
-</div>
-
-<div class="section-title">Project Team Deployment</div>
-<table>
-    <tr><th>Sr. No.</th><th>Name</th><th>Profile</th><th>Location</th><th>Present</th><th>Absent</th><th>Holidays</th></tr>
-    {team_rows}
-</table>
-
-<div class="section-title">A. Major Activities</div>
-<table>
-    <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member</th><th>Status</th><th>Date</th></tr>
-    <tr><td>1.</td><td>SANGAM Orientation & Training (May 4-6 at Trident Board Room)</td><td>All Coordinators</td><td>✅ Completed</td><td>May 4-6, 2026</td></tr>
-    <tr><td>2.</td><td>University Onboarding & Data Source Mapping</td><td>All Coordinators</td><td>✅ Completed</td><td>May 7-8, 2026</td></tr>
-    <tr><td>3.</td><td>NIRF Data Collection (Student, Faculty, Research, Placement, Finance)</td><td>All Coordinators</td><td>✅ Completed</td><td>May 12-20, 2026</td></tr>
-    <tr><td>4.</td><td>Stakeholder Consultation & Review Meetings</td><td>All Coordinators</td><td>✅ Completed</td><td>May 18-27, 2026</td></tr>
-    <tr><td>5.</td><td>Inception Report & GRDAU Framework Development</td><td>All Coordinators</td><td>✅ Completed</td><td>May 22-26, 2026</td></tr>
-    <tr><td>6.</td><td>May MPR Preparation & Finalization</td><td>All Coordinators</td><td>✅ Completed</td><td>May 29, 2026</td></tr>
-</table>
-
-<div class="section-title">B. Minutes of Meetings Conducted</div>
-<table>
-    <tr><th>Sr. No.</th><th>Date</th><th>Chairperson + Key Participants</th><th>Agenda</th><th>Decision / Way Forward</th><th>Responsibility</th></tr>
-    <tr><td>1.</td><td>May 4-6, 2026</td><td>ICARE Team + All Coordinators</td><td>SANGAM Orientation, Training & Workshop</td><td>Training completed. GRDAU concept introduced.</td><td>All Coordinators</td></tr>
-    <tr><td>2.</td><td>May 7, 2026</td><td>ICARE Team + Nodal Officer</td><td>Project Kick-off and data source mapping</td><td>Data collection initiated</td><td>Coordinators</td></tr>
-    <tr><td>3.</td><td>May 18, 2026</td><td>ICARE Team + Nodal Officer + Dept Heads</td><td>Data gap review and action plan</td><td>Departments to submit pending data</td><td>Coordinators</td></tr>
-    <tr><td>4.</td><td>May 27, 2026</td><td>ICARE Team + IQAC</td><td>Review of May progress</td><td>MPR preparation initiated</td><td>Coordinators</td></tr>
-</table>
-
-<div class="section-title">C. Major Deliverables (As committed under Contract)</div>
-<table>
-    <tr><th>Sr. No.</th><th>Major Deliverables</th><th>Team Member Name</th><th>Activity Status</th><th>Due Date</th></tr>
-    <tr><td>1.</td><td>Inception Report and Deployment Plan</td><td>All Coordinators</td><td>✅ Completed</td><td>June 6, 2026</td></tr>
-    <tr><td>2.</td><td>GRDAUs Establishment & Operationalization</td><td>All Coordinators</td><td>✅ Completed</td><td>July 6, 2026</td></tr>
-    <tr><td>3.</td><td>Monthly Progress Report (May 2026)</td><td>All Coordinators</td><td>✅ Completed</td><td>June 10, 2026</td></tr>
-</table>
-
-<div class="section-title">D. Administration & Risk Management</div>
-<table>
-    <tr><th>Sr. No.</th><th>Description of Identified Risk</th><th>Possible Impact</th><th>Severity Level</th><th>Mitigation Strategy</th><th>Responsibility</th></tr>
-    <tr><td>1.</td><td>Delay in data availability from departments</td><td>Incomplete NIRF submission</td><td>Medium</td><td>Regular follow-ups with Nodal Officer</td><td>Coordinator</td></tr>
-    <tr><td>2.</td><td>Inconsistent data formats across departments</td><td>Data validation challenges</td><td>Low</td><td>Standardized templates provided</td><td>Coordinator</td></tr>
-    <tr><td>3.</td><td>Staff turnover in key departments</td><td>Loss of data continuity</td><td>Medium</td><td>Documentation of processes</td><td>ICARE Team</td></tr>
-</table>
-
-<div class="section-title">E. Status of Initiatives under the Project</div>
-<table>
-    <tr><th>Sr. No.</th><th>Sub-Sector</th><th>Objective</th><th>Specific Intervention</th><th>Current Status</th><th>Way Forward</th></tr>
-    <tr><td>1.</td><td>NIRF Data Collection</td><td>Complete baseline data</td><td>Student, Faculty, Research, Placement data</td><td>✅ Completed</td><td>Validation by June 15</td></tr>
-    <tr><td>2.</td><td>Capacity Building</td><td>Train coordinators</td><td>SANGAM Training Program</td><td>✅ Completed</td><td>Reinforcement in June</td></tr>
-    <tr><td>3.</td><td>GRDAU Setup</td><td>Establish Data Analytics Unit</td><td>Team identification, role definition</td><td>✅ Completed</td><td>Operational by June 30</td></tr>
-</table>
-
-<div class="section-title">Approvals and Signatures</div>
-<table style="border:none">
-    <tr><td style="border:none; width:30%"><strong>Prepared by:</strong></td><td style="border:none">All Institutional Coordinators</td></tr>
-    <tr><td style="border:none"><strong>Verified by:</strong></td><td style="border:none">Nodal Officers of respective Universities</td></tr>
-    <tr><td style="border:none"><strong>Approved by:</strong></td><td style="border:none">Jt. CEO, MITRA</td></tr>
-</table>
-
-<div class="footer">This consolidated report is submitted as per SOP Section 2 - Monthly Progress Report (MPR)<br>Generated on {datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</div>
-</body>
-</html>"""
-    return html
-
-def get_download_link(html, filename):
-    b64 = base64.b64encode(html.encode()).decode()
-    return f'<a href="data:text/html;base64,{b64}" download="{filename}" style="background:#4CAF50;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">📥 Download {filename}</a>'
-
-def show_credentials():
-    st.markdown("""
-    <div class="credentials-box">
-        <h4>🔐 Demo Credentials (Password: <strong>Name@2026</strong> for all)</h4>
-        <div class="cred-row"><strong>Admin:</strong> admin@mahastride.com</div>
-        <div class="cred-row"><strong>Project Lead (ICARE):</strong> projectlead@mahastride.com</div>
-        <div class="cred-row"><strong>MITRA Coordinator:</strong> shubham@mitra.gov.in</div>
-        <div class="cred-row"><strong>Mumbai University:</strong> sneha@mu.edu | sagar@mu.edu</div>
-        <div class="cred-row"><strong>SPPU Pune:</strong> jagan@sspu.edu</div>
-        <div class="cred-row"><strong>COEP Pune:</strong> vaibhav@coep.edu</div>
-        <div class="cred-row"><strong>Amravati University:</strong> pratham@au.edu</div>
-        <div class="cred-row"><strong>Nagpur University:</strong> anjali@nu.edu</div>
-        <div class="cred-row"><strong>KBCNMU Jalgaon:</strong> nitish@kbcnmu.edu</div>
-        <div class="cred-row"><strong>BAMU Aurangabad:</strong> atharv@bamu.edu</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-def show_sangam():
-    st.markdown('<div class="sangam-card"><h3>🎉 SANGAM Orientation & Training</h3><p><strong>Dates:</strong> May 4-6, 2026 | <strong>Venue:</strong> Trident Board Room, Mumbai | ✅ Completed</p></div>', unsafe_allow_html=True)
-
-# ============================================================
-# DASHBOARDS
-# ============================================================
-
-def admin_dashboard():
-    st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2></div>', unsafe_allow_html=True)
-    
-    with st.sidebar:
-        st.markdown("---")
-        if st.button("🔄 Reset All Data", use_container_width=True):
-            reset_all()
-            st.success("Data reset!")
-            st.rerun()
-        if st.button("✅ Mark All Tasks Completed", use_container_width=True):
-            for code in UNIVERSITIES:
-                mark_all_completed(code)
-            st.success("All tasks marked completed!")
-            st.rerun()
-    
-    show_sangam()
-    
+# Dashboard View
+if selected == "Dashboard":
     col1, col2, col3, col4 = st.columns(4)
-    total_planned = len(DEFAULT_PLAN) * len(UNIVERSITIES)
-    summary = get_summary()
-    total_completed = summary["Completed"].sum() if not summary.empty else 0
-    col1.metric("Working Days", "19")
-    col2.metric("Universities", len(UNIVERSITIES))
-    col3.metric("Total Tasks", total_planned)
-    col4.metric("Completed", total_completed)
     
-    st.dataframe(summary, use_container_width=True)
-    
-    st.subheader("📄 Generate Reports")
-    col1, col2 = st.columns(2)
     with col1:
-        sel = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
-        if st.button("Generate University MPR"):
-            html = generate_mpr_html(sel)
-            st.markdown(get_download_link(html, f"MPR_{UNIVERSITIES[sel]['name'].replace(' ', '_')}_May2026.html"), unsafe_allow_html=True)
-    with col2:
-        if st.button("Generate Consolidated MPR"):
-            html = generate_consolidated_html()
-            st.markdown(get_download_link(html, "Consolidated_MPR_May2026.html"), unsafe_allow_html=True)
-
-def lead_dashboard():
-    st.markdown('<div class="projectlead-card"><h2>👨‍💼 ICARE Project Lead Dashboard - Dr. Harshal Kotwal</h2></div>', unsafe_allow_html=True)
-    show_sangam()
-    
-    st.subheader("📝 MPR Settings")
-    mpr = load_mpr_config()
-    col1, col2 = st.columns(2)
-    with col1:
-        wo_ref = st.text_input("Work Order Reference", value=mpr.get("work_order_ref"))
-        ps = st.date_input("Period Start", value=datetime.strptime(mpr.get("period_start", "2026-05-04"), "%Y-%m-%d").date())
-    with col2:
-        wo_date = st.text_input("Work Order Date", value=mpr.get("work_order_date"))
-        pe = st.date_input("Period End", value=datetime.strptime(mpr.get("period_end", "2026-05-29"), "%Y-%m-%d").date())
-    if st.button("Save Settings"):
-        mpr["work_order_ref"] = wo_ref
-        mpr["work_order_date"] = wo_date
-        mpr["period_start"] = ps.strftime("%Y-%m-%d")
-        mpr["period_end"] = pe.strftime("%Y-%m-%d")
-        save_mpr_config(mpr)
-        st.success("Saved!")
-    
-    st.subheader("📄 Generate Reports")
-    col1, col2 = st.columns(2)
-    with col1:
-        sel = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
-        if st.button("Generate University MPR"):
-            html = generate_mpr_html(sel)
-            st.markdown(get_download_link(html, f"MPR_{UNIVERSITIES[sel]['name'].replace(' ', '_')}_May2026.html"), unsafe_allow_html=True)
-    with col2:
-        if st.button("Generate Consolidated MPR"):
-            html = generate_consolidated_html()
-            st.markdown(get_download_link(html, "Consolidated_MPR_May2026.html"), unsafe_allow_html=True)
-
-def coordinator_dashboard(code, name):
-    uni = UNIVERSITIES[code]
-    st.markdown(f'<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>{uni["name"]} | {name}</p></div>', unsafe_allow_html=True)
-    
-    pending = get_pending(code)
-    entries = get_entries(code)
-    total = len(DEFAULT_PLAN)
-    completed = len(entries)
-    
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total Tasks", total)
-    col2.metric("Completed", completed)
-    col3.metric("Pending", total - completed)
-    st.progress(completed/total if total else 0)
-    
-    if pending:
-        sel = st.selectbox("Select Date", [p["date"] for p in pending])
-        task = next(p for p in pending if p["date"] == sel)
         st.markdown(f"""
-        <div class="default-task-card">
-            <strong>📋 {task['date']}</strong><br>
-            <strong>📍 Venue:</strong> {task['venue']}<br>
-            <strong>🎯 Task:</strong> {task['task']}<br>
-            <strong>📝 Description:</strong> {task['description']}
+        <div class="metric-card">
+            <h3>📅 {((CONTRACT_END - CURRENT_DATE).days)}</h3>
+            <p>Days Remaining</p>
         </div>
         """, unsafe_allow_html=True)
+    
+    with col2:
+        completed_months = sum(1 for m in MONTHLY_PLAN if m["is_completed"])
+        st.markdown(f"""
+        <div class="metric-card">
+            <h3>✅ {completed_months}/24</h3>
+            <p>Months Completed</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        completed_deliverables = sum(1 for d in CONTRACT_DELIVERABLES if d["status"] == "completed")
+        total_deliverables = len(CONTRACT_DELIVERABLES)
+        st.markdown(f"""
+        <div class="metric-card">
+            <h3>📋 {completed_deliverables}/{total_deliverables}</h3>
+            <p>Key Deliverables</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <h3>🏫 {len(UNIVERSITIES)}</h3>
+            <p>Universities</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Progress Bars
+    st.subheader("📈 Overall Project Progress")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        progress_percent = (completed_months / 24) * 100
+        st.progress(progress_percent / 100)
+        st.caption(f"Time Progress: {progress_percent:.1f}%")
+    
+    with col2:
+        milestone_progress = 0  # No milestones completed yet
+        st.progress(milestone_progress / 100)
+        st.caption(f"Milestone Progress: {milestone_progress:.1f}%")
+    
+    # Quick Stats
+    st.subheader("📊 Quick Statistics")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total Team Members", "11", delta=None)
+    with col2:
+        st.metric("Hours Logged (May)", "209", delta="11 people x 19 days")
+    with col3:
+        st.metric("Meetings Completed (May)", "4", delta=None)
+    with col4:
+        st.metric="Milestones Achieved", "0/7", delta=None
+    
+    # Current Focus
+    st.subheader("🎯 Current Focus (June 2026)")
+    
+    current_activities = ACTIVITIES_BY_MONTH[2]["activities"]
+    for activity in current_activities:
+        if activity["status"] == "in_progress":
+            st.info(f"🔄 **{activity['activity']}** - Due: {activity['due_date']}")
+        else:
+            st.warning(f"⏳ **{activity['activity']}** - Due: {activity['due_date']}")
+
+# May 2026 - Completed View
+elif selected == "May 2026 - Completed":
+    st.header("✅ May 2026 - Month 1 Completed")
+    st.markdown("---")
+    
+    # Team attendance for May
+    st.subheader("👥 Team Attendance - May 2026")
+    
+    team_data = []
+    for level, members in TEAM_STRUCTURE.items():
+        for member in members:
+            team_data.append({
+                "Level": level,
+                "Role": member["role"],
+                "Name": member["name"],
+                "Present Days": member.get("present_days_may", 19),
+                "Absent": member.get("absent", 0),
+                "Holidays": member.get("holidays", 12),
+                "Location": member.get("location", member.get("university", ""))
+            })
+    
+    df_team = pd.DataFrame(team_data)
+    st.dataframe(df_team, use_container_width=True, hide_index=True)
+    
+    st.markdown("---")
+    
+    # Completed Activities
+    st.subheader("✅ Activities Completed in May 2026")
+    
+    for activity in COMPLETED_MAY_ACTIVITIES:
+        st.markdown(f"""
+        <div class="deliverable-card">
+            <span class="completed-badge">COMPLETED</span>
+            <strong>{activity['activity']}</strong><br>
+            📅 {activity['date']} | 👥 {activity['team']}
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Meetings Conducted
+    st.subheader("📝 Meetings Conducted in May 2026")
+    
+    meetings_df = pd.DataFrame(COMPLETED_MAY_MEETINGS)
+    st.dataframe(meetings_df, use_container_width=True, hide_index=True)
+    
+    st.markdown("---")
+    
+    # Key Accomplishments
+    st.subheader("🏆 Key Accomplishments - May 2026")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.success("""
+        **SANGAM Training Completed**
+        - 3-day intensive orientation (May 4-6)
+        - All 10 coordinators trained
+        - GRDAU concept introduced successfully
+        """)
         
-        with st.form("log"):
-            hours = st.number_input("Hours Spent", 0.5, 12.0, 8.0)
-            remarks = st.text_area("Remarks")
-            if st.form_submit_button("✅ Submit"):
-                if log_work(code, sel, task["category"], task["task"], task["description"], hours, remarks, name):
-                    st.success("Logged!")
-                    st.rerun()
-    else:
-        st.success("🎉 All tasks completed!")
-
-# ============================================================
-# MAIN
-# ============================================================
-
-def main():
-    if not os.path.exists(PROGRESS_DATA_FILE):
-        init_all()
+        st.success("""
+        **University Onboarding**
+        - All 7 universities onboarded
+        - Data source mapping completed
+        - Nodal officers identified
+        """)
     
-    if "auth" not in st.session_state:
-        st.session_state["auth"] = False
+    with col2:
+        st.success("""
+        **NIRF Data Collection**
+        - Student, Faculty, Research data collected
+        - Placement and Finance data gathered
+        - Baseline data repository created
+        """)
+        
+        st.success("""
+        **Inception Report**
+        - Framework developed
+        - GRDAU structure defined
+        - Submitted as per contract
+        """)
     
-    if not st.session_state["auth"]:
-        st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE Project Tracker</h1><p>May 4-29, 2026 (19 Working Days)</p></div>', unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            st.markdown("### Login")
-            email = st.text_input("Email")
-            password = st.text_input("Password", type="password")
-            if st.button("Login", use_container_width=True):
-                ok, role, name, uni = authenticate_user(email, password)
-                if ok:
-                    st.session_state.update({"auth": True, "role": role, "name": name, "uni": uni})
-                    st.rerun()
+    st.markdown("---")
+    
+    # MPR Submission
+    st.subheader("📄 Monthly Progress Report (MPR) - May 2026")
+    st.info("""
+    **MPR submitted on: 29 May 2026**
+    - Submitted to: PMU, MahaSTRIDE at pmu.mahastride@mahamitra.org
+    - Approved by: Nominated Nodal Officer and Registrar
+    - Copy sent to: Hon. Vice Chancellor and Project Director, MahaSTRIDE
+    """)
+
+# 24-Month Plan View
+elif selected == "24-Month Plan":
+    st.header("📅 24-Month Project Plan (May 2026 - April 2028)")
+    st.markdown("---")
+    
+    # Phase-wise view
+    phase_tabs = st.tabs([
+        "Phase 1: Foundation (Months 1-3)", 
+        "Phase 2: Planning (Months 4-6)", 
+        "Phase 3: Implementation (Months 7-12)",
+        "Phase 4: Enhancement (Months 13-18)",
+        "Phase 5: Finalization (Months 19-24)"
+    ])
+    
+    # Phase 1
+    with phase_tabs[0]:
+        st.subheader("Phase 1: Foundation & Assessment (May 2026 - July 2026)")
+        
+        for month_num in [1, 2, 3]:
+            month_data = ACTIVITIES_BY_MONTH[month_num]
+            status_color = "✅" if month_data["status"] == "completed" else "🔄" if month_data["status"] == "current" else "⏳"
+            st.markdown(f"### {status_color} {month_data['month']}")
+            
+            for activity in month_data["activities"]:
+                status_icon = "✅" if activity["status"] == "completed" else "🔄" if activity["status"] == "in_progress" else "📅"
+                st.markdown(f"- {status_icon} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
+            st.markdown("---")
+    
+    # Phase 2
+    with phase_tabs[1]:
+        st.subheader("Phase 2: Planning & Development (August 2026 - October 2026)")
+        
+        for month_num in [4, 5, 6]:
+            month_data = ACTIVITIES_BY_MONTH[month_num]
+            st.markdown(f"### ⏳ {month_data['month']}")
+            
+            for activity in month_data["activities"]:
+                status_icon = "🔄" if activity["status"] == "in_progress" else "📅"
+                st.markdown(f"- {status_icon} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
+            st.markdown("---")
+    
+    # Phase 3
+    with phase_tabs[2]:
+        st.subheader("Phase 3: Implementation & Capacity Building (November 2026 - April 2027)")
+        
+        for month_num in [7, 8, 9, 10, 11, 12]:
+            month_data = ACTIVITIES_BY_MONTH[month_num]
+            st.markdown(f"### ⏳ {month_data['month']}")
+            
+            for activity in month_data["activities"]:
+                status_icon = "📅"
+                st.markdown(f"- {status_icon} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
+            st.markdown("---")
+    
+    # Phase 4
+    with phase_tabs[3]:
+        st.subheader("Phase 4: Enhancement & Global Engagement (May 2027 - October 2027)")
+        
+        for month_num in [13, 14, 15, 16, 17, 18]:
+            month_data = ACTIVITIES_BY_MONTH[month_num]
+            st.markdown(f"### ⏳ {month_data['month']}")
+            
+            for activity in month_data["activities"]:
+                status_icon = "📅"
+                st.markdown(f"- {status_icon} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
+            st.markdown("---")
+    
+    # Phase 5
+    with phase_tabs[4]:
+        st.subheader("Phase 5: Finalization & Handover (November 2027 - April 2028)")
+        
+        for month_num in [19, 20, 21, 22, 23, 24]:
+            month_data = ACTIVITIES_BY_MONTH[month_num]
+            st.markdown(f"### ⏳ {month_data['month']}")
+            
+            for activity in month_data["activities"]:
+                status_icon = "📅"
+                st.markdown(f"- {status_icon} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
+            st.markdown("---")
+    
+    # Gantt Chart - Simplified
+    st.subheader("📊 Project Timeline Gantt Chart")
+    
+    gantt_data = []
+    for month_num, month_data in ACTIVITIES_BY_MONTH.items():
+        for activity in month_data["activities"]:
+            gantt_data.append({
+                "Month": month_data["month"],
+                "Activity": activity["activity"][:50] + "...",
+                "Status": activity["status"],
+                "Due Date": activity["due_date"]
+            })
+    
+    df_gantt = pd.DataFrame(gantt_data)
+    st.dataframe(df_gantt.head(20), use_container_width=True, hide_index=True)
+    st.caption("Showing first 20 activities. Total activities: " + str(len(df_gantt)))
+
+# Team & Resources View
+elif selected == "Team & Resources":
+    st.header("👥 Team Structure & Resources")
+    st.markdown("---")
+    
+    # MITRA Level
+    st.subheader("🏢 MITRA Level Resources")
+    mitra_df = pd.DataFrame(TEAM_STRUCTURE["MITRA Level"])
+    st.dataframe(mitra_df, use_container_width=True, hide_index=True)
+    
+    # University Level
+    st.subheader("🏫 University Level Resources (GRDAU Coordinators)")
+    uni_df = pd.DataFrame(TEAM_STRUCTURE["University Level"])
+    st.dataframe(uni_df, use_container_width=True, hide_index=True)
+    
+    st.markdown("---")
+    
+    # Deployment Summary
+    st.subheader("📊 Deployment Summary")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Total Personnel", "11", delta=None)
+    with col2:
+        st.metric("MITRA Level", "2", delta=None)
+    with col3:
+        st.metric("University Level", "9", delta="Across 7 universities")
+    
+    # Resource Requirements
+    st.subheader("📋 Resource Requirements (as per contract)")
+    
+    requirements = {
+        "Requirement": [
+            "Prior written approval for any resource change",
+            "15 days advance notice for replacement with CV",
+            "MITRA reserves right to reject replacement",
+            "Unauthorized substitution may attract penalty",
+            "All personnel bound by confidentiality"
+        ]
+    }
+    
+    st.dataframe(pd.DataFrame(requirements), use_container_width=True, hide_index=True)
+    
+    # Leave mechanism
+    st.subheader("📝 Leave Approval Mechanism (as per SOP)")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.info("**University Level Resources**")
+        st.write("1. Obtain leave approval on email from Project Head (ICARE)")
+        st.write("2. Copy to Nominated Nodal Officer from respective University")
+    
+    with col2:
+        st.info("**MITRA Level Resources**")
+        st.write("1. Obtain leave approval on email from Project Head (ICARE)")
+        st.write("2. Project Head to copy Sector Expert, HR, MITRA")
+
+# Milestones & Payments View
+elif selected == "Milestones & Payments":
+    st.header("💰 Milestones & Payment Structure")
+    st.markdown("---")
+    
+    # Payment structure
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📊 Payment Distribution")
+        
+        fig = go.Figure(data=[go.Pie(
+            labels=['Monthly Fee (70%)', 'Milestone-Based (30%)'],
+            values=[70, 30],
+            hole=0.4,
+            marker_colors=['#2a5298', '#28a745']
+        )])
+        fig.update_layout(title="Payment Structure", height=400)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        st.subheader("📈 Milestone Breakdown (30% of Contract)")
+        
+        milestone_df = pd.DataFrame([
+            {"Milestone": m["name"][:40], "Percentage": m["percentage"], "Target Date": m["target_date"], "Status": m["status"]}
+            for m in MILESTONES
+        ])
+        st.dataframe(milestone_df, use_container_width=True, hide_index=True)
+    
+    st.markdown("---")
+    
+    # Payment terms
+    st.subheader("💰 Payment Terms (as per contract)")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.warning("**Monthly Payment (70%)**")
+        st.write("- Based on attendance and MPR approval")
+        st.write("- Distributed across 24 months")
+        st.write("- No advance payment")
+        st.write("- TDS deducted as applicable")
+    
+    with col2:
+        st.success("**Milestone Payment (30%)**")
+        st.write("- Payable on achievement of milestones")
+        st.write("- Documentary evidence required")
+        st.write("- PMU confirmation before release")
+        st.write("- Payment within 60 days of valid invoice")
+    
+    st.markdown("---")
+    
+    # Performance Bank Guarantee
+    st.subheader("🔒 Performance Bank Guarantee")
+    st.info(f"""
+    - **Amount:** 5% of Contract Value = ₹{CONTRACT_VALUE * 0.05:,.0f}
+    - **Submission:** Within 15 days of LoA or prior to contract signing
+    - **Validity:** 90 days after expiration of all contractual obligations
+    - **Bank:** Scheduled or Nationalized bank
+    - **Format:** As per Annexure X of RFP
+    """)
+
+# Deliverables Tracker View
+elif selected == "Deliverables Tracker":
+    st.header("📋 Contract Deliverables Tracker")
+    st.markdown("---")
+    
+    deliverables_df = pd.DataFrame(CONTRACT_DELIVERABLES)
+    
+    # Add status badges
+    def get_status_badge(status):
+        if status == "completed":
+            return "✅ Completed"
+        elif status == "in_progress":
+            return "🔄 In Progress"
+        else:
+            return "⏳ Pending"
+    
+    deliverables_df["Status Badge"] = deliverables_df["status"].apply(get_status_badge)
+    
+    # Display deliverables
+    for idx, row in deliverables_df.iterrows():
+        with st.expander(f"**{row['deliverable']}** - {row['Status Badge']}"):
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(f"**Due Date:** {row['due_date']}")
+                st.write(f"**Status:** {row['status'].upper()}")
+            with col2:
+                if row.get('actual_date'):
+                    st.write(f"**Actual Submission:** {row['actual_date']}")
                 else:
-                    st.error("Invalid credentials")
-            show_credentials()
-        return
+                    st.write("**Actual Submission:** Not yet submitted")
     
-    role, name, uni = st.session_state["role"], st.session_state["name"], st.session_state.get("uni")
+    st.markdown("---")
     
-    with st.sidebar:
-        st.title("📊 mahaSTRIDE")
-        st.markdown(f"**Welcome, {name}**")
-        st.markdown("---")
-        if role == "admin":
-            menu = st.radio("Navigate", ["📊 Admin Dashboard", "ℹ️ About"])
-        elif role == "project_lead":
-            menu = st.radio("Navigate", ["👨‍💼 ICARE Lead Dashboard", "ℹ️ About"])
-        else:
-            menu = st.radio("Navigate", ["📋 My Tasks", "ℹ️ About"])
-        if st.button("🚪 Logout"):
-            for k in ["auth", "role", "name", "uni"]:
-                st.session_state.pop(k, None)
-            st.rerun()
+    # Expected Outcomes
+    st.subheader("🎯 Expected Outcomes (Performance-Linked)")
     
-    if role == "admin":
-        if menu == "📊 Admin Dashboard":
-            admin_dashboard()
-        else:
-            st.title("ℹ️ About")
-            st.markdown("**mahaSTRIDE** - Maharashtra University Rankings Improvement Project\n\n- 19 Working Days (May 4-29, 2026)\n- SANGAM Training: May 4-6 at Trident Board Room\n- 7 Universities + MITRA PMU + ICARE")
-    elif role == "project_lead":
-        if menu == "👨‍💼 ICARE Lead Dashboard":
-            lead_dashboard()
-        else:
-            st.title("ℹ️ About")
-            st.markdown("**ICARE Project Lead Dashboard**\n- Configure MPR settings\n- Generate university-wise and consolidated reports")
-    else:
-        if uni and menu == "📋 My Tasks":
-            coordinator_dashboard(uni, name)
-        else:
-            st.title("ℹ️ About")
-            st.markdown("**Coordinator Dashboard**\n- Log daily work\n- Track your progress\n- May 2026: 19 working days")
+    outcomes = [
+        ("Enhanced Global Rankings Participation", "Successful participation of institutions on minimum two global ranking platforms"),
+        ("Minimum 20% Improvement", "Validation of comparative data between baseline and endline diagnostics"),
+        ("Establishment of Sustainable Data & Quality Systems", "Certification of GRDAU readiness and dashboard deployment"),
+        ("Institutional Development Plans", "Finalization and institutional sign-off of all IDPs"),
+        ("Capacity Building Participation", "Submission of training completion report with attendance records"),
+        ("Final Evaluation", "Approval of final report and satisfactory project closure")
+    ]
+    
+    for outcome, metric in outcomes:
+        st.markdown(f"- **{outcome}:** {metric}")
 
-if __name__ == "__main__":
-    main()
+# Risk & Compliance View
+elif selected == "Risk & Compliance":
+    st.header("⚠️ Risk Management & Compliance")
+    st.markdown("---")
+    
+    # Penalties
+    st.subheader("⚖️ Penalty Provisions (as per contract)")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.error("**Milestone Penalty**")
+        st.write("- Fine up to 10% of milestone value for non-completion")
+        st.write("- Applicable if compliance report not submitted as described")
+    
+    with col2:
+        st.error("**Overall Penalty**")
+        st.write("- Maximum 10% of total contract value")
+        st.write("- For breach of contract conditions")
+        st.write("- For unsatisfactory performance")
+        st.write("- For delay in prescribed timelines")
+    
+    st.markdown("---")
+    
+    # Termination conditions
+    st.subheader("🔴 Termination Conditions")
+    
+    termination_reasons = [
+        "Failure to remedy breach within 30 days of notice",
+        "Insolvency or bankruptcy",
+        "False or misleading information during bid submission",
+        "Force Majeure Event lasting 60+ continuous days",
+        "Defect, inadequacy, or incompetence in performance",
+        "MITRA's sole discretion (with 30 days written notice)"
+    ]
+    
+    for reason in termination_reasons:
+        st.markdown(f"- {reason}")
+    
+    st.markdown("---")
+    
+    # Fraud and Corruption
+    st.subheader("🔒 Fraud and Corruption Compliance")
+    st.info("""
+    **World Bank Guidelines on Preventing and Combating Fraud and Corruption**
+    - Program-for-Results Financing guidelines dated 1 Feb 2012 (revised 10 July 2015)
+    - Anti-Corruption Guidelines shall prevail in case of conflict
+    - MITRA as nodal agency ensures compliance
+    """)
+    
+    st.markdown("---")
+    
+    # Jurisdiction
+    st.subheader("⚖️ Jurisdiction")
+    st.warning("""
+    - **Governing Law:** Laws in force in India
+    - **Exclusive Jurisdiction:** Courts at Mumbai, India
+    - **Arbitration:** Mumbai Centre for Arbitration (as per Arbitration and Conciliation Act, 2015)
+    """)
+    
+    st.markdown("---")
+    
+    # Confidentiality
+    st.subheader("🔐 Confidentiality Obligations")
+    st.write("""
+    - All plans, data, reports, and specifications are property of MITRA
+    - No publication or speech without prior written consent
+    - All materials to be handed over upon request/termination/completion
+    - Confidentiality survives termination of contract
+    """)
+
+# Footer
+st.markdown("---")
+st.markdown(f"""
+<div style="text-align: center; color: #666; font-size: 0.8rem;">
+    <p>© 2026 Maharashtra Institution for Transformation (MITRA) | MahaSTRIDE Project | World Bank Loan No: IBRD 9737-IN</p>
+    <p>Last Updated: {datetime.now().strftime('%d %B %Y, %H:%M:%S')}</p>
+</div>
+""", unsafe_allow_html=True)
