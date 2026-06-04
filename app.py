@@ -107,6 +107,7 @@ st.markdown("""
 PROJECT_NAME = "MahaSTRIDE - University Ranking Framework Project"
 CLIENT = "Maharashtra Institution for Transformation (MITRA)"
 CONSULTANT = "Indian Centre for Academic Rankings & Excellence - ICARE Pvt. Ltd."
+CONTRACT_VALUE = 44841888  # Rs.
 CONTRACT_START = datetime(2026, 5, 6)
 CONTRACT_END = datetime(2028, 5, 6)
 CURRENT_DATE = datetime(2026, 6, 4)  # Today's date
@@ -474,8 +475,8 @@ CONTRACT_DELIVERABLES = [
 
 # Sidebar Navigation
 with st.sidebar:
-    st.image("https://via.placeholder.com/300x80?text=MITRA+ICARE", use_column_width=True)
-    st.title("📋 Navigation")
+    st.markdown("### 📋 MahaSTRIDE")
+    st.markdown("---")
     
     selected = option_menu(
         menu_title=None,
@@ -514,9 +515,10 @@ if selected == "Dashboard":
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
+        days_remaining = (CONTRACT_END - CURRENT_DATE).days
         st.markdown(f"""
         <div class="metric-card">
-            <h3>📅 {((CONTRACT_END - CURRENT_DATE).days)}</h3>
+            <h3>📅 {days_remaining}</h3>
             <p>Days Remaining</p>
         </div>
         """, unsafe_allow_html=True)
@@ -554,6 +556,7 @@ if selected == "Dashboard":
     col1, col2 = st.columns(2)
     
     with col1:
+        completed_months = sum(1 for m in MONTHLY_PLAN if m["is_completed"])
         progress_percent = (completed_months / 24) * 100
         st.progress(progress_percent / 100)
         st.caption(f"Time Progress: {progress_percent:.1f}%")
@@ -574,7 +577,7 @@ if selected == "Dashboard":
     with col3:
         st.metric("Meetings Completed (May)", "4", delta=None)
     with col4:
-        st.metric="Milestones Achieved", "0/7", delta=None
+        st.metric("Milestones Achieved", "0/7", delta=None)
     
     # Current Focus
     st.subheader("🎯 Current Focus (June 2026)")
@@ -700,12 +703,12 @@ elif selected == "24-Month Plan":
         
         for month_num in [1, 2, 3]:
             month_data = ACTIVITIES_BY_MONTH[month_num]
-            status_color = "✅" if month_data["status"] == "completed" else "🔄" if month_data["status"] == "current" else "⏳"
-            st.markdown(f"### {status_color} {month_data['month']}")
+            status_icon = "✅" if month_data["status"] == "completed" else "🔄" if month_data["status"] == "current" else "⏳"
+            st.markdown(f"### {status_icon} {month_data['month']}")
             
             for activity in month_data["activities"]:
-                status_icon = "✅" if activity["status"] == "completed" else "🔄" if activity["status"] == "in_progress" else "📅"
-                st.markdown(f"- {status_icon} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
+                status_icon_act = "✅" if activity["status"] == "completed" else "🔄" if activity["status"] == "in_progress" else "📅"
+                st.markdown(f"- {status_icon_act} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
             st.markdown("---")
     
     # Phase 2
@@ -717,8 +720,8 @@ elif selected == "24-Month Plan":
             st.markdown(f"### ⏳ {month_data['month']}")
             
             for activity in month_data["activities"]:
-                status_icon = "🔄" if activity["status"] == "in_progress" else "📅"
-                st.markdown(f"- {status_icon} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
+                status_icon_act = "🔄" if activity["status"] == "in_progress" else "📅"
+                st.markdown(f"- {status_icon_act} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
             st.markdown("---")
     
     # Phase 3
@@ -730,8 +733,8 @@ elif selected == "24-Month Plan":
             st.markdown(f"### ⏳ {month_data['month']}")
             
             for activity in month_data["activities"]:
-                status_icon = "📅"
-                st.markdown(f"- {status_icon} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
+                status_icon_act = "📅"
+                st.markdown(f"- {status_icon_act} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
             st.markdown("---")
     
     # Phase 4
@@ -743,8 +746,8 @@ elif selected == "24-Month Plan":
             st.markdown(f"### ⏳ {month_data['month']}")
             
             for activity in month_data["activities"]:
-                status_icon = "📅"
-                st.markdown(f"- {status_icon} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
+                status_icon_act = "📅"
+                st.markdown(f"- {status_icon_act} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
             st.markdown("---")
     
     # Phase 5
@@ -756,26 +759,24 @@ elif selected == "24-Month Plan":
             st.markdown(f"### ⏳ {month_data['month']}")
             
             for activity in month_data["activities"]:
-                status_icon = "📅"
-                st.markdown(f"- {status_icon} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
+                status_icon_act = "📅"
+                st.markdown(f"- {status_icon_act} **{activity['activity']}** - *Deliverable: {activity['deliverable']}* (Due: {activity['due_date']})")
             st.markdown("---")
     
-    # Gantt Chart - Simplified
-    st.subheader("📊 Project Timeline Gantt Chart")
-    
-    gantt_data = []
+    # Summary table
+    st.subheader("📊 Monthly Summary")
+    summary_data = []
     for month_num, month_data in ACTIVITIES_BY_MONTH.items():
-        for activity in month_data["activities"]:
-            gantt_data.append({
-                "Month": month_data["month"],
-                "Activity": activity["activity"][:50] + "...",
-                "Status": activity["status"],
-                "Due Date": activity["due_date"]
-            })
+        summary_data.append({
+            "Month": month_data["month"],
+            "Status": month_data["status"].upper(),
+            "Activities Count": len(month_data["activities"]),
+            "Completed": sum(1 for a in month_data["activities"] if a["status"] == "completed"),
+            "In Progress": sum(1 for a in month_data["activities"] if a["status"] == "in_progress")
+        })
     
-    df_gantt = pd.DataFrame(gantt_data)
-    st.dataframe(df_gantt.head(20), use_container_width=True, hide_index=True)
-    st.caption("Showing first 20 activities. Total activities: " + str(len(df_gantt)))
+    df_summary = pd.DataFrame(summary_data)
+    st.dataframe(df_summary, use_container_width=True, hide_index=True)
 
 # Team & Resources View
 elif selected == "Team & Resources":
@@ -905,20 +906,10 @@ elif selected == "Deliverables Tracker":
     
     deliverables_df = pd.DataFrame(CONTRACT_DELIVERABLES)
     
-    # Add status badges
-    def get_status_badge(status):
-        if status == "completed":
-            return "✅ Completed"
-        elif status == "in_progress":
-            return "🔄 In Progress"
-        else:
-            return "⏳ Pending"
-    
-    deliverables_df["Status Badge"] = deliverables_df["status"].apply(get_status_badge)
-    
     # Display deliverables
     for idx, row in deliverables_df.iterrows():
-        with st.expander(f"**{row['deliverable']}** - {row['Status Badge']}"):
+        status_icon = "✅" if row["status"] == "completed" else "🔄" if row["status"] == "in_progress" else "⏳"
+        with st.expander(f"{status_icon} **{row['deliverable']}**"):
             col1, col2 = st.columns(2)
             with col1:
                 st.write(f"**Due Date:** {row['due_date']}")
