@@ -28,13 +28,6 @@ st.markdown("""
         margin-bottom: 2rem;
         color: white;
     }
-    .dashboard-card {
-        background: white;
-        border-radius: 10px;
-        padding: 1rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        margin-bottom: 1rem;
-    }
     .stat-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -74,19 +67,6 @@ st.markdown("""
         border-radius: 10px;
         padding: 1rem;
         margin: 1rem 0;
-    }
-    .complete-btn {
-        background-color: #28a745;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 5px;
-        cursor: pointer;
-        width: 100%;
-        font-weight: bold;
-    }
-    .complete-btn:hover {
-        background-color: #218838;
     }
     .success-message {
         background-color: #d4edda;
@@ -178,229 +158,436 @@ DAILY_TASKS_FILE = "daily_tasks_data.json"
 TASK_COMPLETION_FILE = "task_completion_data.json"
 
 # ============================================================
-# TASK GENERATION FUNCTIONS
+# DETAILED DAILY TASKS FOR EACH WORKING DAY
 # ============================================================
 
-def get_24_month_plan():
-    """Return the complete 24-month plan"""
-    return {
-        1: {"month": "May 2026", "year": 2026, "status": "completed", "activities": [
-            {"activity": "SANGAM Orientation & Training", "deliverable": "Training Completed", "due_date": "May 6, 2026"},
-            {"activity": "University Onboarding & Data Source Mapping", "deliverable": "Data Source Inventory", "due_date": "May 8, 2026"},
-            {"activity": "NIRF Data Collection", "deliverable": "NIRF Data Repository", "due_date": "May 20, 2026"},
-            {"activity": "Stakeholder Consultation Meetings", "deliverable": "Meeting Minutes", "due_date": "May 27, 2026"},
-            {"activity": "Inception Report & GRDAU Framework", "deliverable": "Inception Report", "due_date": "May 26, 2026"},
-            {"activity": "Monthly Progress Report Submission", "deliverable": "MPR May 2026", "due_date": "May 29, 2026"},
-        ]},
-        2: {"month": "June 2026", "year": 2026, "status": "current", "activities": [
-            {"activity": "Complete Diagnostic Assessments across all 7 universities", "deliverable": "7 Diagnostic Reports", "due_date": "June 30, 2026"},
-            {"activity": "Continue baseline data collection and validation", "deliverable": "Validated Baseline Data", "due_date": "June 25, 2026"},
-            {"activity": "Establish GRDAU framework documentation", "deliverable": "GRDAU SOP Document", "due_date": "June 20, 2026"},
-            {"activity": "Conduct initial GRDAU training for university coordinators", "deliverable": "Training Session 1 Completed", "due_date": "June 15, 2026"},
-            {"activity": "Submit June MPR", "deliverable": "MPR June 2026", "due_date": "June 30, 2026"},
-        ]},
-        3: {"month": "July 2026", "year": 2026, "status": "upcoming", "activities": [
-            {"activity": "Complete gap analysis against NIRF/NAAC/Global Rankings", "deliverable": "Gap Analysis Report", "due_date": "July 15, 2026"},
-            {"activity": "SWOT analysis for each university", "deliverable": "7 SWOT Reports", "due_date": "July 20, 2026"},
-            {"activity": "Finalize GRDAU establishment in all universities", "deliverable": "7 GRDAUs Operational", "due_date": "July 31, 2026"},
-            {"activity": "Submit July MPR", "deliverable": "MPR July 2026", "due_date": "July 31, 2026"},
-        ]},
-        4: {"month": "August 2026", "year": 2026, "status": "upcoming", "activities": [
-            {"activity": "Develop Institutional Development Plans (IDPs)", "deliverable": "IDP Drafts", "due_date": "August 15, 2026"},
-            {"activity": "Stakeholder review of IDPs", "deliverable": "Stakeholder Feedback", "due_date": "August 25, 2026"},
-            {"activity": "Design data portal architecture", "deliverable": "Portal Design Document", "due_date": "August 31, 2026"},
-            {"activity": "Submit August MPR", "deliverable": "MPR August 2026", "due_date": "August 31, 2026"},
-        ]},
-        5: {"month": "September 2026", "year": 2026, "status": "upcoming", "activities": [
-            {"activity": "Finalize IDPs with university approval", "deliverable": "7 Approved IDPs", "due_date": "September 15, 2026"},
-            {"activity": "Create performance monitoring dashboard mockups", "deliverable": "Dashboard Designs", "due_date": "September 20, 2026"},
-            {"activity": "MILESTONE 1: Establishment of Sustainable Data & Quality Systems", "deliverable": "Milestone Achievement Report", "due_date": "September 30, 2026"},
-            {"activity": "Submit September MPR", "deliverable": "MPR September 2026", "due_date": "September 30, 2026"},
-        ]},
-        6: {"month": "October 2026", "year": 2026, "status": "upcoming", "activities": [
-            {"activity": "Complete dashboard development", "deliverable": "Dashboard Beta Version", "due_date": "October 15, 2026"},
-            {"activity": "MILESTONE 2: Institutional Development Plans and Execution Monitoring", "deliverable": "Milestone Achievement Report", "due_date": "October 31, 2026"},
-            {"activity": "Mid-term review preparation", "deliverable": "Mid-term Review Materials", "due_date": "October 25, 2026"},
-            {"activity": "Submit October MPR", "deliverable": "MPR October 2026", "due_date": "October 31, 2026"},
-        ]},
-        7: {"month": "November 2026", "year": 2026, "status": "upcoming", "activities": [
-            {"activity": "Deploy data portal MVP", "deliverable": "Data Portal Live", "due_date": "November 15, 2026"},
-            {"activity": "Mid-term Progress Report submission", "deliverable": "Mid-term Report", "due_date": "November 30, 2026"},
-            {"activity": "Training needs assessment completion", "deliverable": "Training Needs Report", "due_date": "November 20, 2026"},
-            {"activity": "Submit November MPR", "deliverable": "MPR November 2026", "due_date": "November 30, 2026"},
-        ]},
-        8: {"month": "December 2026", "year": 2026, "status": "upcoming", "activities": [
-            {"activity": "Launch performance dashboards", "deliverable": "Dashboards Deployed", "due_date": "December 10, 2026"},
-            {"activity": "Develop training modules", "deliverable": "Training Curriculum", "due_date": "December 15, 2026"},
-            {"activity": "MILESTONE 3: Capacity Building Participation", "deliverable": "Milestone Achievement Report", "due_date": "December 31, 2026"},
-            {"activity": "Submit December MPR", "deliverable": "MPR December 2026", "due_date": "December 31, 2026"},
-        ]},
-        9: {"month": "January 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "First round of training programs across all universities", "deliverable": "Training Completion Report", "due_date": "January 25, 2027"},
-            {"activity": "Data quality framework implementation", "deliverable": "Data Quality Framework", "due_date": "January 20, 2027"},
-            {"activity": "Submit January MPR", "deliverable": "MPR January 2027", "due_date": "January 31, 2027"},
-        ]},
-        10: {"month": "February 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "Data validation and quality improvement cycles", "deliverable": "Data Quality Report", "due_date": "February 20, 2027"},
-            {"activity": "Research output enhancement initiatives", "deliverable": "Research Enhancement Plan", "due_date": "February 25, 2027"},
-            {"activity": "Submit February MPR", "deliverable": "MPR February 2027", "due_date": "February 28, 2027"},
-        ]},
-        11: {"month": "March 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "International collaboration framework development", "deliverable": "Collaboration Framework", "due_date": "March 15, 2027"},
-            {"activity": "Outcome-based education (OBE) implementation support", "deliverable": "OBE Guidelines", "due_date": "March 20, 2027"},
-            {"activity": "Submit March MPR", "deliverable": "MPR March 2027", "due_date": "March 31, 2027"},
-        ]},
-        12: {"month": "April 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "Accreditation preparedness assessment", "deliverable": "Accreditation Readiness Report", "due_date": "April 15, 2027"},
-            {"activity": "Quality assurance framework implementation", "deliverable": "QA Framework", "due_date": "April 25, 2027"},
-            {"activity": "Submit April MPR", "deliverable": "MPR April 2027", "due_date": "April 30, 2027"},
-        ]},
-        13: {"month": "May 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "Year 1 performance review", "deliverable": "Annual Performance Report", "due_date": "May 15, 2027"},
-            {"activity": "Enhanced data collection and reporting", "deliverable": "Enhanced Data Repository", "due_date": "May 20, 2027"},
-            {"activity": "Submit May MPR", "deliverable": "MPR May 2027", "due_date": "May 31, 2027"},
-        ]},
-        14: {"month": "June 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "MILESTONE 4: Minimum 10% Improvement in Performance Indicators", "deliverable": "Milestone Achievement Report", "due_date": "June 30, 2027"},
-            {"activity": "Mid-year performance assessment", "deliverable": "Mid-year Assessment", "due_date": "June 25, 2027"},
-            {"activity": "Submit June MPR", "deliverable": "MPR June 2027", "due_date": "June 30, 2027"},
-        ]},
-        15: {"month": "July 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "Advanced training programs for GRDAU staff", "deliverable": "Advanced Training Report", "due_date": "July 20, 2027"},
-            {"activity": "Research publication support and tracking", "deliverable": "Publication Report", "due_date": "July 25, 2027"},
-            {"activity": "Submit July MPR", "deliverable": "MPR July 2027", "due_date": "July 31, 2027"},
-        ]},
-        16: {"month": "August 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "International ranking agency engagement", "deliverable": "Engagement Report", "due_date": "August 20, 2027"},
-            {"activity": "Dashboard enhancements based on feedback", "deliverable": "Enhanced Dashboards", "due_date": "August 25, 2027"},
-            {"activity": "Submit August MPR", "deliverable": "MPR August 2027", "due_date": "August 31, 2027"},
-        ]},
-        17: {"month": "September 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "Citation analysis and improvement strategies", "deliverable": "Citation Report", "due_date": "September 15, 2027"},
-            {"activity": "Employer perception enhancement initiatives", "deliverable": "Employer Engagement Report", "due_date": "September 20, 2027"},
-            {"activity": "Submit September MPR", "deliverable": "MPR September 2027", "due_date": "September 30, 2027"},
-        ]},
-        18: {"month": "October 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "Academic reputation building strategies", "deliverable": "Reputation Strategy Document", "due_date": "October 15, 2027"},
-            {"activity": "IPR and patent filing support", "deliverable": "IPR Status Report", "due_date": "October 25, 2027"},
-            {"activity": "Submit October MPR", "deliverable": "MPR October 2027", "due_date": "October 31, 2027"},
-        ]},
-        19: {"month": "November 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "SDG-aligned research promotion", "deliverable": "SDG Research Report", "due_date": "November 15, 2027"},
-            {"activity": "International student enrollment strategies", "deliverable": "Internationalization Plan", "due_date": "November 20, 2027"},
-            {"activity": "Submit November MPR", "deliverable": "MPR November 2027", "due_date": "November 30, 2027"},
-        ]},
-        20: {"month": "December 2027", "year": 2027, "status": "upcoming", "activities": [
-            {"activity": "MILESTONE 5: Minimum 20% Improvement in Performance Indicators", "deliverable": "Milestone Achievement Report", "due_date": "December 31, 2027"},
-            {"activity": "Year-end performance review", "deliverable": "Year-end Report", "due_date": "December 20, 2027"},
-            {"activity": "Submit December MPR", "deliverable": "MPR December 2027", "due_date": "December 31, 2027"},
-        ]},
-        21: {"month": "January 2028", "year": 2028, "status": "upcoming", "activities": [
-            {"activity": "Global ranking submission preparation", "deliverable": "Ranking Submission Package", "due_date": "January 20, 2028"},
-            {"activity": "Final round of capacity building", "deliverable": "Final Training Report", "due_date": "January 25, 2028"},
-            {"activity": "Submit January MPR", "deliverable": "MPR January 2028", "due_date": "January 31, 2028"},
-        ]},
-        22: {"month": "February 2028", "year": 2028, "status": "upcoming", "activities": [
-            {"activity": "MILESTONE 6: Enhanced Global Rankings Participation of 10 colleges", "deliverable": "Milestone Achievement Report", "due_date": "February 29, 2028"},
-            {"activity": "Final dashboard and portal review", "deliverable": "Final System Review", "due_date": "February 25, 2028"},
-            {"activity": "Submit February MPR", "deliverable": "MPR February 2028", "due_date": "February 29, 2028"},
-        ]},
-        23: {"month": "March 2028", "year": 2028, "status": "upcoming", "activities": [
-            {"activity": "Sustainability planning and handover documentation", "deliverable": "Sustainability Plan", "due_date": "March 15, 2028"},
-            {"activity": "Lessons learned documentation", "deliverable": "Lessons Learned Report", "due_date": "March 20, 2028"},
-            {"activity": "Submit March MPR", "deliverable": "MPR March 2028", "due_date": "March 31, 2028"},
-        ]},
-        24: {"month": "April 2028", "year": 2028, "status": "upcoming", "activities": [
-            {"activity": "MILESTONE 7: Final Evaluation and Reporting", "deliverable": "Final Closure Report", "due_date": "April 30, 2028"},
-            {"activity": "Project closure and knowledge transfer", "deliverable": "Knowledge Transfer Report", "due_date": "April 25, 2028"},
-            {"activity": "Final MPR submission", "deliverable": "Final MPR", "due_date": "April 30, 2028"},
-            {"activity": "Handover of all project materials to MITRA", "deliverable": "Complete Project Documentation", "due_date": "April 30, 2028"},
-        ]},
+def get_detailed_tasks_for_date(date):
+    """Return detailed task for a specific date"""
+    date_str = date.strftime("%Y-%m-%d")
+    
+    # June 2026 Detailed Tasks
+    june_tasks = {
+        "2026-06-08": {
+            "task": "Conduct faculty interviews at assigned university",
+            "sub_tasks": ["Schedule interviews with 5 faculty members", "Prepare interview questionnaire", "Document interview responses", "Identify key research areas"],
+            "deliverable": "Faculty Interview Summary Report",
+            "category": "Data Collection",
+            "priority": "High"
+        },
+        "2026-06-09": {
+            "task": "Analyze research output metrics",
+            "sub_tasks": ["Collect publication data from last 5 years", "Calculate citation impact", "Identify top research areas", "Benchmark against top universities"],
+            "deliverable": "Research Output Analysis Report",
+            "category": "Analysis",
+            "priority": "High"
+        },
+        "2026-06-10": {
+            "task": "Evaluate infrastructure readiness",
+            "sub_tasks": ["Review lab facilities", "Assess library resources", "Check IT infrastructure", "Document infrastructure gaps"],
+            "deliverable": "Infrastructure Readiness Report",
+            "category": "Assessment",
+            "priority": "Medium"
+        },
+        "2026-06-11": {
+            "task": "Assess international collaboration",
+            "sub_tasks": ["Identify existing MoUs", "List international research projects", "Document visiting faculty", "Propose new collaborations"],
+            "deliverable": "International Collaboration Assessment",
+            "category": "Assessment",
+            "priority": "Medium"
+        },
+        "2026-06-12": {
+            "task": "Compile assessment findings",
+            "sub_tasks": ["Consolidate all assessment data", "Create summary metrics", "Identify patterns and trends", "Prepare presentation"],
+            "deliverable": "Comprehensive Assessment Compilation",
+            "category": "Analysis",
+            "priority": "High"
+        },
+        "2026-06-15": {
+            "task": "GRDAU Training Session for Coordinators",
+            "sub_tasks": ["Prepare training materials", "Conduct 3-hour training session", "Answer participant questions", "Collect feedback forms"],
+            "deliverable": "Training Session Report",
+            "category": "Training",
+            "priority": "High"
+        },
+        "2026-06-16": {
+            "task": "Data validation workshop",
+            "sub_tasks": ["Review data collection methods", "Identify data inconsistencies", "Standardize data formats", "Create validation checklist"],
+            "deliverable": "Data Validation Framework",
+            "category": "Training",
+            "priority": "High"
+        },
+        "2026-06-17": {
+            "task": "NIRF submission preparation",
+            "sub_tasks": ["Complete NIRF data templates", "Verify all metrics", "Prepare supporting documents", "Review with IQAC"],
+            "deliverable": "NIRF Submission Package",
+            "category": "Reporting",
+            "priority": "High"
+        },
+        "2026-06-18": {
+            "task": "Review progress with Vice Chancellor",
+            "sub_tasks": ["Prepare progress presentation", "Compile key achievements", "Discuss challenges", "Get VC approval for next steps"],
+            "deliverable": "VC Meeting Minutes",
+            "category": "Meetings",
+            "priority": "High"
+        },
+        "2026-06-19": {
+            "task": "Update data repository",
+            "sub_tasks": ["Upload all collected data", "Organize data by category", "Add metadata", "Backup repository"],
+            "deliverable": "Updated Data Repository",
+            "category": "Data Collection",
+            "priority": "Medium"
+        },
+        "2026-06-22": {
+            "task": "Finalize Diagnostic Reports",
+            "sub_tasks": ["Review all sections", "Add executive summary", "Include recommendations", "Format as per guidelines"],
+            "deliverable": "Diagnostic Report Draft",
+            "category": "Reporting",
+            "priority": "High"
+        },
+        "2026-06-23": {
+            "task": "Submit Diagnostic Assessment Reports",
+            "sub_tasks": ["Get final approval", "Submit to PMU", "Send copy to VC", "Archive submission"],
+            "deliverable": "Submitted Diagnostic Reports",
+            "category": "Reporting",
+            "priority": "High"
+        },
+        "2026-06-24": {
+            "task": "Prepare June MPR",
+            "sub_tasks": ["Compile June activities", "Document achievements", "List challenges faced", "Plan for July"],
+            "deliverable": "June MPR Draft",
+            "category": "Reporting",
+            "priority": "High"
+        },
+        "2026-06-25": {
+            "task": "Plan July activities",
+            "sub_tasks": ["Review Phase 1 remaining tasks", "Create July work schedule", "Assign responsibilities", "Set deadlines"],
+            "deliverable": "July Work Plan",
+            "category": "Planning",
+            "priority": "Medium"
+        },
+        "2026-06-26": {
+            "task": "Client review meeting",
+            "sub_tasks": ["Prepare presentation", "Present June progress", "Receive feedback", "Document action items"],
+            "deliverable": "Client Meeting Minutes",
+            "category": "Meetings",
+            "priority": "High"
+        },
+        "2026-06-29": {
+            "task": "Continue data analysis",
+            "sub_tasks": ["Analyze remaining data", "Identify improvement areas", "Prepare analysis charts", "Document findings"],
+            "deliverable": "Data Analysis Report",
+            "category": "Analysis",
+            "priority": "Medium"
+        },
+        "2026-06-30": {
+            "task": "Finalize and submit June MPR",
+            "sub_tasks": ["Incorporate feedback", "Finalize report", "Submit to PMU", "Get acknowledgment"],
+            "deliverable": "June MPR Final",
+            "category": "Reporting",
+            "priority": "High"
+        }
     }
-
-def get_working_days_in_month(year, month):
-    """Get all working days (Monday to Friday) in a given month"""
-    working_days = []
-    first_day = datetime(year, month, 1)
     
-    if month == 12:
-        last_day = datetime(year, month, 31)
+    # July 2026 Detailed Tasks
+    july_tasks = {
+        "2026-07-01": {
+            "task": "Complete gap analysis against NIRF/NAAC/Global Rankings",
+            "sub_tasks": ["Compare current vs target metrics", "Identify critical gaps", "Prioritize improvement areas", "Create gap analysis matrix"],
+            "deliverable": "Gap Analysis Report",
+            "category": "Analysis",
+            "priority": "High"
+        },
+        "2026-07-02": {
+            "task": "Prepare SWOT reports for each university",
+            "sub_tasks": ["Conduct SWOT workshop", "Document strengths/weaknesses", "Identify opportunities/threats", "Compile university-wise SWOT"],
+            "deliverable": "7 SWOT Analysis Reports",
+            "category": "Documentation",
+            "priority": "High"
+        },
+        "2026-07-03": {
+            "task": "Submit GRDAU establishment plan",
+            "sub_tasks": ["Define GRDAU structure", "List required resources", "Set up operational procedures", "Get approval from VC"],
+            "deliverable": "GRDAU Establishment Plan",
+            "category": "Reporting",
+            "priority": "High"
+        },
+        "2026-07-06": {
+            "task": "Finalize GRDAU in all universities",
+            "sub_tasks": ["Setup GRDAU office", "Install necessary software", "Create user accounts", "Test systems"],
+            "deliverable": "GRDAU Operational Status",
+            "category": "Setup",
+            "priority": "High"
+        },
+        "2026-07-07": {
+            "task": "Train GRDAU staff",
+            "sub_tasks": ["Conduct training session", "Demonstrate data entry", "Explain reporting process", "Assess staff readiness"],
+            "deliverable": "GRDAU Training Completion Report",
+            "category": "Training",
+            "priority": "High"
+        },
+        "2026-07-08": {
+            "task": "Develop SOP for GRDAU",
+            "sub_tasks": ["Draft standard procedures", "Define roles and responsibilities", "Create workflow diagrams", "Get approval"],
+            "deliverable": "GRDAU SOP Document",
+            "category": "Documentation",
+            "priority": "High"
+        },
+        "2026-07-09": {
+            "task": "Setup data management systems",
+            "sub_tasks": ["Configure database", "Setup backup systems", "Implement security protocols", "Test data integrity"],
+            "deliverable": "Data Management System",
+            "category": "Technical",
+            "priority": "High"
+        },
+        "2026-07-10": {
+            "task": "Review GRDAU readiness",
+            "sub_tasks": ["Check all systems", "Verify staff training", "Test data flow", "Document readiness status"],
+            "deliverable": "GRDAU Readiness Report",
+            "category": "Assessment",
+            "priority": "Medium"
+        },
+        "2026-07-13": {
+            "task": "Data quality framework implementation",
+            "sub_tasks": ["Define quality metrics", "Create validation rules", "Setup automated checks", "Test framework"],
+            "deliverable": "Data Quality Framework",
+            "category": "Technical",
+            "priority": "High"
+        },
+        "2026-07-14": {
+            "task": "Dashboard requirements gathering",
+            "sub_tasks": ["Meet with stakeholders", "List required KPIs", "Define visualization needs", "Document requirements"],
+            "deliverable": "Dashboard Requirements Document",
+            "category": "Meetings",
+            "priority": "High"
+        },
+        "2026-07-15": {
+            "task": "Prepare baseline report",
+            "sub_tasks": ["Compile all baseline data", "Create summary statistics", "Document methodology", "Format report"],
+            "deliverable": "Baseline Report",
+            "category": "Reporting",
+            "priority": "High"
+        },
+        "2026-07-16": {
+            "task": "Stakeholder feedback session",
+            "sub_tasks": ["Schedule meeting", "Present findings", "Collect feedback", "Document action items"],
+            "deliverable": "Stakeholder Feedback Report",
+            "category": "Meetings",
+            "priority": "Medium"
+        },
+        "2026-07-17": {
+            "task": "Update project plan",
+            "sub_tasks": ["Review progress against plan", "Adjust timelines if needed", "Update resource allocation", "Communicate changes"],
+            "deliverable": "Updated Project Plan",
+            "category": "Planning",
+            "priority": "Medium"
+        },
+        "2026-07-20": {
+            "task": "Finalize July MPR",
+            "sub_tasks": ["Compile July activities", "Document Phase 1 completion", "Prepare for Phase 2", "Submit to PMU"],
+            "deliverable": "July MPR Report",
+            "category": "Reporting",
+            "priority": "High"
+        },
+        "2026-07-21": {
+            "task": "Phase 1 completion review",
+            "sub_tasks": ["Review all Phase 1 deliverables", "Assess quality metrics", "Document lessons learned", "Celebrate achievements"],
+            "deliverable": "Phase 1 Completion Report",
+            "category": "Meetings",
+            "priority": "High"
+        },
+        "2026-07-22": {
+            "task": "Plan Phase 2 activities",
+            "sub_tasks": ["Review Phase 2 requirements", "Create detailed work plan", "Assign resources", "Set milestones"],
+            "deliverable": "Phase 2 Work Plan",
+            "category": "Planning",
+            "priority": "High"
+        },
+        "2026-07-23": {
+            "task": "Client presentation - Phase 1 results",
+            "sub_tasks": ["Prepare presentation", "Showcase achievements", "Present metrics", "Get client approval"],
+            "deliverable": "Client Presentation Deck",
+            "category": "Meetings",
+            "priority": "High"
+        },
+        "2026-07-24": {
+            "task": "Document lessons learned",
+            "sub_tasks": ["Capture successes", "Document challenges", "Recommend improvements", "Share with team"],
+            "deliverable": "Lessons Learned Document",
+            "category": "Documentation",
+            "priority": "Medium"
+        },
+        "2026-07-27": {
+            "task": "Prepare for Phase 2 kickoff",
+            "sub_tasks": ["Review Phase 2 objectives", "Prepare kickoff materials", "Schedule team meeting", "Setup tracking systems"],
+            "deliverable": "Phase 2 Kickoff Package",
+            "category": "Planning",
+            "priority": "Medium"
+        },
+        "2026-07-28": {
+            "task": "Team meeting for Phase 2",
+            "sub_tasks": ["Present Phase 2 plan", "Clarify roles", "Discuss challenges", "Align on goals"],
+            "deliverable": "Phase 2 Team Meeting Minutes",
+            "category": "Meetings",
+            "priority": "Medium"
+        },
+        "2026-07-29": {
+            "task": "Review project status",
+            "sub_tasks": ["Check all trackers", "Verify data completeness", "Update dashboards", "Prepare status report"],
+            "deliverable": "Project Status Report",
+            "category": "Reporting",
+            "priority": "Medium"
+        },
+        "2026-07-30": {
+            "task": "Submit July MPR (final)",
+            "sub_tasks": ["Finalize report", "Get approvals", "Submit to PMU", "Confirm receipt"],
+            "deliverable": "July MPR Submitted",
+            "category": "Reporting",
+            "priority": "High"
+        },
+        "2026-07-31": {
+            "task": "Plan August activities",
+            "sub_tasks": ["Review August deliverables", "Create daily schedule", "Assign tasks", "Setup deadlines"],
+            "deliverable": "August Work Plan",
+            "category": "Planning",
+            "priority": "Medium"
+        }
+    }
+    
+    # Check if date is in specific task dictionaries
+    if date_str in june_tasks:
+        return june_tasks[date_str]
+    elif date_str in july_tasks:
+        return july_tasks[date_str]
     else:
-        last_day = datetime(year, month + 1, 1) - timedelta(days=1)
-    
-    current = first_day
-    while current <= last_day:
-        if current.weekday() < 5:
-            working_days.append(current)
-        current += timedelta(days=1)
-    return working_days
+        # For dates beyond July 2026, generate detailed tasks based on the month
+        return get_generic_detailed_task(date)
 
-def get_daily_tasks_for_month(year, month):
-    """Generate daily tasks for a specific month"""
-    working_days = get_working_days_in_month(year, month)
-    daily_tasks = {}
+def get_generic_detailed_task(date):
+    """Generate detailed task for dates beyond July 2026"""
+    month = date.month
+    year = date.year
     
-    plan = get_24_month_plan()
-    month_data = None
-    for month_num, data in plan.items():
-        if data["year"] == year and data["month"].split()[0].lower() == datetime(year, month, 1).strftime("%B").lower():
-            month_data = data
-            break
-    
-    activities = month_data["activities"] if month_data else []
-    
-    for idx, working_day in enumerate(working_days):
-        date_str = working_day.strftime("%Y-%m-%d")
+    if year == 2026 and month == 8:
+        return {
+            "task": f"Develop Institutional Development Plan (IDP) - Day {date.day}",
+            "sub_tasks": ["Review IDP template", "Collect strategic inputs", "Draft IDP sections", "Validate with stakeholders"],
+            "deliverable": f"IDP Development Progress",
+            "category": "Planning",
+            "priority": "High"
+        }
+    elif year == 2026 and month == 9:
+        return {
+            "task": f"Dashboard Design and Development - Activity {date.day}",
+            "sub_tasks": ["Design dashboard mockups", "Integrate data sources", "Test visualizations", "Gather feedback"],
+            "deliverable": f"Dashboard Component",
+            "category": "Technical",
+            "priority": "High"
+        }
+    elif year == 2026 and month == 10:
+        return {
+            "task": f"Milestone 2: Institutional Development Plans - Day {date.day}",
+            "sub_tasks": ["Finalize IDPs", "Get institutional sign-off", "Submit milestone report", "Present to client"],
+            "deliverable": f"Milestone 2 Deliverable",
+            "category": "Reporting",
+            "priority": "High"
+        }
+    elif year == 2026 and month == 11:
+        return {
+            "task": f"Data Portal Deployment - Activity {date.day}",
+            "sub_tasks": ["Deploy portal", "Configure settings", "Test functionality", "Train users"],
+            "deliverable": f"Portal Deployment Progress",
+            "category": "Technical",
+            "priority": "High"
+        }
+    elif year == 2026 and month == 12:
+        return {
+            "task": f"Capacity Building Training - Module {date.day}",
+            "sub_tasks": ["Prepare training materials", "Conduct sessions", "Assess learning", "Collect feedback"],
+            "deliverable": f"Training Completion Report",
+            "category": "Training",
+            "priority": "High"
+        }
+    elif year == 2027:
+        # For 2027, create specific tasks based on the month
+        month_names = ["January", "February", "March", "April", "May", "June", 
+                       "July", "August", "September", "October", "November", "December"]
+        month_name = month_names[month-1]
         
-        if idx < len(activities):
-            activity = activities[idx]
-            daily_tasks[date_str] = {
-                "task": activity["activity"],
-                "deliverable": activity["deliverable"],
-                "due_date": activity["due_date"],
-                "category": get_category(activity["activity"]),
-                "priority": "High" if "MILESTONE" in activity["activity"] else "Medium"
+        if month <= 4:
+            category = "Implementation"
+            task_prefix = f"Phase 3: {month_name} Implementation Activities"
+        elif month <= 8:
+            category = "Enhancement"
+            task_prefix = f"Phase 4: {month_name} Enhancement Activities"
+        else:
+            category = "Finalization"
+            task_prefix = f"Phase 5: {month_name} Finalization Activities"
+        
+        return {
+            "task": f"{task_prefix} - Day {date.day}",
+            "sub_tasks": [
+                "Review project progress",
+                "Complete assigned deliverables",
+                "Document work completed",
+                "Coordinate with team members",
+                "Update project trackers"
+            ],
+            "deliverable": "Daily Progress Report",
+            "category": category,
+            "priority": "Medium"
+        }
+    else:
+        # For 2028 tasks
+        month_names = ["January", "February", "March", "April"]
+        month_name = month_names[month-1]
+        
+        if month == 1:
+            return {
+                "task": f"Global Ranking Submission Preparation - Day {date.day}",
+                "sub_tasks": ["Compile ranking data", "Complete submission forms", "Review with experts", "Finalize submissions"],
+                "deliverable": "Ranking Submission Package",
+                "category": "Reporting",
+                "priority": "High"
+            }
+        elif month == 2:
+            return {
+                "task": f"Milestone 6: Enhanced Global Rankings - Day {date.day}",
+                "sub_tasks": ["Submit rankings for 10 colleges", "Prepare evidence", "Document participation", "Submit milestone report"],
+                "deliverable": "Milestone 6 Achievement Report",
+                "category": "Milestone",
+                "priority": "High"
+            }
+        elif month == 3:
+            return {
+                "task": f"Sustainability and Handover Planning - Day {date.day}",
+                "sub_tasks": ["Develop sustainability plan", "Document lessons learned", "Prepare handover materials", "Train successor team"],
+                "deliverable": "Sustainability Plan",
+                "category": "Planning",
+                "priority": "High"
             }
         else:
-            daily_tasks[date_str] = {
-                "task": "Continue project activities and documentation",
-                "deliverable": "Daily Progress Report",
-                "due_date": date_str,
-                "category": "General",
-                "priority": "Medium"
+            return {
+                "task": f"Final Evaluation and Project Closure - Day {date.day}",
+                "sub_tasks": ["Complete final evaluation", "Submit closure report", "Handover all materials", "Project sign-off"],
+                "deliverable": "Project Closure Report",
+                "category": "Closure",
+                "priority": "High"
             }
-    
-    return daily_tasks
-
-def get_category(activity):
-    if "Training" in activity:
-        return "Training"
-    elif "Data" in activity:
-        return "Data Collection"
-    elif "Report" in activity or "MPR" in activity:
-        return "Reporting"
-    elif "Meeting" in activity:
-        return "Meetings"
-    elif "Assessment" in activity:
-        return "Assessment"
-    elif "MILESTONE" in activity:
-        return "Milestone"
-    else:
-        return "General"
 
 def get_all_tasks():
-    """Generate all tasks for all months"""
+    """Generate all daily tasks for all working days"""
     all_tasks = {}
     
-    for year in [2026, 2027, 2028]:
-        for month in range(1, 13):
-            if year == 2026 and month < 5:
-                continue
-            if year == 2028 and month > 4:
-                continue
-            
-            monthly_tasks = get_daily_tasks_for_month(year, month)
-            all_tasks.update(monthly_tasks)
+    start_date = datetime(2026, 5, 4)
+    end_date = datetime(2028, 4, 28)
+    
+    current = start_date
+    while current <= end_date:
+        if current.weekday() < 5:  # Monday to Friday
+            date_str = current.strftime("%Y-%m-%d")
+            task_info = get_detailed_tasks_for_date(current)
+            all_tasks[date_str] = task_info
+        current += timedelta(days=1)
     
     return all_tasks
 
@@ -469,8 +656,8 @@ def get_user_tasks(email):
             user_tasks.append({
                 "date": date_str,
                 "task": task_info.get("task", ""),
+                "sub_tasks": task_info.get("sub_tasks", []),
                 "deliverable": task_info.get("deliverable", ""),
-                "due_date": task_info.get("due_date", ""),
                 "category": task_info.get("category", ""),
                 "priority": task_info.get("priority", "Medium"),
                 "status": "Completed" if is_completed else "Pending",
@@ -593,7 +780,7 @@ def show_credentials():
     """, unsafe_allow_html=True)
 
 # ============================================================
-# DATA ANALYST DASHBOARD - WITH CLEAR COMPLETE BUTTON
+# DATA ANALYST DASHBOARD
 # ============================================================
 
 def data_analyst_dashboard(email, user):
@@ -620,9 +807,7 @@ def data_analyst_dashboard(email, user):
     
     st.markdown("---")
     
-    # ============================================================
-    # TODAY'S TASK WITH COMPLETE BUTTON
-    # ============================================================
+    # Today's task with complete button
     today = datetime.now().strftime("%Y-%m-%d")
     today_task = next((t for t in user_tasks if t["date"] == today and t["date"] > "2026-06-05"), None)
     
@@ -633,24 +818,27 @@ def data_analyst_dashboard(email, user):
             st.markdown(f"""
             <div class="task-card task-completed">
                 ✅ <strong>TASK COMPLETED</strong><br>
-                <strong>Date:</strong> {today_task['date']}<br>
                 <strong>Task:</strong> {today_task['task']}<br>
                 <strong>Deliverable:</strong> {today_task['deliverable']}<br>
                 <strong>Remarks:</strong> {today_task.get('remarks', 'No remarks')}
             </div>
             """, unsafe_allow_html=True)
         else:
-            # Interactive form with complete button
             with st.form(key=f"complete_today_task"):
                 st.markdown(f"""
                 <div class="task-card task-pending">
                     <strong>⏳ PENDING - Please complete today's task</strong><br>
                     <strong>Task:</strong> {today_task['task']}<br>
                     <strong>Deliverable:</strong> {today_task['deliverable']}<br>
-                    <strong>Due Date:</strong> {today_task['due_date']}<br>
                     <strong>Priority:</strong> {today_task['priority']}
                 </div>
                 """, unsafe_allow_html=True)
+                
+                if today_task.get('sub_tasks'):
+                    st.markdown("**📋 Sub-tasks to complete:**")
+                    for stask in today_task['sub_tasks']:
+                        st.markdown(f"- {stask}")
+                    st.markdown("---")
                 
                 col1, col2 = st.columns(2)
                 with col1:
@@ -660,11 +848,7 @@ def data_analyst_dashboard(email, user):
                 
                 work_hours = f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}"
                 
-                remarks = st.text_area(
-                    "📝 What did you accomplish today?", 
-                    height=120,
-                    placeholder="Example:\n• Completed data collection for 3 departments\n• Analyzed research output metrics\n• Prepared draft report for review\n• Coordinated with stakeholders"
-                )
+                remarks = st.text_area("📝 What did you accomplish today?", height=120)
                 
                 submitted = st.form_submit_button("✅ MARK AS COMPLETE", use_container_width=True, type="primary")
                 
@@ -679,21 +863,24 @@ def data_analyst_dashboard(email, user):
     
     st.markdown("---")
     
-    # ============================================================
-    # PENDING TASKS WITH COMPLETE BUTTONS
-    # ============================================================
+    # Other pending tasks
     if pending_tasks:
         st.subheader("⏳ Other Pending Tasks")
         
         for task in pending_tasks[:5]:
-            if task['date'] != today:  # Skip today's task as it's already shown above
+            if task['date'] != today:
                 with st.expander(f"📅 {task['date']} - {task['task'][:60]}..."):
                     st.markdown(f"""
                     **Task:** {task['task']}<br>
                     **Deliverable:** {task['deliverable']}<br>
-                    **Due Date:** {task['due_date']}<br>
+                    **Category:** {task['category']}<br>
                     **Priority:** {task['priority']}
                     """, unsafe_allow_html=True)
+                    
+                    if task.get('sub_tasks'):
+                        st.markdown("**Sub-tasks:**")
+                        for stask in task['sub_tasks']:
+                            st.markdown(f"- {stask}")
                     
                     with st.form(key=f"complete_task_{task['date']}"):
                         col1, col2 = st.columns(2)
@@ -713,32 +900,26 @@ def data_analyst_dashboard(email, user):
                             else:
                                 st.error("Please describe your work accomplishments")
     
-    # ============================================================
-    # RECENTLY COMPLETED TASKS
-    # ============================================================
+    # Recently completed tasks
     if completed_tasks:
         st.subheader("✅ Recently Completed Tasks")
         for task in completed_tasks[-5:]:
             st.markdown(f"""
             <div class="task-card task-completed">
                 <strong>✅ {task['date']}</strong><br>
-                {task['task'][:80]}...<br>
-                <small>Completed at: {task.get('completed_at', '')[:16] if task.get('completed_at') else 'N/A'}</small>
+                {task['task'][:80]}...
             </div>
             """, unsafe_allow_html=True)
     
-    # ============================================================
-    # PROGRESS VISUALIZATION
-    # ============================================================
+    # Progress visualization
     st.markdown("---")
     st.subheader("📊 My Progress Dashboard")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        # Task breakdown chart
         fig = go.Figure(data=[go.Pie(
-            labels=['Completed (Initial Setup)', 'Completed (My Work)', 'Pending'],
+            labels=['Completed (Initial)', 'Completed (My Work)', 'Pending'],
             values=[len(initial_completed), len(completed_tasks), len(pending_tasks)],
             marker_colors=['#28a745', '#20c997', '#ffc107'],
             hole=0.4
@@ -747,7 +928,6 @@ def data_analyst_dashboard(email, user):
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
-        # Progress gauge
         total_future = len(completed_tasks) + len(pending_tasks)
         progress_pct = (len(completed_tasks) / total_future * 100) if total_future > 0 else 0
         
@@ -760,37 +940,8 @@ def data_analyst_dashboard(email, user):
                    'steps': [
                        {'range': [0, 33], 'color': "#ffcccc"},
                        {'range': [33, 66], 'color': "#ffffcc"},
-                       {'range': [66, 100], 'color': "#ccffcc"}],
-                   'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 90}}))
+                       {'range': [66, 100], 'color': "#ccffcc"}]}))
         fig.update_layout(height=350)
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Weekly progress chart
-    st.markdown("---")
-    st.subheader("📈 Weekly Progress Trend")
-    
-    weekly_data = {}
-    for task in user_tasks:
-        if task["date"] > "2026-06-05":
-            task_date = datetime.strptime(task["date"], "%Y-%m-%d")
-            week_num = task_date.isocalendar()[1]
-            week_label = f"Week {week_num} ({task_date.strftime('%b')})"
-            if week_label not in weekly_data:
-                weekly_data[week_label] = {"completed": 0, "total": 0}
-            weekly_data[week_label]["total"] += 1
-            if task["status"] == "Completed":
-                weekly_data[week_label]["completed"] += 1
-    
-    if weekly_data:
-        weeks = list(weekly_data.keys())
-        completed_counts = [weekly_data[w]["completed"] for w in weeks]
-        pending_counts = [weekly_data[w]["total"] - weekly_data[w]["completed"] for w in weeks]
-        
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=weeks, y=completed_counts, name="Completed", marker_color="#28a745"))
-        fig.add_trace(go.Bar(x=weeks, y=pending_counts, name="Pending", marker_color="#ffc107"))
-        fig.update_layout(title="Weekly Task Completion", barmode="stack", height=350,
-                         xaxis_title="Week", yaxis_title="Number of Tasks")
         st.plotly_chart(fig, use_container_width=True)
 
 # ============================================================
@@ -805,7 +956,6 @@ def admin_dashboard():
     progress_df = get_all_analysts_progress()
     team_summary = get_team_summary()
     
-    # Key Metrics
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown(f"""
@@ -839,23 +989,15 @@ def admin_dashboard():
     
     st.markdown("---")
     
-    # Team Progress Chart
     st.subheader("👥 Team Progress Dashboard")
-    
     fig = px.bar(progress_df, x="name", y="progress", color="team",
-                 title="Team Member Progress (%)",
-                 labels={"name": "Team Member", "progress": "Progress (%)"},
-                 text="progress", height=500)
+                 title="Team Member Progress (%)", text="progress", height=500)
     fig.update_traces(textposition="outside")
     st.plotly_chart(fig, use_container_width=True)
     
     st.markdown("---")
-    
-    # Team Summary
     st.subheader("📊 Team-wise Summary")
     st.dataframe(team_summary, use_container_width=True, hide_index=True)
-    
-    # Detailed table
     st.subheader("📋 Detailed Team Performance")
     st.dataframe(progress_df, use_container_width=True, hide_index=True)
 
@@ -881,12 +1023,9 @@ def project_lead_dashboard():
     
     st.markdown("---")
     
-    # Team Progress Chart
     st.subheader("Team Performance Overview")
     fig = px.bar(progress_df, x="name", y="progress", color="team",
-                 title="Team Member Progress (%)",
-                 labels={"name": "Team Member", "progress": "Progress (%)"},
-                 text="progress", height=450)
+                 title="Team Member Progress (%)", text="progress", height=450)
     fig.update_traces(textposition="outside")
     st.plotly_chart(fig, use_container_width=True)
     
@@ -899,11 +1038,9 @@ def project_lead_dashboard():
 # ============================================================
 
 def main():
-    # Initialize data
     load_tasks()
     initialize_completed_tasks()
     
-    # Authentication
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
     
@@ -938,12 +1075,10 @@ def main():
             show_credentials()
         return
     
-    # Get user info
     user_info = st.session_state.user_info
     email = st.session_state.user_email
     role = user_info.get("role", "data_analyst")
     
-    # Sidebar Navigation
     with st.sidebar:
         st.markdown("## 📋 MahaSTRIDE")
         st.markdown(f"**Welcome, {user_info.get('name')}**")
@@ -963,9 +1098,9 @@ def main():
         
         st.markdown("---")
         st.markdown("### ℹ️ Info")
-        st.markdown("**Working Hours:** 10:00 AM - 6:00 PM")
-        st.markdown("**Working Days:** Monday to Friday")
-        st.markdown("**Project Duration:** 24 months")
+        st.markdown("**Hours:** 10:00 AM - 6:00 PM")
+        st.markdown("**Days:** Monday to Friday")
+        st.markdown("**Duration:** 24 months")
         st.markdown("**Status:** ✅ May 4 - June 5, 2026 COMPLETED")
         
         st.markdown("---")
@@ -973,26 +1108,15 @@ def main():
             st.session_state.authenticated = False
             st.rerun()
     
-    # Render appropriate dashboard
     if role == "admin":
         if selected_nav == "📊 Dashboard":
             admin_dashboard()
         elif selected_nav == "👥 Team Performance":
             st.markdown("## 👥 Team Performance Analysis")
             progress_df = get_all_analysts_progress()
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                fig = px.pie(progress_df, values="completed", names="name", title="Tasks Completed by Team Member")
-                st.plotly_chart(fig, use_container_width=True)
-            with col2:
-                fig = px.bar(progress_df, x="team", y="progress", color="team", 
-                             title="Team-wise Progress", text="progress")
-                fig.update_traces(textposition="outside")
-                st.plotly_chart(fig, use_container_width=True)
-            
-            st.markdown("---")
-            st.subheader("Complete Team Member List")
+            fig = px.bar(progress_df, x="team", y="progress", color="team", title="Team-wise Progress", text="progress")
+            fig.update_traces(textposition="outside")
+            st.plotly_chart(fig, use_container_width=True)
             st.dataframe(progress_df, use_container_width=True, hide_index=True)
         elif selected_nav == "📄 MPR Reports":
             st.markdown("## 📄 Monthly Progress Reports")
@@ -1008,11 +1132,9 @@ def main():
                 st.markdown(get_download_link(html, f"MPR_{report_year}_{report_month}.html"), unsafe_allow_html=True)
         elif selected_nav == "📅 Monthly Plan":
             st.markdown("## 📅 24-Month Project Plan")
-            plan = get_24_month_plan()
-            for month_num, month_data in plan.items():
-                with st.expander(f"{month_data['month']} {month_data['year']}"):
-                    for activity in month_data["activities"]:
-                        st.markdown(f"• **{activity['activity']}** - {activity['deliverable']} (Due: {activity['due_date']})")
+            all_tasks = load_tasks()
+            for date_str, task in list(all_tasks.items())[:50]:
+                st.markdown(f"**{date_str}:** {task['task']}")
     
     elif role == "project_lead":
         if selected_nav == "📊 Dashboard":
@@ -1020,19 +1142,6 @@ def main():
         elif selected_nav == "👥 Team Performance":
             st.markdown("## 👥 Team Performance Analysis")
             progress_df = get_all_analysts_progress()
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                fig = px.pie(progress_df, values="completed", names="name", title="Tasks Completed Distribution")
-                st.plotly_chart(fig, use_container_width=True)
-            with col2:
-                fig = px.bar(progress_df, x="team", y="progress", color="team", 
-                             title="Team-wise Progress", text="progress")
-                fig.update_traces(textposition="outside")
-                st.plotly_chart(fig, use_container_width=True)
-            
-            st.markdown("---")
-            st.subheader("Complete Team Member List")
             for _, row in progress_df.iterrows():
                 st.markdown(f"**{row['name']}** - {row['team']}")
                 st.progress(row['progress']/100)
@@ -1051,7 +1160,7 @@ def main():
                 html = generate_mpr_html(report_year, report_month)
                 st.markdown(get_download_link(html, f"MPR_{report_year}_{report_month}.html"), unsafe_allow_html=True)
     
-    else:  # data_analyst
+    else:
         if selected_nav == "📝 My Tasks":
             data_analyst_dashboard(email, user_info)
         elif selected_nav == "📊 My Progress":
@@ -1060,35 +1169,8 @@ def main():
             future_tasks = [t for t in user_tasks if t["date"] > "2026-06-05"]
             completed = sum(1 for t in future_tasks if t["status"] == "Completed")
             total = len(future_tasks)
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("📊 Total Tasks (June 8 onwards)", total)
-            with col2:
-                st.metric("✅ Completed", completed)
-            with col3:
-                st.metric("📈 Progress", f"{(completed/total*100):.1f}%" if total > 0 else "0%")
-            
+            st.metric("Progress", f"{(completed/total*100):.1f}%" if total > 0 else "0%")
             st.progress(completed/total if total > 0 else 0)
-            
-            st.markdown("---")
-            st.subheader("Monthly Progress")
-            monthly_data = {}
-            for task in future_tasks:
-                month_key = task["date"][:7]
-                if month_key not in monthly_data:
-                    monthly_data[month_key] = {"total": 0, "completed": 0}
-                monthly_data[month_key]["total"] += 1
-                if task["status"] == "Completed":
-                    monthly_data[month_key]["completed"] += 1
-            
-            if monthly_data:
-                df_monthly = pd.DataFrame([
-                    {"Month": k, "Completed": v["completed"], "Total": v["total"]}
-                    for k, v in monthly_data.items()
-                ])
-                fig = px.bar(df_monthly, x="Month", y="Completed", title="Monthly Task Completion", text="Total")
-                st.plotly_chart(fig, use_container_width=True)
         elif selected_nav == "📅 Calendar View":
             st.markdown(f"## 📅 Calendar View - {user_info.get('name')}")
             user_tasks = get_user_tasks(email)
