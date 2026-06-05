@@ -42,14 +42,6 @@ st.markdown("""
         border-left-color: #ffc107;
         background-color: #fff3cd;
     }
-    .week-header {
-        background-color: #2a5298;
-        color: white;
-        padding: 0.5rem;
-        text-align: center;
-        border-radius: 5px;
-        margin-top: 1rem;
-    }
     .credentials-box {
         background-color: #f8f9fa;
         border: 2px solid #2a5298;
@@ -105,13 +97,152 @@ DAILY_TASKS_FILE = "daily_tasks_breakdown.json"
 TASK_COMPLETION_FILE = "task_completion.json"
 
 # ============================================================
-# COMPLETE 24-MONTH PLAN WITH DAILY BREAKDOWNS
+# COMPLETE 24-MONTH PLAN
 # ============================================================
+
+def get_24_month_plan():
+    """Return the complete 24-month plan"""
+    return {
+        1: {"month": "May 2026", "year": 2026, "status": "completed", "activities": [
+            {"activity": "SANGAM Orientation & Training", "deliverable": "Training Completed", "due_date": "May 6, 2026"},
+            {"activity": "University Onboarding & Data Source Mapping", "deliverable": "Data Source Inventory", "due_date": "May 8, 2026"},
+            {"activity": "NIRF Data Collection", "deliverable": "NIRF Data Repository", "due_date": "May 20, 2026"},
+            {"activity": "Stakeholder Consultation Meetings", "deliverable": "Meeting Minutes", "due_date": "May 27, 2026"},
+            {"activity": "Inception Report & GRDAU Framework", "deliverable": "Inception Report", "due_date": "May 26, 2026"},
+            {"activity": "Monthly Progress Report Submission", "deliverable": "MPR May 2026", "due_date": "May 29, 2026"},
+        ]},
+        2: {"month": "June 2026", "year": 2026, "status": "current", "activities": [
+            {"activity": "Complete Diagnostic Assessments across all 7 universities", "deliverable": "7 Diagnostic Reports", "due_date": "June 30, 2026"},
+            {"activity": "Continue baseline data collection and validation", "deliverable": "Validated Baseline Data", "due_date": "June 25, 2026"},
+            {"activity": "Establish GRDAU framework documentation", "deliverable": "GRDAU SOP Document", "due_date": "June 20, 2026"},
+            {"activity": "Conduct initial GRDAU training for university coordinators", "deliverable": "Training Session 1 Completed", "due_date": "June 15, 2026"},
+            {"activity": "Submit June MPR", "deliverable": "MPR June 2026", "due_date": "June 30, 2026"},
+        ]},
+        3: {"month": "July 2026", "year": 2026, "status": "upcoming", "activities": [
+            {"activity": "Complete gap analysis against NIRF/NAAC/Global Rankings", "deliverable": "Gap Analysis Report", "due_date": "July 15, 2026"},
+            {"activity": "SWOT analysis for each university", "deliverable": "7 SWOT Reports", "due_date": "July 20, 2026"},
+            {"activity": "Finalize GRDAU establishment in all universities", "deliverable": "7 GRDAUs Operational", "due_date": "July 31, 2026"},
+            {"activity": "Submit July MPR", "deliverable": "MPR July 2026", "due_date": "July 31, 2026"},
+        ]},
+        4: {"month": "August 2026", "year": 2026, "status": "upcoming", "activities": [
+            {"activity": "Develop Institutional Development Plans (IDPs)", "deliverable": "IDP Drafts", "due_date": "August 15, 2026"},
+            {"activity": "Stakeholder review of IDPs", "deliverable": "Stakeholder Feedback", "due_date": "August 25, 2026"},
+            {"activity": "Design data portal architecture", "deliverable": "Portal Design Document", "due_date": "August 31, 2026"},
+            {"activity": "Submit August MPR", "deliverable": "MPR August 2026", "due_date": "August 31, 2026"},
+        ]},
+        5: {"month": "September 2026", "year": 2026, "status": "upcoming", "activities": [
+            {"activity": "Finalize IDPs with university approval", "deliverable": "7 Approved IDPs", "due_date": "September 15, 2026"},
+            {"activity": "Create performance monitoring dashboard mockups", "deliverable": "Dashboard Designs", "due_date": "September 20, 2026"},
+            {"activity": "MILESTONE 1: Establishment of Sustainable Data & Quality Systems", "deliverable": "Milestone Achievement Report", "due_date": "September 30, 2026"},
+            {"activity": "Submit September MPR", "deliverable": "MPR September 2026", "due_date": "September 30, 2026"},
+        ]},
+        6: {"month": "October 2026", "year": 2026, "status": "upcoming", "activities": [
+            {"activity": "Complete dashboard development", "deliverable": "Dashboard Beta Version", "due_date": "October 15, 2026"},
+            {"activity": "MILESTONE 2: Institutional Development Plans and Execution Monitoring", "deliverable": "Milestone Achievement Report", "due_date": "October 31, 2026"},
+            {"activity": "Mid-term review preparation", "deliverable": "Mid-term Review Materials", "due_date": "October 25, 2026"},
+            {"activity": "Submit October MPR", "deliverable": "MPR October 2026", "due_date": "October 31, 2026"},
+        ]},
+        7: {"month": "November 2026", "year": 2026, "status": "upcoming", "activities": [
+            {"activity": "Deploy data portal MVP", "deliverable": "Data Portal Live", "due_date": "November 15, 2026"},
+            {"activity": "Mid-term Progress Report submission", "deliverable": "Mid-term Report", "due_date": "November 30, 2026"},
+            {"activity": "Training needs assessment completion", "deliverable": "Training Needs Report", "due_date": "November 20, 2026"},
+            {"activity": "Submit November MPR", "deliverable": "MPR November 2026", "due_date": "November 30, 2026"},
+        ]},
+        8: {"month": "December 2026", "year": 2026, "status": "upcoming", "activities": [
+            {"activity": "Launch performance dashboards", "deliverable": "Dashboards Deployed", "due_date": "December 10, 2026"},
+            {"activity": "Develop training modules", "deliverable": "Training Curriculum", "due_date": "December 15, 2026"},
+            {"activity": "MILESTONE 3: Capacity Building Participation", "deliverable": "Milestone Achievement Report", "due_date": "December 31, 2026"},
+            {"activity": "Submit December MPR", "deliverable": "MPR December 2026", "due_date": "December 31, 2026"},
+        ]},
+        9: {"month": "January 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "First round of training programs across all universities", "deliverable": "Training Completion Report", "due_date": "January 25, 2027"},
+            {"activity": "Data quality framework implementation", "deliverable": "Data Quality Framework", "due_date": "January 20, 2027"},
+            {"activity": "Submit January MPR", "deliverable": "MPR January 2027", "due_date": "January 31, 2027"},
+        ]},
+        10: {"month": "February 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "Data validation and quality improvement cycles", "deliverable": "Data Quality Report", "due_date": "February 20, 2027"},
+            {"activity": "Research output enhancement initiatives", "deliverable": "Research Enhancement Plan", "due_date": "February 25, 2027"},
+            {"activity": "Submit February MPR", "deliverable": "MPR February 2027", "due_date": "February 28, 2027"},
+        ]},
+        11: {"month": "March 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "International collaboration framework development", "deliverable": "Collaboration Framework", "due_date": "March 15, 2027"},
+            {"activity": "Outcome-based education (OBE) implementation support", "deliverable": "OBE Guidelines", "due_date": "March 20, 2027"},
+            {"activity": "Submit March MPR", "deliverable": "MPR March 2027", "due_date": "March 31, 2027"},
+        ]},
+        12: {"month": "April 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "Accreditation preparedness assessment", "deliverable": "Accreditation Readiness Report", "due_date": "April 15, 2027"},
+            {"activity": "Quality assurance framework implementation", "deliverable": "QA Framework", "due_date": "April 25, 2027"},
+            {"activity": "Submit April MPR", "deliverable": "MPR April 2027", "due_date": "April 30, 2027"},
+        ]},
+        13: {"month": "May 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "Year 1 performance review", "deliverable": "Annual Performance Report", "due_date": "May 15, 2027"},
+            {"activity": "Enhanced data collection and reporting", "deliverable": "Enhanced Data Repository", "due_date": "May 20, 2027"},
+            {"activity": "Submit May MPR", "deliverable": "MPR May 2027", "due_date": "May 31, 2027"},
+        ]},
+        14: {"month": "June 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "MILESTONE 4: Minimum 10% Improvement in Performance Indicators", "deliverable": "Milestone Achievement Report", "due_date": "June 30, 2027"},
+            {"activity": "Mid-year performance assessment", "deliverable": "Mid-year Assessment", "due_date": "June 25, 2027"},
+            {"activity": "Submit June MPR", "deliverable": "MPR June 2027", "due_date": "June 30, 2027"},
+        ]},
+        15: {"month": "July 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "Advanced training programs for GRDAU staff", "deliverable": "Advanced Training Report", "due_date": "July 20, 2027"},
+            {"activity": "Research publication support and tracking", "deliverable": "Publication Report", "due_date": "July 25, 2027"},
+            {"activity": "Submit July MPR", "deliverable": "MPR July 2027", "due_date": "July 31, 2027"},
+        ]},
+        16: {"month": "August 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "International ranking agency engagement", "deliverable": "Engagement Report", "due_date": "August 20, 2027"},
+            {"activity": "Dashboard enhancements based on feedback", "deliverable": "Enhanced Dashboards", "due_date": "August 25, 2027"},
+            {"activity": "Submit August MPR", "deliverable": "MPR August 2027", "due_date": "August 31, 2027"},
+        ]},
+        17: {"month": "September 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "Citation analysis and improvement strategies", "deliverable": "Citation Report", "due_date": "September 15, 2027"},
+            {"activity": "Employer perception enhancement initiatives", "deliverable": "Employer Engagement Report", "due_date": "September 20, 2027"},
+            {"activity": "Submit September MPR", "deliverable": "MPR September 2027", "due_date": "September 30, 2027"},
+        ]},
+        18: {"month": "October 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "Academic reputation building strategies", "deliverable": "Reputation Strategy Document", "due_date": "October 15, 2027"},
+            {"activity": "IPR and patent filing support", "deliverable": "IPR Status Report", "due_date": "October 25, 2027"},
+            {"activity": "Submit October MPR", "deliverable": "MPR October 2027", "due_date": "October 31, 2027"},
+        ]},
+        19: {"month": "November 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "SDG-aligned research promotion", "deliverable": "SDG Research Report", "due_date": "November 15, 2027"},
+            {"activity": "International student enrollment strategies", "deliverable": "Internationalization Plan", "due_date": "November 20, 2027"},
+            {"activity": "Submit November MPR", "deliverable": "MPR November 2027", "due_date": "November 30, 2027"},
+        ]},
+        20: {"month": "December 2027", "year": 2027, "status": "upcoming", "activities": [
+            {"activity": "MILESTONE 5: Minimum 20% Improvement in Performance Indicators", "deliverable": "Milestone Achievement Report", "due_date": "December 31, 2027"},
+            {"activity": "Year-end performance review", "deliverable": "Year-end Report", "due_date": "December 20, 2027"},
+            {"activity": "Submit December MPR", "deliverable": "MPR December 2027", "due_date": "December 31, 2027"},
+        ]},
+        21: {"month": "January 2028", "year": 2028, "status": "upcoming", "activities": [
+            {"activity": "Global ranking submission preparation", "deliverable": "Ranking Submission Package", "due_date": "January 20, 2028"},
+            {"activity": "Final round of capacity building", "deliverable": "Final Training Report", "due_date": "January 25, 2028"},
+            {"activity": "Submit January MPR", "deliverable": "MPR January 2028", "due_date": "January 31, 2028"},
+        ]},
+        22: {"month": "February 2028", "year": 2028, "status": "upcoming", "activities": [
+            {"activity": "MILESTONE 6: Enhanced Global Rankings Participation of 10 colleges", "deliverable": "Milestone Achievement Report", "due_date": "February 29, 2028"},
+            {"activity": "Final dashboard and portal review", "deliverable": "Final System Review", "due_date": "February 25, 2028"},
+            {"activity": "Submit February MPR", "deliverable": "MPR February 2028", "due_date": "February 29, 2028"},
+        ]},
+        23: {"month": "March 2028", "year": 2028, "status": "upcoming", "activities": [
+            {"activity": "Sustainability planning and handover documentation", "deliverable": "Sustainability Plan", "due_date": "March 15, 2028"},
+            {"activity": "Lessons learned documentation", "deliverable": "Lessons Learned Report", "due_date": "March 20, 2028"},
+            {"activity": "Submit March MPR", "deliverable": "MPR March 2028", "due_date": "March 31, 2028"},
+        ]},
+        24: {"month": "April 2028", "year": 2028, "status": "upcoming", "activities": [
+            {"activity": "MILESTONE 7: Final Evaluation and Reporting", "deliverable": "Final Closure Report", "due_date": "April 30, 2028"},
+            {"activity": "Project closure and knowledge transfer", "deliverable": "Knowledge Transfer Report", "due_date": "April 25, 2028"},
+            {"activity": "Final MPR submission", "deliverable": "Final MPR", "due_date": "April 30, 2028"},
+            {"activity": "Handover of all project materials to MITRA", "deliverable": "Complete Project Documentation", "due_date": "April 30, 2028"},
+        ]},
+    }
 
 def get_working_days_in_month(year, month):
     """Get all working days (Monday to Friday) in a given month"""
     working_days = []
     first_day = datetime(year, month, 1)
+    
+    # Get last day of month
     if month == 12:
         last_day = datetime(year, month, 31)
     else:
@@ -512,23 +643,23 @@ def get_daily_breakdown_january_2028():
         }
     }
 
-def get_daily_breakdown_for_month(month_num, year):
+def get_daily_breakdown_for_month(month_num, year, month):
     """Get daily breakdown for a specific month"""
     
     # February 2028
-    if year == 2028 and month_num == 2:
+    if year == 2028 and month == 2:
         return get_daily_breakdown_february_2028()
     
     # January 2028
-    if year == 2028 and month_num == 1:
+    if year == 2028 and month == 1:
         return get_daily_breakdown_january_2028()
     
-    # For other months, generate generic daily breakdown based on monthly activities
+    # For other months, generate generic daily breakdown
     plan = get_24_month_plan()
     month_data = plan.get(month_num, {})
     activities = month_data.get("activities", [])
     
-    working_days = get_working_days_in_month(year, month_num)
+    working_days = get_working_days_in_month(year, month)
     daily_breakdown = {}
     
     for idx, working_day in enumerate(working_days):
@@ -539,10 +670,13 @@ def get_daily_breakdown_for_month(month_num, year):
             activity = activities[idx]
             daily_breakdown[date_str] = {
                 "task": activity["activity"],
-                "sub_tasks": [f"Complete {activity['activity'].lower()}", 
-                             f"Prepare {activity['deliverable']}",
-                             "Document progress",
-                             "Update trackers"],
+                "sub_tasks": [
+                    f"Plan and prepare for {activity['activity'].lower()}",
+                    f"Execute {activity['activity'].lower()}",
+                    f"Document progress and challenges",
+                    f"Prepare {activity['deliverable']}",
+                    f"Review and submit deliverables"
+                ],
                 "deliverable": activity["deliverable"],
                 "category": get_category_from_activity(activity["activity"]),
                 "priority": "High" if "MILESTONE" in activity["activity"] else "Medium"
@@ -551,7 +685,13 @@ def get_daily_breakdown_for_month(month_num, year):
             # Generic tasks for remaining days
             daily_breakdown[date_str] = {
                 "task": "Continue project activities and documentation",
-                "sub_tasks": ["Review progress", "Update documentation", "Coordinate with team", "Plan next steps"],
+                "sub_tasks": [
+                    "Review progress against plan",
+                    "Update project documentation",
+                    "Coordinate with team members",
+                    "Plan next day's activities",
+                    "Log daily work in system"
+                ],
                 "deliverable": "Daily Progress Report",
                 "category": "General",
                 "priority": "Medium"
@@ -578,143 +718,6 @@ def get_category_from_activity(activity):
         return "Milestone"
     else:
         return "General"
-
-def get_24_month_plan():
-    """Return the complete 24-month plan"""
-    return {
-        1: {"month": "May 2026", "status": "completed", "activities": [
-            {"activity": "SANGAM Orientation & Training", "deliverable": "Training Completed", "due_date": "May 6, 2026"},
-            {"activity": "University Onboarding & Data Source Mapping", "deliverable": "Data Source Inventory", "due_date": "May 8, 2026"},
-            {"activity": "NIRF Data Collection", "deliverable": "NIRF Data Repository", "due_date": "May 20, 2026"},
-            {"activity": "Stakeholder Consultation Meetings", "deliverable": "Meeting Minutes", "due_date": "May 27, 2026"},
-            {"activity": "Inception Report & GRDAU Framework", "deliverable": "Inception Report", "due_date": "May 26, 2026"},
-            {"activity": "Monthly Progress Report Submission", "deliverable": "MPR May 2026", "due_date": "May 29, 2026"},
-        ]},
-        2: {"month": "June 2026", "status": "current", "activities": [
-            {"activity": "Complete Diagnostic Assessments across all 7 universities", "deliverable": "7 Diagnostic Reports", "due_date": "June 30, 2026"},
-            {"activity": "Continue baseline data collection and validation", "deliverable": "Validated Baseline Data", "due_date": "June 25, 2026"},
-            {"activity": "Establish GRDAU framework documentation", "deliverable": "GRDAU SOP Document", "due_date": "June 20, 2026"},
-            {"activity": "Conduct initial GRDAU training for university coordinators", "deliverable": "Training Session 1 Completed", "due_date": "June 15, 2026"},
-            {"activity": "Submit June MPR", "deliverable": "MPR June 2026", "due_date": "June 30, 2026"},
-        ]},
-        3: {"month": "July 2026", "status": "upcoming", "activities": [
-            {"activity": "Complete gap analysis against NIRF/NAAC/Global Rankings", "deliverable": "Gap Analysis Report", "due_date": "July 15, 2026"},
-            {"activity": "SWOT analysis for each university", "deliverable": "7 SWOT Reports", "due_date": "July 20, 2026"},
-            {"activity": "Finalize GRDAU establishment in all universities", "deliverable": "7 GRDAUs Operational", "due_date": "July 31, 2026"},
-            {"activity": "Submit July MPR", "deliverable": "MPR July 2026", "due_date": "July 31, 2026"},
-        ]},
-        4: {"month": "August 2026", "status": "upcoming", "activities": [
-            {"activity": "Develop Institutional Development Plans (IDPs)", "deliverable": "IDP Drafts", "due_date": "August 15, 2026"},
-            {"activity": "Stakeholder review of IDPs", "deliverable": "Stakeholder Feedback", "due_date": "August 25, 2026"},
-            {"activity": "Design data portal architecture", "deliverable": "Portal Design Document", "due_date": "August 31, 2026"},
-            {"activity": "Submit August MPR", "deliverable": "MPR August 2026", "due_date": "August 31, 2026"},
-        ]},
-        5: {"month": "September 2026", "status": "upcoming", "activities": [
-            {"activity": "Finalize IDPs with university approval", "deliverable": "7 Approved IDPs", "due_date": "September 15, 2026"},
-            {"activity": "Create performance monitoring dashboard mockups", "deliverable": "Dashboard Designs", "due_date": "September 20, 2026"},
-            {"activity": "MILESTONE 1: Establishment of Sustainable Data & Quality Systems", "deliverable": "Milestone Achievement Report", "due_date": "September 30, 2026"},
-            {"activity": "Submit September MPR", "deliverable": "MPR September 2026", "due_date": "September 30, 2026"},
-        ]},
-        6: {"month": "October 2026", "status": "upcoming", "activities": [
-            {"activity": "Complete dashboard development", "deliverable": "Dashboard Beta Version", "due_date": "October 15, 2026"},
-            {"activity": "MILESTONE 2: Institutional Development Plans and Execution Monitoring", "deliverable": "Milestone Achievement Report", "due_date": "October 31, 2026"},
-            {"activity": "Mid-term review preparation", "deliverable": "Mid-term Review Materials", "due_date": "October 25, 2026"},
-            {"activity": "Submit October MPR", "deliverable": "MPR October 2026", "due_date": "October 31, 2026"},
-        ]},
-        7: {"month": "November 2026", "status": "upcoming", "activities": [
-            {"activity": "Deploy data portal MVP", "deliverable": "Data Portal Live", "due_date": "November 15, 2026"},
-            {"activity": "Mid-term Progress Report submission", "deliverable": "Mid-term Report", "due_date": "November 30, 2026"},
-            {"activity": "Training needs assessment completion", "deliverable": "Training Needs Report", "due_date": "November 20, 2026"},
-            {"activity": "Submit November MPR", "deliverable": "MPR November 2026", "due_date": "November 30, 2026"},
-        ]},
-        8: {"month": "December 2026", "status": "upcoming", "activities": [
-            {"activity": "Launch performance dashboards", "deliverable": "Dashboards Deployed", "due_date": "December 10, 2026"},
-            {"activity": "Develop training modules", "deliverable": "Training Curriculum", "due_date": "December 15, 2026"},
-            {"activity": "MILESTONE 3: Capacity Building Participation", "deliverable": "Milestone Achievement Report", "due_date": "December 31, 2026"},
-            {"activity": "Submit December MPR", "deliverable": "MPR December 2026", "due_date": "December 31, 2026"},
-        ]},
-        9: {"month": "January 2027", "status": "upcoming", "activities": [
-            {"activity": "First round of training programs across all universities", "deliverable": "Training Completion Report", "due_date": "January 25, 2027"},
-            {"activity": "Data quality framework implementation", "deliverable": "Data Quality Framework", "due_date": "January 20, 2027"},
-            {"activity": "Submit January MPR", "deliverable": "MPR January 2027", "due_date": "January 31, 2027"},
-        ]},
-        10: {"month": "February 2027", "status": "upcoming", "activities": [
-            {"activity": "Data validation and quality improvement cycles", "deliverable": "Data Quality Report", "due_date": "February 20, 2027"},
-            {"activity": "Research output enhancement initiatives", "deliverable": "Research Enhancement Plan", "due_date": "February 25, 2027"},
-            {"activity": "Submit February MPR", "deliverable": "MPR February 2027", "due_date": "February 28, 2027"},
-        ]},
-        11: {"month": "March 2027", "status": "upcoming", "activities": [
-            {"activity": "International collaboration framework development", "deliverable": "Collaboration Framework", "due_date": "March 15, 2027"},
-            {"activity": "Outcome-based education (OBE) implementation support", "deliverable": "OBE Guidelines", "due_date": "March 20, 2027"},
-            {"activity": "Submit March MPR", "deliverable": "MPR March 2027", "due_date": "March 31, 2027"},
-        ]},
-        12: {"month": "April 2027", "status": "upcoming", "activities": [
-            {"activity": "Accreditation preparedness assessment", "deliverable": "Accreditation Readiness Report", "due_date": "April 15, 2027"},
-            {"activity": "Quality assurance framework implementation", "deliverable": "QA Framework", "due_date": "April 25, 2027"},
-            {"activity": "Submit April MPR", "deliverable": "MPR April 2027", "due_date": "April 30, 2027"},
-        ]},
-        13: {"month": "May 2027", "status": "upcoming", "activities": [
-            {"activity": "Year 1 performance review", "deliverable": "Annual Performance Report", "due_date": "May 15, 2027"},
-            {"activity": "Enhanced data collection and reporting", "deliverable": "Enhanced Data Repository", "due_date": "May 20, 2027"},
-            {"activity": "Submit May MPR", "deliverable": "MPR May 2027", "due_date": "May 31, 2027"},
-        ]},
-        14: {"month": "June 2027", "status": "upcoming", "activities": [
-            {"activity": "MILESTONE 4: Minimum 10% Improvement in Performance Indicators", "deliverable": "Milestone Achievement Report", "due_date": "June 30, 2027"},
-            {"activity": "Mid-year performance assessment", "deliverable": "Mid-year Assessment", "due_date": "June 25, 2027"},
-            {"activity": "Submit June MPR", "deliverable": "MPR June 2027", "due_date": "June 30, 2027"},
-        ]},
-        15: {"month": "July 2027", "status": "upcoming", "activities": [
-            {"activity": "Advanced training programs for GRDAU staff", "deliverable": "Advanced Training Report", "due_date": "July 20, 2027"},
-            {"activity": "Research publication support and tracking", "deliverable": "Publication Report", "due_date": "July 25, 2027"},
-            {"activity": "Submit July MPR", "deliverable": "MPR July 2027", "due_date": "July 31, 2027"},
-        ]},
-        16: {"month": "August 2027", "status": "upcoming", "activities": [
-            {"activity": "International ranking agency engagement", "deliverable": "Engagement Report", "due_date": "August 20, 2027"},
-            {"activity": "Dashboard enhancements based on feedback", "deliverable": "Enhanced Dashboards", "due_date": "August 25, 2027"},
-            {"activity": "Submit August MPR", "deliverable": "MPR August 2027", "due_date": "August 31, 2027"},
-        ]},
-        17: {"month": "September 2027", "status": "upcoming", "activities": [
-            {"activity": "Citation analysis and improvement strategies", "deliverable": "Citation Report", "due_date": "September 15, 2027"},
-            {"activity": "Employer perception enhancement initiatives", "deliverable": "Employer Engagement Report", "due_date": "September 20, 2027"},
-            {"activity": "Submit September MPR", "deliverable": "MPR September 2027", "due_date": "September 30, 2027"},
-        ]},
-        18: {"month": "October 2027", "status": "upcoming", "activities": [
-            {"activity": "Academic reputation building strategies", "deliverable": "Reputation Strategy Document", "due_date": "October 15, 2027"},
-            {"activity": "IPR and patent filing support", "deliverable": "IPR Status Report", "due_date": "October 25, 2027"},
-            {"activity": "Submit October MPR", "deliverable": "MPR October 2027", "due_date": "October 31, 2027"},
-        ]},
-        19: {"month": "November 2027", "status": "upcoming", "activities": [
-            {"activity": "SDG-aligned research promotion", "deliverable": "SDG Research Report", "due_date": "November 15, 2027"},
-            {"activity": "International student enrollment strategies", "deliverable": "Internationalization Plan", "due_date": "November 20, 2027"},
-            {"activity": "Submit November MPR", "deliverable": "MPR November 2027", "due_date": "November 30, 2027"},
-        ]},
-        20: {"month": "December 2027", "status": "upcoming", "activities": [
-            {"activity": "MILESTONE 5: Minimum 20% Improvement in Performance Indicators", "deliverable": "Milestone Achievement Report", "due_date": "December 31, 2027"},
-            {"activity": "Year-end performance review", "deliverable": "Year-end Report", "due_date": "December 20, 2027"},
-            {"activity": "Submit December MPR", "deliverable": "MPR December 2027", "due_date": "December 31, 2027"},
-        ]},
-        21: {"month": "January 2028", "status": "upcoming", "activities": [
-            {"activity": "Global ranking submission preparation", "deliverable": "Ranking Submission Package", "due_date": "January 20, 2028"},
-            {"activity": "Final round of capacity building", "deliverable": "Final Training Report", "due_date": "January 25, 2028"},
-            {"activity": "Submit January MPR", "deliverable": "MPR January 2028", "due_date": "January 31, 2028"},
-        ]},
-        22: {"month": "February 2028", "status": "upcoming", "activities": [
-            {"activity": "MILESTONE 6: Enhanced Global Rankings Participation of 10 colleges", "deliverable": "Milestone Achievement Report", "due_date": "February 29, 2028"},
-            {"activity": "Final dashboard and portal review", "deliverable": "Final System Review", "due_date": "February 25, 2028"},
-            {"activity": "Submit February MPR", "deliverable": "MPR February 2028", "due_date": "February 29, 2028"},
-        ]},
-        23: {"month": "March 2028", "status": "upcoming", "activities": [
-            {"activity": "Sustainability planning and handover documentation", "deliverable": "Sustainability Plan", "due_date": "March 15, 2028"},
-            {"activity": "Lessons learned documentation", "deliverable": "Lessons Learned Report", "due_date": "March 20, 2028"},
-            {"activity": "Submit March MPR", "deliverable": "MPR March 2028", "due_date": "March 31, 2028"},
-        ]},
-        24: {"month": "April 2028", "status": "upcoming", "activities": [
-            {"activity": "MILESTONE 7: Final Evaluation and Reporting", "deliverable": "Final Closure Report", "due_date": "April 30, 2028"},
-            {"activity": "Project closure and knowledge transfer", "deliverable": "Knowledge Transfer Report", "due_date": "April 25, 2028"},
-            {"activity": "Final MPR submission", "deliverable": "Final MPR", "due_date": "April 30, 2028"},
-            {"activity": "Handover of all project materials to MITRA", "deliverable": "Complete Project Documentation", "due_date": "April 30, 2028"},
-        ]},
-    }
 
 # ============================================================
 # DATA MANAGEMENT FUNCTIONS
@@ -749,20 +752,18 @@ def get_all_daily_tasks():
         plan = get_24_month_plan()
         
         for month_num, month_data in plan.items():
-            # Determine year
-            if month_num <= 12:
-                year = 2026
-                month = month_num
-            else:
-                year = 2027 if month_num <= 24 else 2028
-                month = month_num - 12 if month_num <= 24 else month_num - 24
+            year = month_data["year"]
+            month_name = month_data["month"].split()[0]
             
-            # Adjust for 2028
-            if month_num >= 21:
-                year = 2028
-                month = month_num - 20
+            # Convert month name to number
+            month_map = {
+                "January": 1, "February": 2, "March": 3, "April": 4,
+                "May": 5, "June": 6, "July": 7, "August": 8,
+                "September": 9, "October": 10, "November": 11, "December": 12
+            }
+            month = month_map[month_name]
             
-            daily_breakdown = get_daily_breakdown_for_month(month_num, year)
+            daily_breakdown = get_daily_breakdown_for_month(month_num, year, month)
             for date_str, task_info in daily_breakdown.items():
                 all_tasks[date_str] = task_info
         
@@ -832,12 +833,12 @@ def show_credentials():
         <p><strong>Password format:</strong> <code>FirstName@2026</code></p>
         <table style="width:100%">
             <tr><th>Role</th><th>Email</th><th>Password</th></tr>
-            <tr><td style="background:#dc3545;color:white;padding:2px 8px;border-radius:5px;">Admin</td>
-                <td>admin@mahastride.com</td><td>Admin@2026</td></tr>
-            <tr><td style="background:#17a2b8;color:white;padding:2px 8px;border-radius:5px;">Project Lead</td>
-                <td>projectlead@mahastride.com</td><td>ProjectLead@2026</td></tr>
-            <tr><td style="background:#28a745;color:white;padding:2px 8px;border-radius:5px;">Data Analyst</td>
-                <td>sneha@mu.edu</td><td>Sneha@2026</td></tr>
+            <tr><td style="background:#dc3545;color:white;padding:2px 8px;border-radius:5px;">Admin</div>
+                <td>admin@mahastride.com</div><td>Admin@2026</div></tr>
+            <tr><td style="background:#17a2b8;color:white;padding:2px 8px;border-radius:5px;">Project Lead</div>
+                <td>projectlead@mahastride.com</div><td>ProjectLead@2026</div></tr>
+            <tr><td style="background:#28a745;color:white;padding:2px 8px;border-radius:5px;">Data Analyst</div>
+                <td>sneha@mu.edu</div><td>Sneha@2026</div></tr>
         </table>
     </div>
     """, unsafe_allow_html=True)
@@ -850,24 +851,23 @@ def admin_dashboard():
     st.markdown("## 📊 Administrator Dashboard")
     
     all_tasks = get_all_daily_tasks()
-    completions = load_completions()
     
     total_days = len(all_tasks)
     completed_initial = len([d for d in all_tasks.keys() if d <= "2026-06-05"])
     
     col1, col2, col3 = st.columns(3)
-    col1.metric("📅 Total Working Days", total_days)
+    col1.metric("📅 Total Working Days (24 months)", total_days)
     col2.metric("✅ Auto-Completed (May 4 - June 5)", completed_initial)
     col3.metric("👥 Data Analysts", sum(1 for u in USERS.values() if u.get("role") == "data_analyst"))
     
     st.markdown("---")
     
-    st.subheader("Monthly View")
+    st.subheader("📅 24-Month Plan Overview")
     plan = get_24_month_plan()
     
     for month_num, month_data in plan.items():
         status_icon = "✅" if month_data["status"] == "completed" else "🔄" if month_data["status"] == "current" else "📅"
-        with st.expander(f"{status_icon} {month_data['month']}"):
+        with st.expander(f"{status_icon} {month_data['month']} - {month_data['year']}"):
             for activity in month_data["activities"]:
                 st.markdown(f"• **{activity['activity']}** - *{activity['deliverable']}* (Due: {activity['due_date']})")
 
@@ -892,7 +892,6 @@ def project_lead_dashboard():
     if daily_tasks:
         st.subheader(f"Daily Activity Plan - {month_names[selected_month-1]} {selected_year}")
         
-        # Calendar view
         for task in daily_tasks:
             if task["status"] == "Completed":
                 status_class = "daily-task-completed"
@@ -929,7 +928,7 @@ def data_analyst_dashboard(email, user):
     with col2:
         month_names = ["January", "February", "March", "April", "May", "June", 
                        "July", "August", "September", "October", "November", "December"]
-        selected_month = st.selectbox("Select Month", range(1, 13), format_func=lambda x: month_names[x-1], index=5)  # Default to June
+        selected_month = st.selectbox("Select Month", range(1, 13), format_func=lambda x: month_names[x-1], index=5)
     
     st.markdown("---")
     
@@ -937,7 +936,6 @@ def data_analyst_dashboard(email, user):
     daily_tasks = get_user_tasks(email, selected_year, selected_month)
     
     if daily_tasks:
-        # Progress summary for the month
         total = len(daily_tasks)
         completed = sum(1 for t in daily_tasks if t["status"] == "Completed")
         
@@ -954,7 +952,7 @@ def data_analyst_dashboard(email, user):
         today = datetime.now().strftime("%Y-%m-%d")
         today_task = next((t for t in daily_tasks if t["date"] == today), None)
         
-        if today_task:
+        if today_task and today_task["date"] > "2026-06-05":
             st.subheader("📌 Today's Task")
             if today_task["status"] == "Completed":
                 st.markdown(f"""
@@ -1001,7 +999,6 @@ def data_analyst_dashboard(email, user):
         st.markdown("---")
         st.subheader(f"📅 All Tasks for {month_names[selected_month-1]} {selected_year}")
         
-        # Display all tasks for the month in a table
         for task in daily_tasks:
             status_icon = "✅" if task["status"] == "Completed" else "⏳"
             st.markdown(f"""
@@ -1012,12 +1009,6 @@ def data_analyst_dashboard(email, user):
                 <strong>Status:</strong> {task['status']}
             </div>
             """, unsafe_allow_html=True)
-        
-        # Export option
-        if st.button("📥 Download Monthly Tasks as CSV"):
-            df = pd.DataFrame(daily_tasks)
-            csv = df.to_csv(index=False).encode('utf-8')
-            st.download_button("Download CSV", csv, f"tasks_{selected_year}_{selected_month}.csv", "text/csv")
     else:
         st.info(f"No tasks available for {month_names[selected_month-1]} {selected_year}")
 
@@ -1039,6 +1030,7 @@ def main():
             <h1>📋 MahaSTRIDE Daily Activity Planner</h1>
             <p>Complete 24-Month Daily Task Breakdown | May 2026 - April 2028</p>
             <p>Monday to Friday | 10:00 AM - 6:00 PM</p>
+            <p>✅ May 4 to June 5, 2026: Auto-Completed | June 8, 2026 onwards: Pending</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -1092,6 +1084,11 @@ def main():
         st.markdown("📅 Monday to Friday")
         
         st.markdown("---")
+        st.markdown("**Status**")
+        st.markdown("✅ May 4 - June 5, 2026: COMPLETED")
+        st.markdown("📅 June 8, 2026 onwards: PENDING")
+        
+        st.markdown("---")
         
         if st.button("🚪 Logout", use_container_width=True):
             st.session_state.authenticated = False
@@ -1105,7 +1102,7 @@ def main():
             st.markdown("## 📅 24-Month Activity Plan")
             plan = get_24_month_plan()
             for month_num, month_data in plan.items():
-                with st.expander(f"{month_data['month']}"):
+                with st.expander(f"{month_data['month']} {month_data['year']}"):
                     for activity in month_data["activities"]:
                         st.markdown(f"• **{activity['activity']}** - {activity['deliverable']} (Due: {activity['due_date']})")
     
