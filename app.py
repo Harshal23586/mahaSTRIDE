@@ -59,6 +59,13 @@ st.markdown("""
     .admin-badge { background-color: #dc3545; color: white; }
     .lead-badge { background-color: #17a2b8; color: white; }
     .analyst-badge { background-color: #28a745; color: white; }
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -69,12 +76,14 @@ USERS = {
     "admin@mahastride.com": {
         "password": sha256("Admin@2026".encode()).hexdigest(),
         "role": "admin",
-        "name": "Administrator"
+        "name": "Administrator",
+        "team": "MITRA"
     },
     "projectlead@mahastride.com": {
         "password": sha256("ProjectLead@2026".encode()).hexdigest(),
         "role": "project_lead",
-        "name": "Dr. Harshal Kotwal"
+        "name": "Dr. Harshal Kotwal",
+        "team": "ICARE"
     },
     "sneha@mu.edu": {
         "password": sha256("Sneha@2026".encode()).hexdigest(),
@@ -82,11 +91,29 @@ USERS = {
         "name": "Sneha Kashitkar",
         "team": "Mumbai University"
     },
+    "sagar@mu.edu": {
+        "password": sha256("Sagar@2026".encode()).hexdigest(),
+        "role": "data_analyst",
+        "name": "Sagar Teli",
+        "team": "Mumbai University"
+    },
     "shubham@mitra.gov.in": {
         "password": sha256("Shubham@2026".encode()).hexdigest(),
         "role": "data_analyst",
         "name": "Shubham Singh",
         "team": "MITRA"
+    },
+    "jagan@sspu.edu": {
+        "password": sha256("Jagan@2026".encode()).hexdigest(),
+        "role": "data_analyst",
+        "name": "Jagan Sridhar",
+        "team": "Savitribai Phule Pune University"
+    },
+    "vaibhav@coep.edu": {
+        "password": sha256("Vaibhav@2026".encode()).hexdigest(),
+        "role": "data_analyst",
+        "name": "Vaibhav Ambekar",
+        "team": "COEP Technological University"
     }
 }
 
@@ -95,6 +122,7 @@ USERS = {
 # ============================================================
 DAILY_TASKS_FILE = "daily_tasks_breakdown.json"
 TASK_COMPLETION_FILE = "task_completion.json"
+ACTIVITY_LOG_FILE = "activity_log.json"
 
 # ============================================================
 # COMPLETE 24-MONTH PLAN
@@ -242,7 +270,6 @@ def get_working_days_in_month(year, month):
     working_days = []
     first_day = datetime(year, month, 1)
     
-    # Get last day of month
     if month == 12:
         last_day = datetime(year, month, 31)
     else:
@@ -250,409 +277,39 @@ def get_working_days_in_month(year, month):
     
     current = first_day
     while current <= last_day:
-        if current.weekday() < 5:  # Monday to Friday
+        if current.weekday() < 5:
             working_days.append(current)
         current += timedelta(days=1)
     return working_days
 
-def get_daily_breakdown_february_2028():
-    """Daily breakdown for February 2028"""
-    return {
-        "2028-02-01": {
-            "task": "Review ranking submission requirements for 10 colleges",
-            "sub_tasks": [
-                "Identify 10 target colleges for ranking submission",
-                "Review QS/THE/US News submission guidelines",
-                "Create ranking data checklist"
-            ],
-            "deliverable": "Ranking Requirements Document",
-            "category": "Planning",
-            "priority": "High"
-        },
-        "2028-02-02": {
-            "task": "Collect ranking data for first 5 colleges",
-            "sub_tasks": [
-                "Gather research publication data",
-                "Collect citation metrics",
-                "Compile faculty credentials"
-            ],
-            "deliverable": "Ranking Data Set - Batch 1",
-            "category": "Data Collection",
-            "priority": "High"
-        },
-        "2028-02-03": {
-            "task": "Collect ranking data for remaining 5 colleges",
-            "sub_tasks": [
-                "Complete data collection for all 10 colleges",
-                "Validate collected data",
-                "Identify data gaps"
-            ],
-            "deliverable": "Ranking Data Set - Complete",
-            "category": "Data Collection",
-            "priority": "High"
-        },
-        "2028-02-04": {
-            "task": "Data validation and quality check",
-            "sub_tasks": [
-                "Cross-verify all ranking data",
-                "Check for inconsistencies",
-                "Prepare validation report"
-            ],
-            "deliverable": "Data Validation Report",
-            "category": "Analysis",
-            "priority": "High"
-        },
-        "2028-02-07": {
-            "task": "Prepare ranking submission for QS",
-            "sub_tasks": [
-                "Fill QS ranking templates",
-                "Upload supporting documents",
-                "Review submission completeness"
-            ],
-            "deliverable": "QS Ranking Submission",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-02-08": {
-            "task": "Prepare ranking submission for THE",
-            "sub_tasks": [
-                "Complete THE ranking forms",
-                "Submit research impact data",
-                "Verify international metrics"
-            ],
-            "deliverable": "THE Ranking Submission",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-02-09": {
-            "task": "Prepare ranking submission for US News",
-            "sub_tasks": [
-                "Complete US News submission",
-                "Submit global reputation data",
-                "Finalize all submissions"
-            ],
-            "deliverable": "US News Ranking Submission",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-02-10": {
-            "task": "Compile Milestone 6 Achievement Report",
-            "sub_tasks": [
-                "Document all ranking submissions",
-                "Prepare evidence package",
-                "Draft milestone report"
-            ],
-            "deliverable": "Milestone 6 Report Draft",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-02-11": {
-            "task": "Finalize and submit Milestone 6 Report",
-            "sub_tasks": [
-                "Review milestone report",
-                "Get client approval",
-                "Submit to PMU"
-            ],
-            "deliverable": "Milestone Achievement Report",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-02-14": {
-            "task": "Begin final dashboard review",
-            "sub_tasks": [
-                "Check all dashboard modules",
-                "Verify data accuracy",
-                "Test all visualizations"
-            ],
-            "deliverable": "Dashboard Review Checklist",
-            "category": "Technical",
-            "priority": "High"
-        },
-        "2028-02-15": {
-            "task": "Dashboard performance testing",
-            "sub_tasks": [
-                "Load testing",
-                "Response time analysis",
-                "Identify bottlenecks"
-            ],
-            "deliverable": "Performance Test Report",
-            "category": "Technical",
-            "priority": "High"
-        },
-        "2028-02-16": {
-            "task": "Portal functionality review",
-            "sub_tasks": [
-                "Test all portal features",
-                "Verify user access controls",
-                "Check data export functionality"
-            ],
-            "deliverable": "Portal Review Report",
-            "category": "Technical",
-            "priority": "Medium"
-        },
-        "2028-02-17": {
-            "task": "Incorporate feedback and fixes",
-            "sub_tasks": [
-                "Address review comments",
-                "Fix identified issues",
-                "Update documentation"
-            ],
-            "deliverable": "Updated Dashboard/Portal",
-            "category": "Technical",
-            "priority": "High"
-        },
-        "2028-02-18": {
-            "task": "Final System Review completion",
-            "sub_tasks": [
-                "Conduct final acceptance test",
-                "Prepare system review report",
-                "Get client sign-off"
-            ],
-            "deliverable": "Final System Review Report",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-02-21": {
-            "task": "Prepare February MPR draft",
-            "sub_tasks": [
-                "Compile monthly achievements",
-                "Document milestone progress",
-                "List deliverables completed"
-            ],
-            "deliverable": "February MPR Draft",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-02-22": {
-            "task": "Review February activities",
-            "sub_tasks": [
-                "Verify all activities logged",
-                "Check attendance records",
-                "Review team contributions"
-            ],
-            "deliverable": "Activity Verification Report",
-            "category": "Reporting",
-            "priority": "Medium"
-        },
-        "2028-02-23": {
-            "task": "Finalize February MPR",
-            "sub_tasks": [
-                "Incorporate feedback",
-                "Format report as per SOP",
-                "Prepare for submission"
-            ],
-            "deliverable": "Final February MPR",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-02-24": {
-            "task": "Submit February MPR to PMU",
-            "sub_tasks": [
-                "Send to pmu.mahastride@mahamitra.org",
-                "Get acknowledgment",
-                "Archive submission"
-            ],
-            "deliverable": "MPR Submission Confirmation",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-02-25": {
-            "task": "Plan March 2028 activities",
-            "sub_tasks": [
-                "Review remaining deliverables",
-                "Create March work plan",
-                "Assign responsibilities"
-            ],
-            "deliverable": "March 2028 Work Plan",
-            "category": "Planning",
-            "priority": "Medium"
-        },
-        "2028-02-28": {
-            "task": "Month-end reconciliation",
-            "sub_tasks": [
-                "Complete pending tasks",
-                "Update all trackers",
-                "Prepare for final phase"
-            ],
-            "deliverable": "Month-end Status Report",
-            "category": "Reporting",
-            "priority": "Medium"
-        },
-        "2028-02-29": {
-            "task": "Leap day - Final milestone review",
-            "sub_tasks": [
-                "Review Milestone 6 achievement",
-                "Prepare for Phase 5 completion",
-                "Team coordination meeting"
-            ],
-            "deliverable": "Milestone Review Document",
-            "category": "Meetings",
-            "priority": "High"
-        }
-    }
-
-def get_daily_breakdown_january_2028():
-    """Daily breakdown for January 2028"""
-    return {
-        "2028-01-03": {
-            "task": "Final ranking submission preparation",
-            "sub_tasks": ["Review ranking requirements", "Collect final data", "Validate all metrics"],
-            "deliverable": "Ranking Preparation Checklist",
-            "category": "Planning",
-            "priority": "High"
-        },
-        "2028-01-04": {
-            "task": "Global ranking data compilation",
-            "sub_tasks": ["Compile QS data", "Compile THE data", "Compile US News data"],
-            "deliverable": "Complete Ranking Data Package",
-            "category": "Data Collection",
-            "priority": "High"
-        },
-        "2028-01-05": {
-            "task": "Final round of capacity building",
-            "sub_tasks": ["Schedule training sessions", "Prepare materials", "Conduct training"],
-            "deliverable": "Final Training Report",
-            "category": "Training",
-            "priority": "High"
-        },
-        "2028-01-06": {
-            "task": "Prepare January MPR",
-            "sub_tasks": ["Compile monthly data", "Draft report", "Get approvals"],
-            "deliverable": "MPR January 2028",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-01-07": {
-            "task": "Ranking submission review",
-            "sub_tasks": ["Quality check", "Peer review", "Final corrections"],
-            "deliverable": "Ranking Submission Review",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-01-10": {
-            "task": "Submit January MPR",
-            "sub_tasks": ["Send to PMU", "Get acknowledgment", "Archive"],
-            "deliverable": "MPR Submission",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-01-11": {
-            "task": "Continue ranking preparations",
-            "sub_tasks": ["Update missing data", "Refine metrics", "Prepare narratives"],
-            "deliverable": "Updated Ranking Data",
-            "category": "Data Collection",
-            "priority": "Medium"
-        },
-        "2028-01-12": {
-            "task": "Coordinate with ranking agencies",
-            "sub_tasks": ["Schedule calls", "Clarify requirements", "Submit queries"],
-            "deliverable": "Agency Communication Log",
-            "category": "Coordination",
-            "priority": "High"
-        },
-        "2028-01-13": {
-            "task": "Finalize all ranking submissions",
-            "sub_tasks": ["Complete QS", "Complete THE", "Complete US News"],
-            "deliverable": "All Submissions Complete",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-01-14": {
-            "task": "Prepare for milestone 6",
-            "sub_tasks": ["Compile evidence", "Draft report", "Review with team"],
-            "deliverable": "Milestone 6 Draft",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-01-17": {
-            "task": "Continue milestone preparation",
-            "sub_tasks": ["Format report", "Add supporting docs", "Final review"],
-            "deliverable": "Milestone 6 Report",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-01-18": {
-            "task": "Submit milestone 6 for approval",
-            "sub_tasks": ["Send to Project Lead", "Address feedback", "Finalize"],
-            "deliverable": "Approved Milestone Report",
-            "category": "Reporting",
-            "priority": "High"
-        },
-        "2028-01-19": {
-            "task": "Plan February activities",
-            "sub_tasks": ["Create work plan", "Set priorities", "Assign tasks"],
-            "deliverable": "February Work Plan",
-            "category": "Planning",
-            "priority": "Medium"
-        },
-        "2028-01-20": {
-            "task": "Team meeting for final phase",
-            "sub_tasks": ["Review progress", "Discuss challenges", "Align on goals"],
-            "deliverable": "Meeting Minutes",
-            "category": "Meetings",
-            "priority": "Medium"
-        },
-        "2028-01-21": {
-            "task": "Continue daily operations",
-            "sub_tasks": ["Monitor dashboards", "Update data", "Respond to queries"],
-            "deliverable": "Daily Activity Log",
-            "category": "Operations",
-            "priority": "Medium"
-        },
-        "2028-01-24": {
-            "task": "Prepare for final evaluation",
-            "sub_tasks": ["Review project goals", "Compile achievements", "Identify gaps"],
-            "deliverable": "Evaluation Preparation Document",
-            "category": "Planning",
-            "priority": "High"
-        },
-        "2028-01-25": {
-            "task": "Final dashboard review",
-            "sub_tasks": ["Check all features", "Verify data", "Test performance"],
-            "deliverable": "Dashboard Review Report",
-            "category": "Technical",
-            "priority": "High"
-        },
-        "2028-01-26": {
-            "task": "Portal final review",
-            "sub_tasks": ["Check functionality", "Verify security", "Test usability"],
-            "deliverable": "Portal Review Report",
-            "category": "Technical",
-            "priority": "High"
-        },
-        "2028-01-27": {
-            "task": "Final system review",
-            "sub_tasks": ["Integrate feedback", "Make improvements", "Document changes"],
-            "deliverable": "System Review Complete",
-            "category": "Technical",
-            "priority": "High"
-        },
-        "2028-01-28": {
-            "task": "Month-end planning",
-            "sub_tasks": ["Review January progress", "Plan February", "Update trackers"],
-            "deliverable": "Monthly Planning Document",
-            "category": "Planning",
-            "priority": "Medium"
-        },
-        "2028-01-31": {
-            "task": "Submit January MPR (if not done)",
-            "sub_tasks": ["Final submission", "Confirm receipt", "Archive"],
-            "deliverable": "MPR January 2028 Complete",
-            "category": "Reporting",
-            "priority": "High"
-        }
-    }
-
 def get_daily_breakdown_for_month(month_num, year, month):
     """Get daily breakdown for a specific month"""
     
-    # February 2028
+    # February 2028 detailed breakdown
     if year == 2028 and month == 2:
-        return get_daily_breakdown_february_2028()
-    
-    # January 2028
-    if year == 2028 and month == 1:
-        return get_daily_breakdown_january_2028()
+        return {
+            "2028-02-01": {"task": "Review ranking submission requirements for 10 colleges", "sub_tasks": ["Identify 10 target colleges", "Review QS/THE/US News guidelines", "Create ranking data checklist"], "deliverable": "Ranking Requirements Document", "category": "Planning", "priority": "High"},
+            "2028-02-02": {"task": "Collect ranking data for first 5 colleges", "sub_tasks": ["Gather research publication data", "Collect citation metrics", "Compile faculty credentials"], "deliverable": "Ranking Data Set - Batch 1", "category": "Data Collection", "priority": "High"},
+            "2028-02-03": {"task": "Collect ranking data for remaining 5 colleges", "sub_tasks": ["Complete data collection", "Validate collected data", "Identify data gaps"], "deliverable": "Ranking Data Set - Complete", "category": "Data Collection", "priority": "High"},
+            "2028-02-04": {"task": "Data validation and quality check", "sub_tasks": ["Cross-verify all ranking data", "Check for inconsistencies", "Prepare validation report"], "deliverable": "Data Validation Report", "category": "Analysis", "priority": "High"},
+            "2028-02-07": {"task": "Prepare ranking submission for QS", "sub_tasks": ["Fill QS ranking templates", "Upload supporting documents", "Review submission completeness"], "deliverable": "QS Ranking Submission", "category": "Reporting", "priority": "High"},
+            "2028-02-08": {"task": "Prepare ranking submission for THE", "sub_tasks": ["Complete THE ranking forms", "Submit research impact data", "Verify international metrics"], "deliverable": "THE Ranking Submission", "category": "Reporting", "priority": "High"},
+            "2028-02-09": {"task": "Prepare ranking submission for US News", "sub_tasks": ["Complete US News submission", "Submit global reputation data", "Finalize all submissions"], "deliverable": "US News Ranking Submission", "category": "Reporting", "priority": "High"},
+            "2028-02-10": {"task": "Compile Milestone 6 Achievement Report", "sub_tasks": ["Document all ranking submissions", "Prepare evidence package", "Draft milestone report"], "deliverable": "Milestone 6 Report Draft", "category": "Reporting", "priority": "High"},
+            "2028-02-11": {"task": "Finalize and submit Milestone 6 Report", "sub_tasks": ["Review milestone report", "Get client approval", "Submit to PMU"], "deliverable": "Milestone Achievement Report", "category": "Reporting", "priority": "High"},
+            "2028-02-14": {"task": "Begin final dashboard review", "sub_tasks": ["Check all dashboard modules", "Verify data accuracy", "Test all visualizations"], "deliverable": "Dashboard Review Checklist", "category": "Technical", "priority": "High"},
+            "2028-02-15": {"task": "Dashboard performance testing", "sub_tasks": ["Load testing", "Response time analysis", "Identify bottlenecks"], "deliverable": "Performance Test Report", "category": "Technical", "priority": "High"},
+            "2028-02-16": {"task": "Portal functionality review", "sub_tasks": ["Test all portal features", "Verify user access controls", "Check data export"], "deliverable": "Portal Review Report", "category": "Technical", "priority": "Medium"},
+            "2028-02-17": {"task": "Incorporate feedback and fixes", "sub_tasks": ["Address review comments", "Fix identified issues", "Update documentation"], "deliverable": "Updated Dashboard/Portal", "category": "Technical", "priority": "High"},
+            "2028-02-18": {"task": "Final System Review completion", "sub_tasks": ["Conduct final acceptance test", "Prepare system review report", "Get client sign-off"], "deliverable": "Final System Review Report", "category": "Reporting", "priority": "High"},
+            "2028-02-21": {"task": "Prepare February MPR draft", "sub_tasks": ["Compile monthly achievements", "Document milestone progress", "List deliverables"], "deliverable": "February MPR Draft", "category": "Reporting", "priority": "High"},
+            "2028-02-22": {"task": "Review February activities", "sub_tasks": ["Verify all activities logged", "Check attendance records", "Review contributions"], "deliverable": "Activity Verification Report", "category": "Reporting", "priority": "Medium"},
+            "2028-02-23": {"task": "Finalize February MPR", "sub_tasks": ["Incorporate feedback", "Format report as per SOP", "Prepare for submission"], "deliverable": "Final February MPR", "category": "Reporting", "priority": "High"},
+            "2028-02-24": {"task": "Submit February MPR to PMU", "sub_tasks": ["Send to pmu.mahastride@mahamitra.org", "Get acknowledgment", "Archive"], "deliverable": "MPR Submission Confirmation", "category": "Reporting", "priority": "High"},
+            "2028-02-25": {"task": "Plan March 2028 activities", "sub_tasks": ["Review remaining deliverables", "Create March work plan", "Assign responsibilities"], "deliverable": "March 2028 Work Plan", "category": "Planning", "priority": "Medium"},
+            "2028-02-28": {"task": "Month-end reconciliation", "sub_tasks": ["Complete pending tasks", "Update all trackers", "Prepare for final phase"], "deliverable": "Month-end Status Report", "category": "Reporting", "priority": "Medium"},
+            "2028-02-29": {"task": "Leap day - Final milestone review", "sub_tasks": ["Review Milestone 6 achievement", "Prepare for Phase 5 completion", "Team coordination meeting"], "deliverable": "Milestone Review Document", "category": "Meetings", "priority": "High"}
+        }
     
     # For other months, generate generic daily breakdown
     plan = get_24_month_plan()
@@ -665,7 +322,6 @@ def get_daily_breakdown_for_month(month_num, year, month):
     for idx, working_day in enumerate(working_days):
         date_str = working_day.strftime("%Y-%m-%d")
         
-        # Assign activities to working days
         if idx < len(activities):
             activity = activities[idx]
             daily_breakdown[date_str] = {
@@ -682,16 +338,9 @@ def get_daily_breakdown_for_month(month_num, year, month):
                 "priority": "High" if "MILESTONE" in activity["activity"] else "Medium"
             }
         else:
-            # Generic tasks for remaining days
             daily_breakdown[date_str] = {
                 "task": "Continue project activities and documentation",
-                "sub_tasks": [
-                    "Review progress against plan",
-                    "Update project documentation",
-                    "Coordinate with team members",
-                    "Plan next day's activities",
-                    "Log daily work in system"
-                ],
+                "sub_tasks": ["Review progress against plan", "Update project documentation", "Coordinate with team", "Plan next day's activities", "Log daily work"],
                 "deliverable": "Daily Progress Report",
                 "category": "General",
                 "priority": "Medium"
@@ -743,24 +392,45 @@ def save_completions(completions):
     with open(TASK_COMPLETION_FILE, 'w') as f:
         json.dump(completions, f, indent=2)
 
+def load_activity_log():
+    if os.path.exists(ACTIVITY_LOG_FILE):
+        with open(ACTIVITY_LOG_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_activity_log(log):
+    with open(ACTIVITY_LOG_FILE, 'w') as f:
+        json.dump(log, f, indent=2)
+
+def log_activity(email, action, details):
+    log = load_activity_log()
+    timestamp = datetime.now().isoformat()
+    
+    if email not in log:
+        log[email] = []
+    
+    log[email].append({
+        "timestamp": timestamp,
+        "action": action,
+        "details": details,
+        "date": datetime.now().strftime("%Y-%m-%d")
+    })
+    
+    save_activity_log(log)
+
 def get_all_daily_tasks():
     """Get all daily tasks for all months"""
     all_tasks = load_daily_tasks()
     
     if not all_tasks:
-        # Generate tasks for all months
         plan = get_24_month_plan()
         
         for month_num, month_data in plan.items():
             year = month_data["year"]
             month_name = month_data["month"].split()[0]
             
-            # Convert month name to number
-            month_map = {
-                "January": 1, "February": 2, "March": 3, "April": 4,
-                "May": 5, "June": 6, "July": 7, "August": 8,
-                "September": 9, "October": 10, "November": 11, "December": 12
-            }
+            month_map = {"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6,
+                        "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12}
             month = month_map[month_name]
             
             daily_breakdown = get_daily_breakdown_for_month(month_num, year, month)
@@ -770,6 +440,28 @@ def get_all_daily_tasks():
         save_daily_tasks(all_tasks)
     
     return all_tasks
+
+def initialize_completed_tasks():
+    """Mark May 4 to June 5, 2026 as completed for all data analysts"""
+    completions = load_completions()
+    all_tasks = get_all_daily_tasks()
+    
+    completed_dates = [d for d in all_tasks.keys() if d <= "2026-06-05" and datetime.strptime(d, "%Y-%m-%d").weekday() < 5]
+    
+    for email, user in USERS.items():
+        if user.get("role") == "data_analyst":
+            if email not in completions:
+                completions[email] = {}
+            
+            for date_str in completed_dates:
+                if date_str not in completions[email]:
+                    completions[email][date_str] = {
+                        "completed_at": datetime(2026, 6, 5, 17, 0, 0).isoformat(),
+                        "remarks": "Auto-completed - Initial project setup phase"
+                    }
+    
+    save_completions(completions)
+    return len(completed_dates)
 
 def get_user_tasks(email, year=None, month=None):
     user = USERS.get(email, {})
@@ -793,7 +485,6 @@ def get_user_tasks(email, year=None, month=None):
             is_completed = date_str in user_completions
             completion_info = user_completions.get(date_str, {})
             
-            # Tasks before June 8, 2026 are auto-completed
             if date_str <= "2026-06-05":
                 status = "Completed"
             else:
@@ -814,31 +505,63 @@ def get_user_tasks(email, year=None, month=None):
     
     return sorted(user_tasks, key=lambda x: x["date"])
 
-def mark_task_complete(email, date_str, remarks=""):
+def mark_task_complete(email, date_str, remarks, work_hours):
     completions = load_completions()
     if email not in completions:
         completions[email] = {}
     
     completions[email][date_str] = {
         "completed_at": datetime.now().isoformat(),
-        "remarks": remarks
+        "remarks": remarks,
+        "work_hours": work_hours
     }
     save_completions(completions)
+    
+    # Log the activity
+    log_activity(email, "task_completed", f"Completed task on {date_str}: {remarks[:100]}")
+    
     return True
+
+def get_team_performance_data():
+    completions = load_completions()
+    all_tasks = get_all_daily_tasks()
+    
+    # Count only tasks from June 8 onwards
+    pending_tasks = [d for d in all_tasks.keys() if d > "2026-06-05"]
+    total_pending = len(pending_tasks)
+    
+    performance_data = []
+    for email, user in USERS.items():
+        if user.get("role") == "data_analyst":
+            user_completions = completions.get(email, {})
+            completed_pending = sum(1 for d in user_completions.keys() if d > "2026-06-05")
+            
+            performance_data.append({
+                "name": user["name"],
+                "team": user.get("team", "N/A"),
+                "completed": completed_pending,
+                "total": total_pending,
+                "progress": round((completed_pending / total_pending * 100), 1) if total_pending > 0 else 0
+            })
+    
+    return pd.DataFrame(performance_data)
 
 def show_credentials():
     st.markdown("""
     <div class="credentials-box">
         <h4>🔐 Default Login Credentials</h4>
-        <p><strong>Password format:</strong> <code>FirstName@2026</code></p>
+        <p><strong>Password format:</strong> <code>Name@2026</code> (e.g., Admin@2026, Sneha@2026)</p>
         <table style="width:100%">
             <tr><th>Role</th><th>Email</th><th>Password</th></tr>
-            <tr><td style="background:#dc3545;color:white;padding:2px 8px;border-radius:5px;">Admin</div>
-                <td>admin@mahastride.com</div><td>Admin@2026</div></tr>
-            <tr><td style="background:#17a2b8;color:white;padding:2px 8px;border-radius:5px;">Project Lead</div>
-                <td>projectlead@mahastride.com</div><td>ProjectLead@2026</div></tr>
-            <tr><td style="background:#28a745;color:white;padding:2px 8px;border-radius:5px;">Data Analyst</div>
-                <td>sneha@mu.edu</div><td>Sneha@2026</div></tr>
+            <tr><td style="background:#dc3545;color:white;padding:2px 8px;border-radius:5px;">Admin</td>
+                <td>admin@mahastride.com</td><td>Admin@2026</td>
+            </tr>
+            <tr><td style="background:#17a2b8;color:white;padding:2px 8px;border-radius:5px;">Project Lead</td>
+                <td>projectlead@mahastride.com</td><td>ProjectLead@2026</td>
+            </tr>
+            <tr><td style="background:#28a745;color:white;padding:2px 8px;border-radius:5px;">Data Analyst</td>
+                <td>sneha@mu.edu</td><td>Sneha@2026</td>
+            </tr>
         </table>
     </div>
     """, unsafe_allow_html=True)
@@ -851,72 +574,208 @@ def admin_dashboard():
     st.markdown("## 📊 Administrator Dashboard")
     
     all_tasks = get_all_daily_tasks()
+    completions = load_completions()
+    activity_log = load_activity_log()
     
     total_days = len(all_tasks)
     completed_initial = len([d for d in all_tasks.keys() if d <= "2026-06-05"])
+    pending_tasks = total_days - completed_initial
     
-    col1, col2, col3 = st.columns(3)
-    col1.metric("📅 Total Working Days (24 months)", total_days)
-    col2.metric("✅ Auto-Completed (May 4 - June 5)", completed_initial)
-    col3.metric("👥 Data Analysts", sum(1 for u in USERS.values() if u.get("role") == "data_analyst"))
+    # Key metrics row
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(f"""
+        <div class="stat-card">
+            <h2>{total_days}</h2>
+            <p>Total Working Days</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="stat-card">
+            <h2>{completed_initial}</h2>
+            <p>Auto-Completed Tasks</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="stat-card">
+            <h2>{pending_tasks}</h2>
+            <p>Pending Tasks</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col4:
+        total_completions = sum(len(c) for c in completions.values())
+        st.markdown(f"""
+        <div class="stat-card">
+            <h2>{total_completions}</h2>
+            <p>User Completions</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     st.markdown("---")
     
-    st.subheader("📅 24-Month Plan Overview")
+    # Team Performance Chart
+    st.subheader("👥 Team Performance Dashboard")
+    
+    performance_df = get_team_performance_data()
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fig = px.bar(performance_df, x="name", y="progress", color="team",
+                     title="Team Member Progress (%)",
+                     labels={"name": "Team Member", "progress": "Progress (%)"},
+                     text="progress")
+        fig.update_traces(textposition="outside")
+        fig.update_layout(height=400)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        fig = px.pie(performance_df, values="completed", names="name",
+                     title="Tasks Completed by Team Member")
+        fig.update_layout(height=400)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Activity Timeline
+    st.subheader("📈 Recent Activity Timeline")
+    
+    all_activities = []
+    for email, activities in activity_log.items():
+        user = USERS.get(email, {})
+        for act in activities:
+            all_activities.append({
+                "User": user.get("name", email),
+                "Action": act["action"],
+                "Date": act["date"],
+                "Time": act["timestamp"],
+                "Details": act["details"][:50]
+            })
+    
+    if all_activities:
+        df_activities = pd.DataFrame(all_activities).sort_values("Time", ascending=False).head(20)
+        st.dataframe(df_activities, use_container_width=True, hide_index=True)
+    else:
+        st.info("No activities logged yet")
+    
+    st.markdown("---")
+    
+    # Month-wise completion heatmap
+    st.subheader("📅 Month-wise Task Completion Overview")
+    
     plan = get_24_month_plan()
+    month_completions = []
     
     for month_num, month_data in plan.items():
-        status_icon = "✅" if month_data["status"] == "completed" else "🔄" if month_data["status"] == "current" else "📅"
-        with st.expander(f"{status_icon} {month_data['month']} - {month_data['year']}"):
-            for activity in month_data["activities"]:
-                st.markdown(f"• **{activity['activity']}** - *{activity['deliverable']}* (Due: {activity['due_date']})")
+        year = month_data["year"]
+        month_name = month_data["month"]
+        
+        # Count tasks for this month
+        month_tasks = [d for d in all_tasks.keys() if datetime.strptime(d, "%Y-%m-%d").year == year 
+                      and datetime.strptime(d, "%Y-%m-%d").month == {
+                          "January":1,"February":2,"March":3,"April":4,"May":5,"June":6,
+                          "July":7,"August":8,"September":9,"October":10,"November":11,"December":12
+                      }[month_name.split()[0]]]
+        
+        # Count completions across all analysts for this month
+        month_completed = 0
+        for email in completions:
+            for date in completions[email]:
+                if date in month_tasks:
+                    month_completed += 1
+        
+        total_possible = len(month_tasks) * len([u for u in USERS.values() if u.get("role") == "data_analyst"])
+        
+        month_completions.append({
+            "Month": month_data["month"],
+            "Completion Rate": round((month_completed / total_possible * 100), 1) if total_possible > 0 else 0
+        })
+    
+    df_monthly = pd.DataFrame(month_completions)
+    fig = px.line(df_monthly, x="Month", y="Completion Rate", title="Monthly Completion Rate Trend")
+    st.plotly_chart(fig, use_container_width=True)
 
 def project_lead_dashboard():
     st.markdown("## 👨‍💼 Project Lead Dashboard")
     st.markdown("**Dr. Harshal Kotwal** - ICARE Project Director")
     
-    # Month selector
-    years = [2026, 2027, 2028]
-    selected_year = st.selectbox("Select Year", years, index=0)
+    all_tasks = get_all_daily_tasks()
+    completions = load_completions()
     
-    months = list(range(1, 13))
-    month_names = ["January", "February", "March", "April", "May", "June", 
-                   "July", "August", "September", "October", "November", "December"]
-    selected_month = st.selectbox("Select Month", months, format_func=lambda x: month_names[x-1])
+    # Overall statistics
+    total_days = len(all_tasks)
+    completed_initial = len([d for d in all_tasks.keys() if d <= "2026-06-05"])
+    pending_tasks = total_days - completed_initial
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("📅 Total Working Days", total_days)
+    with col2:
+        st.metric("✅ Auto-Completed", completed_initial)
+    with col3:
+        st.metric("⏳ Pending Tasks", pending_tasks)
     
     st.markdown("---")
     
-    # Get daily tasks for the selected month
-    daily_tasks = get_user_tasks("sneha@mu.edu", selected_year, selected_month)
+    # Team Performance
+    st.subheader("📊 Team Performance Overview")
     
-    if daily_tasks:
-        st.subheader(f"Daily Activity Plan - {month_names[selected_month-1]} {selected_year}")
+    performance_df = get_team_performance_data()
+    
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=performance_df["name"], y=performance_df["progress"], 
+                         name="Progress %", marker_color="#2a5298",
+                         text=performance_df["progress"], textposition="outside"))
+    fig.update_layout(title="Team Progress (%)", height=400,
+                     xaxis_title="Team Member", yaxis_title="Progress (%)")
+    st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Date range selector for detailed view
+    st.subheader("📋 Detailed Task View by Date Range")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input("Start Date", datetime(2026, 6, 8))
+    with col2:
+        end_date = st.date_input("End Date", datetime.now())
+    
+    if st.button("Show Tasks", use_container_width=True):
+        start_str = start_date.strftime("%Y-%m-%d")
+        end_str = end_date.strftime("%Y-%m-%d")
         
-        for task in daily_tasks:
-            if task["status"] == "Completed":
-                status_class = "daily-task-completed"
-                status_icon = "✅"
-            else:
-                status_class = "daily-task-pending"
-                status_icon = "⏳"
+        # Get tasks in range
+        tasks_in_range = []
+        for email, user in USERS.items():
+            if user.get("role") == "data_analyst":
+                user_tasks = get_user_tasks(email)
+                for task in user_tasks:
+                    if start_str <= task["date"] <= end_str:
+                        tasks_in_range.append({
+                            "Date": task["date"],
+                            "Day": task["day"],
+                            "Analyst": user["name"],
+                            "Team": user.get("team", ""),
+                            "Task": task["task"][:60],
+                            "Status": task["status"],
+                            "Remarks": task.get("remarks", "")[:50]
+                        })
+        
+        if tasks_in_range:
+            df_tasks = pd.DataFrame(tasks_in_range)
+            st.dataframe(df_tasks, use_container_width=True, hide_index=True)
             
-            st.markdown(f"""
-            <div class="daily-task-card {status_class}">
-                <strong>{status_icon} {task['date']} ({task['day']})</strong><br>
-                <strong>📌 Task:</strong> {task['task']}<br>
-                <strong>📦 Deliverable:</strong> {task['deliverable']}<br>
-                <strong>📂 Category:</strong> {task['category']} | <strong>Priority:</strong> {task['priority']}<br>
-                <strong>📋 Sub-tasks:</strong>
-                <ul>
-                    {''.join([f'<li>{st}</li>' for st in task['sub_tasks'][:3]])}
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.info(f"No tasks found for {month_names[selected_month-1]} {selected_year}")
+            # Summary stats
+            completed_count = sum(1 for t in tasks_in_range if t["Status"] == "Completed")
+            st.info(f"📊 Showing {len(tasks_in_range)} tasks: {completed_count} completed, {len(tasks_in_range)-completed_count} pending")
+        else:
+            st.info("No tasks found in selected date range")
 
 def data_analyst_dashboard(email, user):
-    st.markdown(f"## 📋 Daily Task Dashboard")
+    st.markdown(f"## 📋 My Daily Tasks")
     st.markdown(f"**Welcome, {user['name']}**")
     st.markdown(f"**Team:** {user.get('team', 'N/A')}")
     st.markdown(f"**Working Hours:** 10:00 AM - 6:00 PM (Monday to Friday)")
@@ -939,76 +798,136 @@ def data_analyst_dashboard(email, user):
         total = len(daily_tasks)
         completed = sum(1 for t in daily_tasks if t["status"] == "Completed")
         
-        col1, col2, col3 = st.columns(3)
-        col1.metric("📅 Working Days", total)
-        col2.metric("✅ Completed", completed)
-        col3.metric("⏳ Pending", total - completed)
+        # Progress metrics
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("📅 Working Days", total)
+        with col2:
+            st.metric("✅ Completed", completed)
+        with col3:
+            st.metric("⏳ Pending", total - completed)
+        with col4:
+            st.metric("📈 Progress", f"{(completed/total*100):.0f}%" if total > 0 else "0%")
         
         st.progress(completed/total if total > 0 else 0)
         
         st.markdown("---")
         
-        # Today's task
+        # Today's task - Interactive completion form
         today = datetime.now().strftime("%Y-%m-%d")
-        today_task = next((t for t in daily_tasks if t["date"] == today), None)
+        today_task = next((t for t in daily_tasks if t["date"] == today and t["date"] > "2026-06-05"), None)
         
-        if today_task and today_task["date"] > "2026-06-05":
-            st.subheader("📌 Today's Task")
-            if today_task["status"] == "Completed":
+        if today_task and today_task["status"] == "Pending":
+            st.subheader("📌 Today's Task - Mark as Complete")
+            
+            with st.form(key=f"complete_task_{today_task['date']}"):
                 st.markdown(f"""
-                <div class="daily-task-card daily-task-completed">
-                    ✅ <strong>COMPLETED - {today_task['date']} ({today_task['day']})</strong><br>
+                <div class="daily-task-card daily-task-pending">
+                    <strong>⏳ TASK TO COMPLETE</strong><br>
+                    <strong>Date:</strong> {today_task['date']} ({today_task['day']})<br>
                     <strong>Task:</strong> {today_task['task']}<br>
                     <strong>Deliverable:</strong> {today_task['deliverable']}<br>
                     <strong>Category:</strong> {today_task['category']}<br>
                     <strong>Priority:</strong> {today_task['priority']}<br>
-                    <strong>Remarks:</strong> {today_task.get('remarks', 'No remarks')}
+                    <strong>Sub-tasks to complete:</strong>
+                    <ul>
+                        {''.join([f'<li>{st}</li>' for st in today_task['sub_tasks']])}
+                    </ul>
                 </div>
                 """, unsafe_allow_html=True)
-            else:
-                with st.form(key=f"task_{today_task['date']}"):
-                    st.markdown(f"""
-                    <div class="daily-task-card daily-task-pending">
-                        ⏳ <strong>PENDING - {today_task['date']} ({today_task['day']})</strong><br>
-                        <strong>Task:</strong> {today_task['task']}<br>
-                        <strong>Deliverable:</strong> {today_task['deliverable']}<br>
-                        <strong>Category:</strong> {today_task['category']}<br>
-                        <strong>Priority:</strong> {today_task['priority']}<br>
-                        <strong>Sub-tasks to complete:</strong>
-                        <ul>
-                            {''.join([f'<li>{st}</li>' for st in today_task['sub_tasks']])}
-                        </ul>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown("**Work Log (10:00 AM - 6:00 PM)**")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        start_time = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time())
-                    with col2:
-                        end_time = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time())
-                    
-                    remarks = st.text_area("Work Accomplished / Remarks", height=100)
-                    
-                    if st.form_submit_button("✅ Mark as Complete", use_container_width=True):
-                        work_log = f"Worked from {start_time} to {end_time}. {remarks}"
-                        if mark_task_complete(email, today_task["date"], work_log):
-                            st.success("Task completed! Great work!")
+                
+                st.markdown("### 📝 Work Log")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    start_time = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time())
+                with col2:
+                    end_time = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time())
+                
+                work_hours = f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}"
+                
+                remarks = st.text_area(
+                    "Work Accomplished / Remarks", 
+                    height=150,
+                    placeholder="Describe what you accomplished today:\n- Completed data collection for 3 departments\n- Analyzed research output metrics\n- Prepared draft report for review\n- Coordinated with stakeholders"
+                )
+                
+                submitted = st.form_submit_button("✅ Mark as Complete", use_container_width=True, type="primary")
+                
+                if submitted:
+                    if not remarks:
+                        st.error("Please enter work accomplishments before marking as complete")
+                    else:
+                        if mark_task_complete(email, today_task["date"], remarks, work_hours):
+                            st.success("🎉 Task completed successfully! Great work!")
+                            st.balloons()
                             st.rerun()
         
-        st.markdown("---")
-        st.subheader(f"📅 All Tasks for {month_names[selected_month-1]} {selected_year}")
-        
-        for task in daily_tasks:
-            status_icon = "✅" if task["status"] == "Completed" else "⏳"
+        elif today_task and today_task["status"] == "Completed":
+            st.subheader("📌 Today's Task - Already Completed")
             st.markdown(f"""
-            <div class="daily-task-card">
-                <strong>{status_icon} {task['date']} ({task['day']})</strong><br>
-                <strong>Task:</strong> {task['task']}<br>
-                <strong>Deliverable:</strong> {task['deliverable']}<br>
-                <strong>Status:</strong> {task['status']}
+            <div class="daily-task-card daily-task-completed">
+                ✅ <strong>COMPLETED</strong><br>
+                <strong>Date:</strong> {today_task['date']} ({today_task['day']})<br>
+                <strong>Task:</strong> {today_task['task']}<br>
+                <strong>Deliverable:</strong> {today_task['deliverable']}<br>
+                <strong>Remarks:</strong> {today_task.get('remarks', 'No remarks')}
             </div>
             """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # All tasks for the month in an expandable table
+        st.subheader(f"📅 All Tasks for {month_names[selected_month-1]} {selected_year}")
+        
+        # Convert to DataFrame for better display
+        task_data = []
+        for task in daily_tasks:
+            task_data.append({
+                "Date": task["date"],
+                "Day": task["day"],
+                "Task": task["task"][:50] + "..." if len(task["task"]) > 50 else task["task"],
+                "Category": task["category"],
+                "Priority": task["priority"],
+                "Status": "✅ Completed" if task["status"] == "Completed" else "⏳ Pending",
+                "Remarks": task.get("remarks", "-")[:40]
+            })
+        
+        df_tasks = pd.DataFrame(task_data)
+        st.dataframe(df_tasks, use_container_width=True, hide_index=True)
+        
+        # Export option
+        csv = df_tasks.to_csv(index=False).encode('utf-8')
+        st.download_button("📥 Download My Tasks as CSV", csv, f"my_tasks_{selected_year}_{selected_month}.csv", "text/csv")
+        
+        # Weekly view
+        st.markdown("---")
+        st.subheader("📊 Weekly Activity Summary")
+        
+        # Group by week
+        weekly_data = {}
+        for task in daily_tasks:
+            task_date = datetime.strptime(task["date"], "%Y-%m-%d")
+            week_num = task_date.isocalendar()[1]
+            week_key = f"Week {week_num}"
+            if week_key not in weekly_data:
+                weekly_data[week_key] = {"total": 0, "completed": 0}
+            weekly_data[week_key]["total"] += 1
+            if task["status"] == "Completed":
+                weekly_data[week_key]["completed"] += 1
+        
+        if weekly_data:
+            weeks = list(weekly_data.keys())
+            completed_counts = [weekly_data[w]["completed"] for w in weeks]
+            total_counts = [weekly_data[w]["total"] for w in weeks]
+            
+            fig = go.Figure()
+            fig.add_trace(go.Bar(x=weeks, y=completed_counts, name="Completed", marker_color="#28a745"))
+            fig.add_trace(go.Bar(x=weeks, y=[t-c for t,c in zip(total_counts, completed_counts)], 
+                                name="Pending", marker_color="#ffc107"))
+            fig.update_layout(title="Weekly Task Completion", barmode="stack", height=350)
+            st.plotly_chart(fig, use_container_width=True)
+    
     else:
         st.info(f"No tasks available for {month_names[selected_month-1]} {selected_year}")
 
@@ -1019,6 +938,7 @@ def data_analyst_dashboard(email, user):
 def main():
     # Initialize
     get_all_daily_tasks()
+    initialize_completed_tasks()
     
     # Authentication
     if "authenticated" not in st.session_state:
@@ -1030,7 +950,7 @@ def main():
             <h1>📋 MahaSTRIDE Daily Activity Planner</h1>
             <p>Complete 24-Month Daily Task Breakdown | May 2026 - April 2028</p>
             <p>Monday to Friday | 10:00 AM - 6:00 PM</p>
-            <p>✅ May 4 to June 5, 2026: Auto-Completed | June 8, 2026 onwards: Pending</p>
+            <p>✅ May 4 to June 5, 2026: Auto-Completed | June 8, 2026 onwards: Pending for completion</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -1065,7 +985,8 @@ def main():
     # Sidebar
     with st.sidebar:
         st.markdown("### 📋 MahaSTRIDE")
-        st.markdown(f"**Welcome, {user_info.get('name')}**")
+        st.markdown(f"**Welcome,**")
+        st.markdown(f"**{user_info.get('name')}**")
         if role == "data_analyst":
             st.markdown(f"*Team: {user_info.get('team', 'N/A')}*")
         st.markdown(f"*Role: {role.upper()}*")
@@ -1087,6 +1008,18 @@ def main():
         st.markdown("**Status**")
         st.markdown("✅ May 4 - June 5, 2026: COMPLETED")
         st.markdown("📅 June 8, 2026 onwards: PENDING")
+        
+        st.markdown("---")
+        
+        # Show completion stats for data analyst
+        if role == "data_analyst":
+            tasks = get_user_tasks(email)
+            future_tasks = [t for t in tasks if t["date"] > "2026-06-05"]
+            completed = sum(1 for t in future_tasks if t["status"] == "Completed")
+            total = len(future_tasks)
+            st.markdown("**Your Progress**")
+            st.progress(completed/total if total > 0 else 0)
+            st.caption(f"{completed}/{total} tasks completed")
         
         st.markdown("---")
         
