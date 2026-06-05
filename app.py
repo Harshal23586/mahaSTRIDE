@@ -84,13 +84,6 @@ st.markdown("""
         border-radius: 10px;
         margin: 0.5rem 0;
     }
-    .dashboard-widget {
-        background: white;
-        border-radius: 10px;
-        padding: 1rem;
-        margin: 0.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -112,7 +105,6 @@ USERS = {
         "team": "ICARE",
         "avatar": "👨‍🔬"
     },
-    # MITRA Level
     "shubham@mitra.gov.in": {
         "password": sha256("Shubham@2026".encode()).hexdigest(),
         "role": "data_analyst",
@@ -120,7 +112,6 @@ USERS = {
         "team": "MITRA",
         "avatar": "👨‍💻"
     },
-    # Mumbai University
     "sneha@mu.edu": {
         "password": sha256("Sneha@2026".encode()).hexdigest(),
         "role": "data_analyst",
@@ -135,7 +126,6 @@ USERS = {
         "team": "Mumbai University",
         "avatar": "👨‍🎓"
     },
-    # Pune University
     "jagan@sspu.edu": {
         "password": sha256("Jagan@2026".encode()).hexdigest(),
         "role": "data_analyst",
@@ -143,7 +133,6 @@ USERS = {
         "team": "SPPU Pune",
         "avatar": "👨‍🏫"
     },
-    # COEP
     "vaibhav@coep.edu": {
         "password": sha256("Vaibhav@2026".encode()).hexdigest(),
         "role": "data_analyst",
@@ -151,7 +140,6 @@ USERS = {
         "team": "COEP Pune",
         "avatar": "👨‍🔧"
     },
-    # Amravati University
     "pratham@au.edu": {
         "password": sha256("Pratham@2026".encode()).hexdigest(),
         "role": "data_analyst",
@@ -159,7 +147,6 @@ USERS = {
         "team": "Amravati University",
         "avatar": "👨‍🎓"
     },
-    # Nagpur University
     "anjali@nu.edu": {
         "password": sha256("Anjali@2026".encode()).hexdigest(),
         "role": "data_analyst",
@@ -167,7 +154,6 @@ USERS = {
         "team": "Nagpur University",
         "avatar": "👩‍🎓"
     },
-    # Jalgaon University
     "nitish@kbcnmu.edu": {
         "password": sha256("Nitish@2026".encode()).hexdigest(),
         "role": "data_analyst",
@@ -175,7 +161,6 @@ USERS = {
         "team": "KBCNMU Jalgaon",
         "avatar": "👨‍🎓"
     },
-    # Aurangabad University
     "atharv@bamu.edu": {
         "password": sha256("Atharv@2026".encode()).hexdigest(),
         "role": "data_analyst",
@@ -188,22 +173,24 @@ USERS = {
 # ============================================================
 # DATA FILES
 # ============================================================
-DAILY_TASKS_FILE = "complete_daily_tasks.json"
-TASK_COMPLETION_FILE = "task_completion.json"
-ACHIEVEMENTS_FILE = "achievements.json"
+DAILY_TASKS_FILE = "daily_tasks_data.json"
+TASK_COMPLETION_FILE = "task_completion_data.json"
+ACHIEVEMENTS_FILE = "achievements_data.json"
 
 # ============================================================
-# COMPLETE 24-MONTH TASK GENERATION - UNIQUE FOR EVERY DAY
+# TASK GENERATION FUNCTIONS
 # ============================================================
 
-def generate_all_unique_tasks():
-    """Generate unique tasks for every working day from May 2026 to April 2028"""
-    all_tasks = {}
+def generate_tasks_for_date(date):
+    """Generate a unique task for a specific date"""
+    date_str = date.strftime("%Y-%m-%d")
+    month = date.month
+    year = date.year
     
-    # Create a comprehensive list of unique tasks for each phase
-    task_categories = {
-        "Phase 1 - Foundation (May-July 2026)": [
-            "Conduct kickoff meeting with university leadership",
+    # Task templates organized by month
+    task_templates = {
+        (2026, 6): [
+            "Conduct kickoff meeting with university VC and IQAC team",
             "Interview faculty members for research assessment",
             "Collect student enrollment and demographic data",
             "Document faculty publication records and citations",
@@ -212,260 +199,118 @@ def generate_all_unique_tasks():
             "Review library resources and digital infrastructure",
             "Assess laboratory facilities and equipment availability",
             "Evaluate international collaboration MoUs",
-            "Prepare comprehensive data gap analysis report",
+            "Prepare comprehensive data gap analysis report"
+        ],
+        (2026, 7): [
             "Constitute GRDAU team with nominated members",
             "Develop standard operating procedures for GRDAU",
             "Train GRDAU staff on NIRF data collection",
             "Setup data management system with access controls",
-            "Review diagnostic findings with VC",
+            "Review diagnostic findings with university leadership",
             "Finalize diagnostic reports for PMU submission",
             "Complete gap analysis against NIRF parameters",
-            "Prepare SWOT analysis for each university",
+            "Prepare SWOT analysis report",
             "Finalize GRDAU establishment plan",
-            "Setup GRDAU office with hardware and software",
-            "Create data validation protocols and checklists",
-            "Develop dashboard requirements document",
-            "Design baseline report template",
-            "Compile Phase 1 deliverables and completion report",
-            "Present Phase 1 findings to steering committee",
-            "Document lessons learned and best practices",
-            "Plan Phase 2 activities with work breakdown",
-            "Prepare monthly progress report"
+            "Setup GRDAU office with hardware and software"
         ],
-        "Phase 2 - Planning (Aug-Oct 2026)": [
+        (2026, 8): [
             "Develop IDP framework aligned with NIRF metrics",
-            "Collect strategic plans from all universities",
-            "Analyze collected strategic plans for themes",
-            "Draft IDP for specific university with KPIs",
-            "Present IDP drafts to VC for feedback",
-            "Incorporate VC feedback and finalize IDPs",
-            "Get institutional sign-off on approved IDPs",
+            "Collect strategic plans from university leadership",
+            "Analyze collected strategic plans for common themes",
+            "Draft Institutional Development Plan with KPIs",
+            "Present IDP draft to VC for feedback",
+            "Incorporate VC feedback and finalize IDP",
+            "Get institutional sign-off on approved IDP",
             "Design data portal architecture and schema",
             "Create dashboard wireframes and mockups",
-            "Setup development environment and version control",
+            "Setup development environment and version control"
+        ],
+        (2026, 9): [
             "Develop backend APIs for data integration",
-            "Implement user authentication and RBAC",
+            "Implement user authentication and role-based access",
             "Build KPI dashboard with metric cards",
             "Integrate research output visualization charts",
-            "Add faculty-student ratio analytics",
-            "Implement financial resource tracking",
-            "Develop placement outcomes dashboard",
+            "Add faculty-student ratio analytics dashboard",
+            "Implement financial resource utilization tracking",
+            "Develop placement and graduate outcomes dashboard",
             "Create international collaboration metrics",
             "Add citation analysis and publication impact",
-            "Implement infrastructure assessment dashboard",
+            "Implement infrastructure assessment dashboard"
+        ],
+        (2026, 10): [
             "Prepare Milestone Report with evidence",
-            "Submit milestone to PMU for review",
-            "Conduct user acceptance testing",
-            "Deploy dashboard beta to staging",
-            "Prepare monthly progress report"
-        ],
-        "Phase 3 - Implementation (Nov 2026-Apr 2027)": [
-            "Deploy data portal MVP with core features",
-            "Conduct portal training for GRDAU coordinators",
-            "Upload baseline data for all universities",
-            "Verify data accuracy with source documents",
-            "Collect user feedback on portal usability",
-            "Implement priority fixes based on feedback",
-            "Add data export functionality",
-            "Setup automated data validation rules",
-            "Create custom reports generation feature",
-            "Train staff on report generation",
-            "Develop training for NIRF data submission",
-            "Conduct research metrics analysis workshop",
-            "Provide citation analysis training to faculty",
-            "Prepare training needs assessment report",
-            "Schedule capacity building programs",
-            "Conduct online training for remote coordinators",
-            "Prepare training materials and handouts",
-            "Assess training effectiveness with feedback",
-            "Plan advanced training modules",
-            "Complete first round of training programs",
-            "Launch performance dashboards to all users",
-            "Develop advanced training for GRDAU staff",
-            "Conduct hands-on data analytics workshop",
-            "Create certification program for GRDAU staff",
-            "Implement automated data quality checks",
-            "Conduct data audit for all universities",
-            "Clean and standardize publication data",
-            "Validate faculty credentials and qualifications",
-            "Create data quality scorecard per university",
-            "Implement research output tracking system",
-            "Analyze publication trends and patterns",
-            "Identify high-impact research areas",
-            "Develop research enhancement strategy",
-            "Create faculty research profiles",
-            "Setup citation tracking mechanism"
-        ],
-        "Phase 4 - Enhancement (May-Oct 2027)": [
-            "Implement Year 2 tracking dashboards",
-            "Add predictive analytics for performance trends",
-            "Develop ML models for ranking prediction",
-            "Create benchmarking tool against top universities",
-            "Implement real-time data synchronization",
-            "Add mobile-responsive dashboard views",
-            "Enhance data visualization with interactive charts",
-            "Implement automated report generation",
-            "Add email notification system for alerts",
-            "Create custom dashboard for leadership",
-            "Implement role-based dashboard views",
-            "Add comparative analysis across universities",
-            "Implement year-on-year trend analysis",
-            "Create what-if scenario planning tool",
-            "Review QS World University Ranking methodology",
-            "Collect data for QS ranking indicators",
-            "Prepare academic reputation survey responses",
-            "Compile employer reputation data",
-            "Collect faculty-student ratio for QS",
-            "Gather international faculty statistics",
-            "Compile international student data",
-            "Prepare citations per faculty metrics",
-            "Complete QS ranking submission forms",
-            "Review THE World University Ranking criteria",
-            "Collect teaching quality indicators",
-            "Gather research influence metrics",
-            "Compile industry income data",
-            "Prepare international outlook statistics",
-            "Complete THE ranking submission",
-            "Review US News Best Global Universities criteria",
-            "Collect regional research reputation data",
-            "Compile publications and conferences data",
-            "Prepare normalized citation impact",
-            "Complete US News ranking submission",
-            "Conduct advanced data analytics training",
-            "Provide Python for data science workshop",
-            "Conduct R programming for research analytics",
-            "Offer SQL for data management training",
-            "Provide Tableau dashboard creation workshop",
-            "Conduct research methodology advanced course",
-            "Offer systematic literature review training",
-            "Provide research paper writing workshop",
-            "Conduct journal selection training",
-            "Offer peer review process training",
-            "Provide research ethics and integrity workshop",
-            "Conduct grant proposal writing advanced course",
-            "Offer project management for researchers training",
-            "Provide IPR and patent filing workshop",
-            "Conduct technology transfer training"
-        ],
-        "Phase 5 - Finalization (Nov 2027-Apr 2028)": [
-            "Develop employer perception survey questionnaire",
-            "Conduct employer perception survey",
-            "Analyze survey responses and feedback",
-            "Prepare employer perception improvement plan",
-            "Establish industry advisory board",
-            "Conduct industry-academia meet",
-            "Develop internship programs with industries",
-            "Create placement enhancement strategy",
-            "Organize campus recruitment drive",
-            "Develop alumni engagement program",
-            "Create corporate training programs",
-            "Establish research consultancy cell",
-            "Develop continuing education programs",
-            "Create executive education offerings",
-            "Build industry-sponsored labs",
-            "Develop entrepreneurship cell",
-            "Create startup incubation center",
-            "Review final ranking submission requirements",
-            "Collect updated data for QS ranking",
-            "Verify all QS ranking metrics",
-            "Prepare QS final submission package",
-            "Submit QS ranking final data",
-            "Collect updated data for THE ranking",
-            "Verify THE ranking metrics",
-            "Prepare THE final submission",
-            "Submit THE ranking data",
-            "Collect updated data for US News",
-            "Verify US News ranking metrics",
-            "Prepare US News final submission",
-            "Submit US News ranking data",
-            "Develop sustainability framework for GRDAU",
-            "Create operational sustainability plan",
-            "Develop dashboard maintenance plan",
-            "Create data update and validation schedule",
-            "Develop training sustainability program",
-            "Create knowledge transfer plan",
-            "Develop handover documentation",
-            "Prepare system administration guide",
-            "Create user training manual",
-            "Develop troubleshooting guide",
-            "Prepare disaster recovery plan",
-            "Create backup and archival strategy",
-            "Develop performance monitoring plan",
-            "Create quality assurance checklist",
-            "Prepare sustainability report",
-            "Conduct sustainability workshop",
-            "Train successor team on operations",
-            "Prepare final evaluation framework",
-            "Compile all project achievements",
-            "Collect 24-month performance metrics",
-            "Analyze baseline vs endline data",
-            "Calculate overall improvement percentages",
-            "Prepare final evaluation report",
-            "Submit final deliverables to PMU",
-            "Complete contract closure formalities",
-            "Submit final invoice to client",
-            "CONTRACT COMPLETION - Project Success!"
+            "Submit milestone report to PMU for review",
+            "Conduct user acceptance testing with coordinators",
+            "Fix bugs and optimize dashboard performance",
+            "Deploy dashboard beta version to staging",
+            "Complete dashboard beta testing with all universities",
+            "Finalize dashboard based on user feedback",
+            "Conduct dashboard training for administrators",
+            "Create comprehensive user manual and tutorials",
+            "Prepare Mid-Term Review presentation"
         ]
     }
     
-    # Generate tasks for each working day
+    # Default template for other months
+    if (year, month) in task_templates:
+        templates = task_templates[(year, month)]
+    else:
+        templates = [
+            f"Continue {['data analysis', 'report preparation', 'stakeholder coordination', 'dashboard enhancement', 'training delivery'][date.day % 5]} activities",
+            f"Complete {['milestone', 'progress report', 'data validation', 'quality check', 'documentation'][date.day % 5]} tasks",
+            f"Coordinate with {['VC office', 'IQAC', 'GRDAU team', 'department heads', 'IT team'][date.day % 5]}",
+            f"Prepare {['monthly report', 'presentation', 'dashboard update', 'data summary', 'status update'][date.day % 5]}"
+        ]
+    
+    # Select task based on day of month
+    task_index = (date.day - 1) % len(templates)
+    task = templates[task_index]
+    
+    # Add phase indicator
+    if year == 2026 and month <= 7:
+        phase = "Phase 1: Foundation"
+    elif year == 2026 and month <= 10:
+        phase = "Phase 2: Planning"
+    elif year == 2026 or (year == 2027 and month <= 4):
+        phase = "Phase 3: Implementation"
+    elif year == 2027 and month <= 10:
+        phase = "Phase 4: Enhancement"
+    else:
+        phase = "Phase 5: Finalization"
+    
+    # Determine priority
+    priority = "High" if any(word in task.lower() for word in ["milestone", "submit", "present", "final", "vc", "ceo"]) else "Medium"
+    
+    return {
+        "task": task,
+        "priority": priority,
+        "phase": phase
+    }
+
+def get_all_working_dates():
+    """Get all working dates from May 4, 2026 to April 28, 2028"""
+    dates = []
     start_date = datetime(2026, 5, 4)
     end_date = datetime(2028, 4, 28)
     
-    current_date = start_date
-    task_index = 0
-    phase_tasks = []
-    current_phase = "Phase 1 - Foundation (May-July 2026)"
-    
-    while current_date <= end_date:
-        if current_date.weekday() < 5:  # Monday to Friday
-            date_str = current_date.strftime("%Y-%m-%d")
-            
-            # Determine phase based on date
-            if current_date < datetime(2026, 8, 1):
-                current_phase = "Phase 1 - Foundation (May-July 2026)"
-                phase_tasks = task_categories[current_phase]
-            elif current_date < datetime(2026, 11, 1):
-                current_phase = "Phase 2 - Planning (Aug-Oct 2026)"
-                phase_tasks = task_categories[current_phase]
-            elif current_date < datetime(2027, 5, 1):
-                current_phase = "Phase 3 - Implementation (Nov 2026-Apr 2027)"
-                phase_tasks = task_categories[current_phase]
-            elif current_date < datetime(2027, 11, 1):
-                current_phase = "Phase 4 - Enhancement (May-Oct 2027)"
-                phase_tasks = task_categories[current_phase]
-            else:
-                current_phase = "Phase 5 - Finalization (Nov 2027-Apr 2028)"
-                phase_tasks = task_categories[current_phase]
-            
-            # Get unique task for this day
-            task = phase_tasks[task_index % len(phase_tasks)]
-            
-            # Add university-specific detail for some tasks
-            universities = ["Mumbai", "Pune", "Nagpur", "Amravati", "COEP", "Jalgaon", "Aurangabad"]
-            if "university" in task.lower() or "VC" in task or "IDP" in task:
-                uni = universities[task_index % len(universities)]
-                task = task.replace("university", f"{uni} University")
-                task = task.replace("IDP", f"IDP for {uni} University")
-            
-            # Determine priority
-            priority = "High" if any(word in task.lower() for word in ["milestone", "submit", "present", "final", "VC", "CEO"]) else "Medium"
-            
-            all_tasks[date_str] = {
-                "task": task,
-                "priority": priority,
-                "phase": current_phase
-            }
-            task_index += 1
-        current_date += timedelta(days=1)
-    
-    return all_tasks
+    current = start_date
+    while current <= end_date:
+        if current.weekday() < 5:  # Monday to Friday
+            dates.append(current)
+        current += timedelta(days=1)
+    return dates
 
 def load_tasks():
     if os.path.exists(DAILY_TASKS_FILE):
         with open(DAILY_TASKS_FILE, 'r') as f:
             return json.load(f)
-    tasks = generate_all_unique_tasks()
+    
+    # Generate tasks for all working days
+    tasks = {}
+    for date in get_all_working_dates():
+        date_str = date.strftime("%Y-%m-%d")
+        tasks[date_str] = generate_tasks_for_date(date)
+    
     with open(DAILY_TASKS_FILE, 'w') as f:
         json.dump(tasks, f, indent=2)
     return tasks
@@ -491,6 +336,7 @@ def save_achievements(achievements):
         json.dump(achievements, f, indent=2)
 
 def initialize_completed_tasks():
+    """Mark May 4 to June 5, 2026 as completed for all data analysts"""
     completions = load_completions()
     all_tasks = load_tasks()
     
@@ -513,7 +359,7 @@ def initialize_completed_tasks():
                 if date_str not in completions[email]:
                     completions[email][date_str] = {
                         "completed_at": datetime(2026, 6, 5, 17, 0, 0).isoformat(),
-                        "remarks": "Completed - Initial project setup phase"
+                        "remarks": "Completed - Initial project setup phase (May 4 to June 5, 2026)"
                     }
     
     save_completions(completions)
@@ -522,12 +368,13 @@ def initialize_completed_tasks():
     achievements = load_achievements()
     for email, user in USERS.items():
         if user.get("role") == "data_analyst" and email not in achievements:
-            achievements[email] = {"badges": [], "points": 0, "level": 1}
+            achievements[email] = {"badges": [], "points": 0}
     save_achievements(achievements)
     
     return len(completed_dates)
 
 def get_user_tasks(email):
+    """Get tasks for a specific user"""
     user = USERS.get(email, {})
     all_tasks = load_tasks()
     completions = load_completions()
@@ -541,9 +388,9 @@ def get_user_tasks(email):
             
             user_tasks.append({
                 "date": date_str,
-                "task": task_info.get("task", ""),
+                "task": task_info.get("task", "No task assigned"),
                 "priority": task_info.get("priority", "Medium"),
-                "phase": task_info.get("phase", ""),
+                "phase": task_info.get("phase", "Unknown"),
                 "status": "Completed" if is_completed else "Pending",
                 "completed_at": completion_info.get("completed_at", ""),
                 "remarks": completion_info.get("remarks", "")
@@ -566,7 +413,7 @@ def mark_task_complete(email, date_str, remarks, work_hours):
     # Update achievements
     achievements = load_achievements()
     if email not in achievements:
-        achievements[email] = {"badges": [], "points": 0, "level": 1}
+        achievements[email] = {"badges": [], "points": 0}
     
     user_tasks = get_user_tasks(email)
     completed_count = sum(1 for t in user_tasks if t["status"] == "Completed" and t["date"] > "2026-06-05")
@@ -574,22 +421,23 @@ def mark_task_complete(email, date_str, remarks, work_hours):
     achievements[email]["points"] = completed_count * 10
     
     # Award badges
-    badges = []
+    new_badges = []
     if completed_count >= 5 and "Rising Star" not in achievements[email]["badges"]:
-        badges.append("Rising Star")
+        new_badges.append("Rising Star")
     if completed_count >= 15 and "Dedicated Worker" not in achievements[email]["badges"]:
-        badges.append("Dedicated Worker")
+        new_badges.append("Dedicated Worker")
     if completed_count >= 30 and "Task Master" not in achievements[email]["badges"]:
-        badges.append("Task Master")
+        new_badges.append("Task Master")
     if completed_count >= 50 and "Elite Performer" not in achievements[email]["badges"]:
-        badges.append("Elite Performer")
+        new_badges.append("Elite Performer")
     
-    achievements[email]["badges"].extend(badges)
+    achievements[email]["badges"].extend(new_badges)
     save_achievements(achievements)
     
     return True
 
 def get_all_analysts_progress():
+    """Get progress for all data analysts"""
     all_tasks = load_tasks()
     completions = load_completions()
     achievements = load_achievements()
@@ -622,6 +470,8 @@ def get_all_analysts_progress():
 
 def get_team_summary():
     progress_df = get_all_analysts_progress()
+    if progress_df.empty:
+        return pd.DataFrame()
     team_summary = progress_df.groupby("team").agg({
         "completed_future": "sum",
         "total_future": "first",
@@ -656,7 +506,6 @@ def generate_mpr_html(year, month):
         th, td {{ border: 1px solid #000; padding: 6px; vertical-align: top; }}
         th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
         .footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
-        .badge {{ display: inline-block; background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; }}
     </style>
 </head>
 <body>
@@ -668,28 +517,16 @@ def generate_mpr_html(year, month):
 <div class="section-title">1. Executive Summary</div>
 <table>
     <tr><th>Metric</th><th>Value</th></tr>
-    <tr><td>Reporting Period</div><td>{month_name} {year}</div></tr>
-    <tr><td>Working Days in Month</div><td>{len(month_tasks)}</div></tr>
-    <tr><td>Total Working Days (Project)</div><td>{len(all_tasks)}</div></tr>
-    <tr><td>Active Team Members</div><td>{len(progress_df)}</div></tr>
+    <tr><td>Reporting Period</td><td>{month_name} {year}</td></tr>
+    <tr><td>Working Days in Month</td><td>{len(month_tasks)}</td></tr>
+    <tr><td>Total Working Days (Project)</td><td>{len(all_tasks)}</td></tr>
+    <tr><td>Active Team Members</td><td>{len(progress_df)}</td></tr>
 </table>
 
 <div class="section-title">2. Team Performance Summary</div>
 <table>
     <tr><th>Rank</th><th>Team Member</th><th>Team</th><th>Tasks Completed</th><th>Progress</th><th>Points</th><th>Badges</th></tr>
-    {''.join([f'<tr><td>{i+1}</td><td>{row["name"]}</td><td>{row["team"]}</td><td>{row["completed_future"]}</td><td>{row["progress_future"]}%</td><td>{row["points"]}</td><td>{row["badges"]}</td></tr>' for i, (_, row) in enumerate(progress_df.iterrows())])}
-</table>
-
-<div class="section-title">3. Team-wise Summary</div>
-<table>
-    <tr><th>Team</th><th>Tasks Completed</th><th>Total Tasks</th><th>Progress</th><th>Total Points</th></tr>
-    {''.join([f'<tr><td>{row["team"]}</td><td>{row["completed_future"]}</td><td>{row["total_future"]}</td><td>{row["progress"]}%</td><td>{row["points"]}</td></tr>' for _, row in team_summary.iterrows()])}
-</table>
-
-<div class="section-title">4. Top Performers</div>
-<table>
-    <tr><th>Rank</th><th>Team Member</th><th>Team</th><th>Progress</th><th>Points</th></tr>
-    {''.join([f'<tr><td>{i+1}</td><td>{row["name"]}</td><td>{row["team"]}</td><td>{row["progress_future"]}%</td><td>{row["points"]}</td></tr>' for i, (_, row) in enumerate(progress_df.head(5).iterrows())])}
+    {''.join([f'<tr><td>{i+1}</td><td>{row["name"]}</td><td>{row["team"]}</td><td>{row["completed_future"]}</td><td>{row["progress_future"]}%</td><td>{row["points"]}</td><td>{row["badges"]}</td></tr>' for i, (_, row) in enumerate(progress_df.head(10).iterrows())])}
 </table>
 
 <div class="footer">Generated on {datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</div>
@@ -723,7 +560,7 @@ def show_credentials():
 # ============================================================
 
 def data_analyst_dashboard(email, user):
-    st.markdown(f"## {user.get('avatar')} My Tasks - {user.get('name')}")
+    st.markdown(f"## {user.get('avatar', '📝')} My Tasks - {user.get('name')}")
     st.markdown(f"**Team:** {user.get('team', 'N/A')}")
     st.markdown("**Working Hours:** 10:00 AM - 6:00 PM (Monday to Friday)")
     
@@ -769,7 +606,7 @@ def data_analyst_dashboard(email, user):
                 ✅ <strong>COMPLETED</strong><br>
                 <strong>Task:</strong> {today_task['task']}<br>
                 <strong>Phase:</strong> {today_task.get('phase', 'N/A')}<br>
-                <strong>Completed:</strong> {today_task.get('completed_at', 'N/A')[:16]}
+                <strong>Completed:</strong> {today_task.get('completed_at', 'N/A')[:16] if today_task.get('completed_at') else 'N/A'}
             </div>
             """, unsafe_allow_html=True)
         else:
@@ -850,7 +687,7 @@ def data_analyst_dashboard(email, user):
             medal = "🥇" if idx == 0 else "🥈" if idx == 1 else "🥉" if idx == 2 else f"{idx+1}."
             st.markdown(f"""
             <div class="leaderboard-card">
-                <strong>{medal} {row['name']}</strong> ({row['team']})<br>
+                <strong>{medal} {row['avatar']} {row['name']}</strong> ({row['team']})<br>
                 📊 Progress: {row['progress_future']}% | ✅ Completed: {row['completed_future']} | 🏆 Points: {row['points']} | 🎖️ Badges: {row['badges']}
             </div>
             """, unsafe_allow_html=True)
@@ -890,28 +727,32 @@ def admin_dashboard():
     with tab1:
         st.subheader("Team Progress Dashboard")
         
-        fig = px.bar(progress_df, x="name", y="progress_future", color="team", 
-                     text="progress_future", title="Team Progress (%) - Tasks from June 8 onwards", height=500)
-        fig.update_traces(textposition="outside")
-        st.plotly_chart(fig, use_container_width=True)
+        if not progress_df.empty:
+            fig = px.bar(progress_df, x="name", y="progress_future", color="team", 
+                         text="progress_future", title="Team Progress (%) - Tasks from June 8 onwards", height=500)
+            fig.update_traces(textposition="outside")
+            st.plotly_chart(fig, use_container_width=True)
         
-        st.subheader("Team-wise Summary")
-        st.dataframe(team_summary, use_container_width=True, hide_index=True)
+        if not team_summary.empty:
+            st.subheader("Team-wise Summary")
+            st.dataframe(team_summary, use_container_width=True, hide_index=True)
         
         st.subheader("Detailed Performance")
-        st.dataframe(progress_df[["name", "team", "completed_future", "total_future", "progress_future", "points", "badges"]], 
-                    use_container_width=True, hide_index=True)
+        if not progress_df.empty:
+            st.dataframe(progress_df[["name", "team", "completed_future", "total_future", "progress_future", "points", "badges"]], 
+                        use_container_width=True, hide_index=True)
     
     with tab2:
         st.subheader("🏆 Top Performers Leaderboard")
-        for idx, (_, row) in enumerate(progress_df.head(10).iterrows()):
-            medal = "🥇" if idx == 0 else "🥈" if idx == 1 else "🥉" if idx == 2 else f"{idx+1}."
-            st.markdown(f"""
-            <div class="leaderboard-card">
-                <strong>{medal} {row['avatar']} {row['name']}</strong> - {row['team']}<br>
-                📊 Progress: {row['progress_future']}% | ✅ Completed: {row['completed_future']} | 🏆 Points: {row['points']} | 🎖️ Badges: {row['badges']}
-            </div>
-            """, unsafe_allow_html=True)
+        if not progress_df.empty:
+            for idx, (_, row) in enumerate(progress_df.head(10).iterrows()):
+                medal = "🥇" if idx == 0 else "🥈" if idx == 1 else "🥉" if idx == 2 else f"{idx+1}."
+                st.markdown(f"""
+                <div class="leaderboard-card">
+                    <strong>{medal} {row['avatar']} {row['name']}</strong> - {row['team']}<br>
+                    📊 Progress: {row['progress_future']}% | ✅ Completed: {row['completed_future']} | 🏆 Points: {row['points']} | 🎖️ Badges: {row['badges']}
+                </div>
+                """, unsafe_allow_html=True)
     
     with tab3:
         st.subheader("Generate Monthly Progress Report")
@@ -929,14 +770,15 @@ def admin_dashboard():
     with tab4:
         st.subheader("Advanced Analytics")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            fig = px.histogram(progress_df, x="progress_future", nbins=20, title="Team Progress Distribution")
-            st.plotly_chart(fig, use_container_width=True)
-        with col2:
-            fig = px.scatter(progress_df, x="progress_future", y="points", size="badges", 
-                             color="team", text="name", title="Points vs Progress")
-            st.plotly_chart(fig, use_container_width=True)
+        if not progress_df.empty:
+            col1, col2 = st.columns(2)
+            with col1:
+                fig = px.histogram(progress_df, x="progress_future", nbins=20, title="Team Progress Distribution")
+                st.plotly_chart(fig, use_container_width=True)
+            with col2:
+                fig = px.scatter(progress_df, x="progress_future", y="points", size="badges", 
+                                 color="team", text="name", title="Points vs Progress")
+                st.plotly_chart(fig, use_container_width=True)
 
 def project_lead_dashboard():
     st.markdown("## 👨‍💼 Project Lead Dashboard")
@@ -963,22 +805,24 @@ def project_lead_dashboard():
     tab1, tab2, tab3 = st.tabs(["📊 Team Performance", "🏆 Leaderboard", "📄 Reports"])
     
     with tab1:
-        fig = px.bar(progress_df, x="name", y="progress_future", color="team", 
-                     text="progress_future", title="Team Progress (%)", height=450)
-        fig.update_traces(textposition="outside")
-        st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(progress_df[["name", "team", "completed_future", "progress_future", "points"]], 
-                    use_container_width=True, hide_index=True)
+        if not progress_df.empty:
+            fig = px.bar(progress_df, x="name", y="progress_future", color="team", 
+                         text="progress_future", title="Team Progress (%)", height=450)
+            fig.update_traces(textposition="outside")
+            st.plotly_chart(fig, use_container_width=True)
+            st.dataframe(progress_df[["name", "team", "completed_future", "progress_future", "points"]], 
+                        use_container_width=True, hide_index=True)
     
     with tab2:
-        for idx, (_, row) in enumerate(progress_df.head(5).iterrows()):
-            medal = "🥇" if idx == 0 else "🥈" if idx == 1 else "🥉" if idx == 2 else f"{idx+1}."
-            st.markdown(f"""
-            <div class="leaderboard-card">
-                <strong>{medal} {row['name']}</strong> - {row['team']}<br>
-                ✅ Completed: {row['completed_future']} | 📊 Progress: {row['progress_future']}% | 🏆 Points: {row['points']}
-            </div>
-            """, unsafe_allow_html=True)
+        if not progress_df.empty:
+            for idx, (_, row) in enumerate(progress_df.head(5).iterrows()):
+                medal = "🥇" if idx == 0 else "🥈" if idx == 1 else "🥉" if idx == 2 else f"{idx+1}."
+                st.markdown(f"""
+                <div class="leaderboard-card">
+                    <strong>{medal} {row['name']}</strong> - {row['team']}<br>
+                    ✅ Completed: {row['completed_future']} | 📊 Progress: {row['progress_future']}% | 🏆 Points: {row['points']}
+                </div>
+                """, unsafe_allow_html=True)
     
     with tab3:
         col1, col2 = st.columns(2)
