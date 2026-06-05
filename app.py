@@ -8,9 +8,7 @@ import os
 from hashlib import sha256
 import base64
 import time
-import io
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+import random
 
 # Page configuration
 st.set_page_config(
@@ -36,8 +34,8 @@ def get_theme_css():
             .task-pending { background: #3d2f0a; border-left-color: #ffaa00; }
             .leaderboard-card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; }
             .credentials-box { background: #1a1a2e; border-color: #e94560; color: white; }
-            body { background-color: #0f0f1a; color: white; }
             .stMarkdown, .stMetric, .stDataFrame { color: white; }
+            .stApp { background-color: #0f0f1a; }
         </style>
         """
     else:
@@ -63,7 +61,7 @@ with col_theme2:
         st.rerun()
 
 # ============================================================
-# USER CREDENTIALS (Same as before - 11 users)
+# USER CREDENTIALS
 # ============================================================
 USERS = {
     "admin@mahastride.com": {
@@ -146,7 +144,7 @@ USERS = {
 }
 
 # ============================================================
-# DATA FILES (Same as before)
+# DATA FILES
 # ============================================================
 DAILY_TASKS_FILE = "daily_tasks_complete.json"
 TASK_COMPLETION_FILE = "task_completion.json"
@@ -168,6 +166,9 @@ def log_audit(email, action, details):
         "action": action,
         "details": details
     })
+    # Keep only last 500 entries
+    if len(audit_log) > 500:
+        audit_log = audit_log[-500:]
     save_audit_log(audit_log)
 
 def load_audit_log():
@@ -198,23 +199,111 @@ MOTIVATIONAL_QUOTES = [
 ]
 
 def get_motivational_quote():
-    import random
     icon, quote, author = random.choice(MOTIVATIONAL_QUOTES)
     return f"{icon} *\"{quote}\"* — {author}"
 
 # ============================================================
-# EXISTING TASK FUNCTIONS (Keeping all your existing code)
+# TASK FUNCTIONS
 # ============================================================
 
 def generate_all_unique_tasks():
-    # [Keep your existing task generation code - same as before]
+    """Generate unique tasks for every working day from May 2026 to April 2028"""
     all_tasks = {}
+    
+    # Pre-defined unique tasks
     monthly_tasks = {
         "2026-06-08": "Conduct kickoff meeting with Mumbai University VC and IQAC team",
         "2026-06-09": "Interview 10 faculty members at Mumbai University for research assessment",
-        # ... (keep all your existing tasks)
+        "2026-06-10": "Collect and verify student enrollment data from all departments",
+        "2026-06-11": "Document faculty publication records for last 5 years",
+        "2026-06-12": "Compile research grants and project funding data",
+        "2026-06-15": "Analyze placement data and graduate outcomes for last 3 years",
+        "2026-06-16": "Review library resources and digital infrastructure across campuses",
+        "2026-06-17": "Assess laboratory facilities and research equipment availability",
+        "2026-06-18": "Evaluate international collaboration MoUs and joint research projects",
+        "2026-06-19": "Prepare data gap analysis report for all 7 universities",
+        "2026-06-22": "Constitute GRDAU team with nominated members from each department",
+        "2026-06-23": "Develop standard operating procedures for GRDAU operations",
+        "2026-06-24": "Train GRDAU staff on NIRF data collection and validation",
+        "2026-06-25": "Setup data management system with access controls for GRDAU",
+        "2026-06-26": "Review diagnostic assessment findings with university leadership",
+        "2026-06-29": "Finalize diagnostic reports for submission to PMU",
+        "2026-06-30": "Submit June Monthly Progress Report with all achievements",
+        "2026-07-01": "Complete comprehensive gap analysis against NIRF 2026 parameters",
+        "2026-07-02": "Prepare SWOT analysis report for Mumbai University",
+        "2026-07-03": "Prepare SWOT analysis report for Pune University",
+        "2026-07-06": "Prepare SWOT analysis report for Nagpur University",
+        "2026-07-07": "Prepare SWOT analysis report for Amravati University",
+        "2026-07-08": "Prepare SWOT analysis report for COEP University",
+        "2026-07-09": "Prepare SWOT analysis report for KBCNMU Jalgaon",
+        "2026-07-10": "Prepare SWOT analysis report for BAMU Aurangabad",
+        "2026-07-13": "Finalize GRDAU establishment plan and submit for approval",
+        "2026-07-14": "Setup GRDAU office with required hardware and software",
+        "2026-07-15": "Conduct data entry training for newly appointed GRDAU staff",
+        "2026-07-16": "Create data validation protocols and quality checklists",
+        "2026-07-17": "Develop dashboard requirements document with stakeholder inputs",
+        "2026-07-20": "Design baseline report template for Phase 1 completion",
+        "2026-07-21": "Compile all Phase 1 deliverables and prepare completion report",
+        "2026-07-22": "Present Phase 1 findings to MITRA steering committee",
+        "2026-07-23": "Document lessons learned and best practices from Phase 1",
+        "2026-07-24": "Plan Phase 2 activities with detailed work breakdown structure",
+        "2026-07-27": "Prepare July Monthly Progress Report with Phase 1 summary",
+        "2026-07-28": "Submit July MPR and Phase 1 completion report to PMU",
+        "2026-07-29": "Review and incorporate client feedback on Phase 1 deliverables",
+        "2026-07-30": "Finalize Phase 2 work plan and resource allocation",
+        "2026-07-31": "Conduct Phase 2 kickoff meeting with all university coordinators",
+        "2026-08-03": "Develop IDP framework template aligned with NIRF metrics",
+        "2026-08-04": "Collect strategic plans from Mumbai University leadership",
+        "2026-08-05": "Collect strategic plans from Pune University VC office",
+        "2026-08-06": "Collect strategic plans from Nagpur University administration",
+        "2026-08-07": "Collect strategic plans from Amravati University",
+        "2026-08-10": "Collect strategic plans from COEP University Director",
+        "2026-08-11": "Collect strategic plans from KBCNMU Jalgaon",
+        "2026-08-12": "Collect strategic plans from BAMU Aurangabad",
+        "2026-08-13": "Analyze collected strategic plans and identify common themes",
+        "2026-08-14": "Draft Institutional Development Plan for Mumbai University",
+        "2026-08-17": "Draft IDP for Pune University with specific KPIs",
+        "2026-08-18": "Draft IDP for Nagpur University focusing on research excellence",
+        "2026-08-19": "Draft IDP for Amravati University with timeline",
+        "2026-08-20": "Draft IDP for COEP University emphasizing industry connect",
+        "2026-08-21": "Draft IDP for KBCNMU Jalgaon with internationalization goals",
+        "2026-08-24": "Draft IDP for BAMU Aurangabad focusing on infrastructure",
+        "2026-08-25": "Present IDP drafts to respective Vice Chancellors for feedback",
+        "2026-08-26": "Incorporate VC feedback and finalize IDPs for all universities",
+        "2026-08-27": "Get formal institutional sign-off on approved IDPs",
+        "2026-08-28": "Prepare August MPR documenting IDP development progress",
+        "2026-08-31": "Submit August MPR to PMU with IDP status report",
     }
-    # ... rest of your task generation
+    
+    # Generate tasks for remaining months
+    current_date = datetime(2026, 9, 1)
+    end_date = datetime(2028, 4, 28)
+    
+    phase_tasks = [
+        "Design data portal architecture", "Create dashboard wireframes", "Develop backend APIs",
+        "Implement user authentication", "Build KPI dashboard", "Integrate research charts",
+        "Add faculty-student ratio analytics", "Implement financial tracking", "Develop placement dashboard",
+        "Create international metrics", "Add citation analysis", "Implement infrastructure dashboard",
+        "Prepare Milestone Report", "Submit to PMU for review", "Conduct user testing",
+        "Fix bugs and optimize", "Deploy to staging", "Complete beta testing",
+        "Conduct training for administrators", "Create user manual", "Prepare Mid-Term Review",
+        "Deploy to production", "Monitor performance", "Setup analytics tracking",
+        "Create backup procedures", "Plan Phase 3 activities", "Develop Phase 3 schedule"
+    ]
+    
+    task_index = 0
+    while current_date <= end_date:
+        if current_date.weekday() < 5:
+            date_str = current_date.strftime("%Y-%m-%d")
+            task = phase_tasks[task_index % len(phase_tasks)]
+            priority = "High" if any(w in task.lower() for w in ["milestone", "submit", "present", "final"]) else "Medium"
+            all_tasks[date_str] = {"task": task, "priority": priority, "phase": "Implementation"}
+            task_index += 1
+        current_date += timedelta(days=1)
+    
+    for date_str, task_info in monthly_tasks.items():
+        all_tasks[date_str] = {"task": task_info, "priority": "High", "phase": "Foundation"}
+    
     return all_tasks
 
 def load_tasks():
@@ -391,7 +480,6 @@ def get_all_analysts_progress():
     return pd.DataFrame(progress_data).sort_values("progress", ascending=False)
 
 def generate_mpr_html(year, month):
-    # [Keep existing MPR generation]
     month_names = ["January", "February", "March", "April", "May", "June", 
                    "July", "August", "September", "October", "November", "December"]
     month_name = month_names[month-1]
@@ -399,29 +487,42 @@ def generate_mpr_html(year, month):
     
     html = f"""<!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><title>Monthly Progress Report - {month_name} {year}</title>
-<style>
-    body {{ font-family: 'Times New Roman', serif; margin: 0.7in; font-size: 11pt; }}
-    .header {{ text-align: center; }}
-    .section-title {{ font-size: 12pt; font-weight: bold; background-color: #f0f0f0; padding: 5px; }}
-    table {{ width: 100%; border-collapse: collapse; }}
-    th, td {{ border: 1px solid #000; padding: 6px; }}
-    th {{ background-color: #e8e8e8; }}
-</style>
+<head>
+    <meta charset="UTF-8">
+    <title>Monthly Progress Report - {month_name} {year}</title>
+    <style>
+        body {{ font-family: 'Times New Roman', serif; margin: 0.7in; font-size: 11pt; }}
+        .header {{ text-align: center; margin-bottom: 20px; }}
+        .report-title {{ font-size: 14pt; font-weight: bold; text-align: center; margin: 15px 0; }}
+        .section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; background-color: #f0f0f0; padding: 5px; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+        th, td {{ border: 1px solid #000; padding: 6px; vertical-align: top; }}
+        th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
+        .footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
+    </style>
 </head>
 <body>
-<div class="header"><h2>Maharashtra Institution for Transformation (MITRA)</h2>
-<h3>Monthly Progress Report - {month_name} {year}</h3></div>
-<div class="section-title">Team Performance Summary</div>
-<table><tr><th>Rank</th><th>Team Member</th><th>Team</th><th>Completed</th><th>Progress</th><th>Points</th><th>Badges</th></tr>
-{''.join([f'<tr><td>{i+1}</td><td>{row["name"]}</td><td>{row["team"]}</td><td>{row["completed"]}</td><td>{row["progress"]}%</td><td>{row["points"]}</td><td>{row["badges"]}</td></tr>' for i, (_, row) in enumerate(progress_df.head(10).iterrows())])}
+<div class="header">
+    <h2>Maharashtra Institution for Transformation (MITRA)</h2>
+    <h3>Monthly Progress Report - {month_name} {year}</h3>
+</div>
+
+<div class="section-title">1. Team Performance Summary</div>
+<table>
+    <tr><th>Rank</th><th>Team Member</th><th>Team</th><th>Tasks Completed</th><th>Progress</th><th>Points</th><th>Badges</th></tr>
+    {''.join([f'<tr><td>{i+1}</td><td>{row["name"]}</td><td>{row["team"]}</td><td>{row["completed"]}</td><td>{row["progress"]}%</td><td>{row["points"]}</td><td>{row["badges"]}</td></tr>' for i, (_, row) in enumerate(progress_df.head(10).iterrows())])}
 </table>
-<div class="section-title">Overall Statistics</div>
-<table><tr><td><strong>Total Working Days</strong></td><td>{len(load_tasks())}</td></tr>
-<tr><td><strong>Total Task Completions</strong></td><td>{sum(len(c) for c in load_completions().values())}</td></tr>
-<tr><td><strong>Active Team Members</strong></td><td>{len(progress_df)}</td></tr></table>
+
+<div class="section-title">2. Overall Statistics</div>
+<table>
+    <tr><td><strong>Total Working Days (24 months)</strong></td><td>{len(load_tasks())}</td></tr>
+    <tr><td><strong>Total Task Completions</strong></td><td>{sum(len(c) for c in load_completions().values())}</td></tr>
+    <tr><td><strong>Active Team Members</strong></td><td>{len(progress_df)}</td></tr>
+</table>
+
 <div class="footer">Generated on {datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</div>
-</body></html>"""
+</body>
+</html>"""
     return html
 
 def get_download_link(html, filename):
@@ -443,7 +544,7 @@ def show_credentials():
     """, unsafe_allow_html=True)
 
 # ============================================================
-# UPGRADED DASHBOARDS
+# DATA ANALYST DASHBOARD
 # ============================================================
 
 def data_analyst_dashboard(email, user):
@@ -495,7 +596,7 @@ def data_analyst_dashboard(email, user):
     
     st.markdown("---")
     
-    # Today's task with timer
+    # Today's task with complete button
     today = datetime.now().strftime("%Y-%m-%d")
     today_task = next((t for t in user_tasks if t["date"] == today and t["date"] > "2026-06-05"), None)
     
@@ -507,7 +608,7 @@ def data_analyst_dashboard(email, user):
                 ✅ <strong>COMPLETED</strong><br>
                 <strong>Task:</strong> {today_task['task']}<br>
                 <strong>Phase:</strong> {today_task.get('phase', 'N/A')}<br>
-                <strong>Completed:</strong> {today_task.get('completed_at', 'N/A')[:16]}
+                <strong>Completed:</strong> {today_task.get('completed_at', 'N/A')[:16] if today_task.get('completed_at') else 'N/A'}
             </div>
             """, unsafe_allow_html=True)
         else:
@@ -619,6 +720,10 @@ def data_analyst_dashboard(email, user):
         else:
             st.info("No notifications yet")
 
+# ============================================================
+# ADMIN DASHBOARD
+# ============================================================
+
 def admin_dashboard():
     st.markdown("## 📊 Admin Dashboard")
     
@@ -627,7 +732,6 @@ def admin_dashboard():
     progress_df = get_all_analysts_progress()
     audit_log = load_audit_log()
     
-    # System health metrics
     total_users = len([u for u in USERS.values() if u.get("role") == "data_analyst"])
     total_completions = sum(len(c) for c in completions.values())
     avg_completion = total_completions / total_users if total_users > 0 else 0
@@ -703,7 +807,6 @@ def project_lead_dashboard():
     all_tasks = load_tasks()
     progress_df = get_all_analysts_progress()
     
-    # Milestone tracking
     milestones = [
         {"name": "Milestone 1: Data Systems", "due": "Sep 30, 2026", "status": "pending"},
         {"name": "Milestone 2: IDP Execution", "due": "Oct 31, 2026", "status": "pending"},
@@ -839,7 +942,6 @@ def main():
         st.markdown("📅 **Days:** Monday to Friday")
         st.markdown("✅ **May 4 - June 5, 2026:** COMPLETED")
         
-        # Real-time progress in sidebar
         if role == "data_analyst":
             user_tasks = get_user_tasks(email)
             completed = sum(1 for t in user_tasks if t["status"] == "Completed" and t["date"] > "2026-06-05")
