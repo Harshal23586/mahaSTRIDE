@@ -75,7 +75,7 @@ st.markdown("""
         padding: 1rem;
         margin: 1rem 0;
     }
-    .complete-button {
+    .complete-btn {
         background-color: #28a745;
         color: white;
         border: none;
@@ -83,9 +83,18 @@ st.markdown("""
         border-radius: 5px;
         cursor: pointer;
         width: 100%;
+        font-weight: bold;
     }
-    .complete-button:hover {
+    .complete-btn:hover {
         background-color: #218838;
+    }
+    .success-message {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 1rem;
+        border-radius: 5px;
+        margin: 1rem 0;
+        border-left: 4px solid #28a745;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -471,14 +480,15 @@ def get_user_tasks(email):
     
     return sorted(user_tasks, key=lambda x: x["date"])
 
-def mark_task_complete(email, date_str, remarks):
+def mark_task_complete(email, date_str, remarks, work_hours):
     completions = load_completions()
     if email not in completions:
         completions[email] = {}
     
     completions[email][date_str] = {
         "completed_at": datetime.now().isoformat(),
-        "remarks": remarks
+        "remarks": remarks,
+        "work_hours": work_hours
     }
     save_completions(completions)
     return True
@@ -583,7 +593,7 @@ def show_credentials():
     """, unsafe_allow_html=True)
 
 # ============================================================
-# DATA ANALYST DASHBOARD - WITH COMPLETE TASK COMPLETION UI
+# DATA ANALYST DASHBOARD - WITH CLEAR COMPLETE BUTTON
 # ============================================================
 
 def data_analyst_dashboard(email, user):
@@ -593,7 +603,7 @@ def data_analyst_dashboard(email, user):
     
     user_tasks = get_user_tasks(email)
     
-    # Filter for future tasks (after June 5, 2026)
+    # Filter tasks
     pending_tasks = [t for t in user_tasks if t["date"] > "2026-06-05" and t["status"] == "Pending"]
     completed_tasks = [t for t in user_tasks if t["date"] > "2026-06-05" and t["status"] == "Completed"]
     initial_completed = [t for t in user_tasks if t["date"] <= "2026-06-05"]
@@ -611,7 +621,7 @@ def data_analyst_dashboard(email, user):
     st.markdown("---")
     
     # ============================================================
-    # TODAY'S TASK - WITH COMPLETION FORM
+    # TODAY'S TASK WITH COMPLETE BUTTON
     # ============================================================
     today = datetime.now().strftime("%Y-%m-%d")
     today_task = next((t for t in user_tasks if t["date"] == today and t["date"] > "2026-06-05"), None)
@@ -626,26 +636,21 @@ def data_analyst_dashboard(email, user):
                 <strong>Date:</strong> {today_task['date']}<br>
                 <strong>Task:</strong> {today_task['task']}<br>
                 <strong>Deliverable:</strong> {today_task['deliverable']}<br>
-                <strong>Due Date:</strong> {today_task['due_date']}<br>
-                <strong>Priority:</strong> {today_task['priority']}<br>
                 <strong>Remarks:</strong> {today_task.get('remarks', 'No remarks')}
             </div>
             """, unsafe_allow_html=True)
         else:
-            # Interactive form to mark task as complete
-            with st.form(key=f"complete_task_form_{today}"):
+            # Interactive form with complete button
+            with st.form(key=f"complete_today_task"):
                 st.markdown(f"""
                 <div class="task-card task-pending">
-                    <strong>⏳ TASK TO COMPLETE TODAY</strong><br>
-                    <strong>Date:</strong> {today_task['date']}<br>
+                    <strong>⏳ PENDING - Please complete today's task</strong><br>
                     <strong>Task:</strong> {today_task['task']}<br>
                     <strong>Deliverable:</strong> {today_task['deliverable']}<br>
                     <strong>Due Date:</strong> {today_task['due_date']}<br>
                     <strong>Priority:</strong> {today_task['priority']}
                 </div>
                 """, unsafe_allow_html=True)
-                
-                st.markdown("### 📝 Work Log")
                 
                 col1, col2 = st.columns(2)
                 with col1:
@@ -656,56 +661,60 @@ def data_analyst_dashboard(email, user):
                 work_hours = f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}"
                 
                 remarks = st.text_area(
-                    "Work Accomplished / Remarks", 
-                    height=150,
-                    placeholder="Describe what you accomplished today:\n\nExample:\n- Completed data collection for 3 departments\n- Analyzed research output metrics\n- Prepared draft report for review\n- Coordinated with stakeholders\n- Updated the dashboard with latest data"
+                    "📝 What did you accomplish today?", 
+                    height=120,
+                    placeholder="Example:\n• Completed data collection for 3 departments\n• Analyzed research output metrics\n• Prepared draft report for review\n• Coordinated with stakeholders"
                 )
                 
-                submitted = st.form_submit_button("✅ Mark as Complete", use_container_width=True, type="primary")
+                submitted = st.form_submit_button("✅ MARK AS COMPLETE", use_container_width=True, type="primary")
                 
                 if submitted:
                     if not remarks:
-                        st.error("⚠️ Please enter work accomplishments before marking as complete")
+                        st.error("⚠️ Please describe what you accomplished today")
                     else:
-                        if mark_task_complete(email, today_task["date"], remarks):
-                            st.success("🎉 Task completed successfully! Great work!")
-                            st.balloons()
+                        if mark_task_complete(email, today_task["date"], remarks, work_hours):
+                            st.markdown('<div class="success-message">🎉 Task completed successfully! Great work! 🎉</div>', unsafe_allow_html=True)
                             time.sleep(1)
                             st.rerun()
     
     st.markdown("---")
     
     # ============================================================
-    # PENDING TASKS LIST
+    # PENDING TASKS WITH COMPLETE BUTTONS
     # ============================================================
     if pending_tasks:
-        st.subheader("⏳ Pending Tasks")
+        st.subheader("⏳ Other Pending Tasks")
         
-        # Show next pending tasks
-        for task in pending_tasks[:10]:
-            with st.expander(f"📅 {task['date']} - {task['task'][:60]}..."):
-                st.markdown(f"""
-                **Task:** {task['task']}<br>
-                **Deliverable:** {task['deliverable']}<br>
-                **Due Date:** {task['due_date']}<br>
-                **Category:** {task['category']}<br>
-                **Priority:** {task['priority']}
-                """, unsafe_allow_html=True)
-                
-                # Option to complete past tasks (if missed)
-                if task['date'] < today:
-                    with st.form(key=f"past_task_form_{task['date']}"):
-                        past_remarks = st.text_area("Work Accomplished for this task", height=100)
-                        if st.form_submit_button(f"Complete Task for {task['date']}"):
-                            if past_remarks:
-                                if mark_task_complete(email, task["date"], past_remarks):
-                                    st.success(f"Task for {task['date']} completed!")
+        for task in pending_tasks[:5]:
+            if task['date'] != today:  # Skip today's task as it's already shown above
+                with st.expander(f"📅 {task['date']} - {task['task'][:60]}..."):
+                    st.markdown(f"""
+                    **Task:** {task['task']}<br>
+                    **Deliverable:** {task['deliverable']}<br>
+                    **Due Date:** {task['due_date']}<br>
+                    **Priority:** {task['priority']}
+                    """, unsafe_allow_html=True)
+                    
+                    with st.form(key=f"complete_task_{task['date']}"):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            task_start = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time(), key=f"start_{task['date']}")
+                        with col2:
+                            task_end = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time(), key=f"end_{task['date']}")
+                        
+                        task_hours = f"{task_start.strftime('%H:%M')} - {task_end.strftime('%H:%M')}"
+                        task_remarks = st.text_area("Work Accomplished", height=80, key=f"remarks_{task['date']}")
+                        
+                        if st.form_submit_button(f"✅ Complete Task for {task['date']}", use_container_width=True):
+                            if task_remarks:
+                                if mark_task_complete(email, task["date"], task_remarks, task_hours):
+                                    st.success(f"✅ Task for {task['date']} completed!")
                                     st.rerun()
                             else:
-                                st.error("Please enter work accomplishments")
+                                st.error("Please describe your work accomplishments")
     
     # ============================================================
-    # COMPLETED TASKS SECTION
+    # RECENTLY COMPLETED TASKS
     # ============================================================
     if completed_tasks:
         st.subheader("✅ Recently Completed Tasks")
@@ -713,58 +722,76 @@ def data_analyst_dashboard(email, user):
             st.markdown(f"""
             <div class="task-card task-completed">
                 <strong>✅ {task['date']}</strong><br>
-                {task['task'][:80]}...
+                {task['task'][:80]}...<br>
+                <small>Completed at: {task.get('completed_at', '')[:16] if task.get('completed_at') else 'N/A'}</small>
             </div>
             """, unsafe_allow_html=True)
     
     # ============================================================
-    # QUICK STATS CHART
+    # PROGRESS VISUALIZATION
     # ============================================================
     st.markdown("---")
-    st.subheader("📊 Your Progress Overview")
+    st.subheader("📊 My Progress Dashboard")
     
-    # Create progress chart
-    fig = go.Figure()
+    col1, col2 = st.columns(2)
     
-    categories = ['Completed (Initial)', 'Completed (Your Work)', 'Pending']
-    values = [len(initial_completed), len(completed_tasks), len(pending_tasks)]
-    colors = ['#28a745', '#20c997', '#ffc107']
+    with col1:
+        # Task breakdown chart
+        fig = go.Figure(data=[go.Pie(
+            labels=['Completed (Initial Setup)', 'Completed (My Work)', 'Pending'],
+            values=[len(initial_completed), len(completed_tasks), len(pending_tasks)],
+            marker_colors=['#28a745', '#20c997', '#ffc107'],
+            hole=0.4
+        )])
+        fig.update_layout(title="Task Breakdown", height=350)
+        st.plotly_chart(fig, use_container_width=True)
     
-    fig.add_trace(go.Bar(x=categories, y=values, marker_color=colors, text=values, textposition='auto'))
-    fig.update_layout(title="Task Breakdown", height=350, xaxis_title="Status", yaxis_title="Number of Tasks")
-    st.plotly_chart(fig, use_container_width=True)
+    with col2:
+        # Progress gauge
+        total_future = len(completed_tasks) + len(pending_tasks)
+        progress_pct = (len(completed_tasks) / total_future * 100) if total_future > 0 else 0
+        
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=progress_pct,
+            title={'text': "Your Progress (Tasks from June 8 onwards)"},
+            gauge={'axis': {'range': [0, 100]},
+                   'bar': {'color': "#28a745"},
+                   'steps': [
+                       {'range': [0, 33], 'color': "#ffcccc"},
+                       {'range': [33, 66], 'color': "#ffffcc"},
+                       {'range': [66, 100], 'color': "#ccffcc"}],
+                   'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 90}}))
+        fig.update_layout(height=350)
+        st.plotly_chart(fig, use_container_width=True)
     
-    # Progress percentage
-    total_future = len(completed_tasks) + len(pending_tasks)
-    if total_future > 0:
-        progress_pct = (len(completed_tasks) / total_future) * 100
-        st.markdown(f"### Your Progress on Future Tasks: {progress_pct:.1f}%")
-        st.progress(progress_pct / 100)
-    
-    # ============================================================
-    # ALL TASKS TABLE
-    # ============================================================
+    # Weekly progress chart
     st.markdown("---")
-    st.subheader("📋 All Your Tasks")
+    st.subheader("📈 Weekly Progress Trend")
     
-    task_data = []
+    weekly_data = {}
     for task in user_tasks:
         if task["date"] > "2026-06-05":
-            task_data.append({
-                "Date": task["date"],
-                "Task": task["task"][:60] + "..." if len(task["task"]) > 60 else task["task"],
-                "Deliverable": task["deliverable"],
-                "Priority": task["priority"],
-                "Status": "✅ Completed" if task["status"] == "Completed" else "⏳ Pending"
-            })
+            task_date = datetime.strptime(task["date"], "%Y-%m-%d")
+            week_num = task_date.isocalendar()[1]
+            week_label = f"Week {week_num} ({task_date.strftime('%b')})"
+            if week_label not in weekly_data:
+                weekly_data[week_label] = {"completed": 0, "total": 0}
+            weekly_data[week_label]["total"] += 1
+            if task["status"] == "Completed":
+                weekly_data[week_label]["completed"] += 1
     
-    if task_data:
-        df_tasks = pd.DataFrame(task_data)
-        st.dataframe(df_tasks, use_container_width=True, hide_index=True)
+    if weekly_data:
+        weeks = list(weekly_data.keys())
+        completed_counts = [weekly_data[w]["completed"] for w in weeks]
+        pending_counts = [weekly_data[w]["total"] - weekly_data[w]["completed"] for w in weeks]
         
-        # Export option
-        csv = df_tasks.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 Download My Tasks as CSV", csv, f"my_tasks_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=weeks, y=completed_counts, name="Completed", marker_color="#28a745"))
+        fig.add_trace(go.Bar(x=weeks, y=pending_counts, name="Pending", marker_color="#ffc107"))
+        fig.update_layout(title="Weekly Task Completion", barmode="stack", height=350,
+                         xaxis_title="Week", yaxis_title="Number of Tasks")
+        st.plotly_chart(fig, use_container_width=True)
 
 # ============================================================
 # ADMIN DASHBOARD
@@ -925,11 +952,10 @@ def main():
         st.markdown(f"*Role: {role.upper()}*")
         st.markdown("---")
         
-        # Navigation Tabs based on role
         if role == "admin":
             nav_options = ["📊 Dashboard", "👥 Team Performance", "📄 MPR Reports", "📅 Monthly Plan"]
         elif role == "project_lead":
-            nav_options = ["📊 Dashboard", "👥 Team Performance", "📄 MPR Reports", "📋 Task Overview"]
+            nav_options = ["📊 Dashboard", "👥 Team Performance", "📄 MPR Reports"]
         else:
             nav_options = ["📝 My Tasks", "📊 My Progress", "📅 Calendar View"]
         
@@ -947,10 +973,7 @@ def main():
             st.session_state.authenticated = False
             st.rerun()
     
-    # ============================================================
-    # RENDER APPROPRIATE DASHBOARD
-    # ============================================================
-    
+    # Render appropriate dashboard
     if role == "admin":
         if selected_nav == "📊 Dashboard":
             admin_dashboard()
@@ -973,7 +996,6 @@ def main():
             st.dataframe(progress_df, use_container_width=True, hide_index=True)
         elif selected_nav == "📄 MPR Reports":
             st.markdown("## 📄 Monthly Progress Reports")
-            
             col1, col2 = st.columns(2)
             with col1:
                 report_year = st.selectbox("Select Year", [2026, 2027, 2028])
@@ -981,7 +1003,6 @@ def main():
                 report_month = st.selectbox("Select Month", range(1, 13), 
                                             format_func=lambda x: ["January","February","March","April","May","June",
                                                                   "July","August","September","October","November","December"][x-1])
-            
             if st.button("Generate MPR Report", use_container_width=True):
                 html = generate_mpr_html(report_year, report_month)
                 st.markdown(get_download_link(html, f"MPR_{report_year}_{report_month}.html"), unsafe_allow_html=True)
@@ -1012,7 +1033,6 @@ def main():
             
             st.markdown("---")
             st.subheader("Complete Team Member List")
-            
             for _, row in progress_df.iterrows():
                 st.markdown(f"**{row['name']}** - {row['team']}")
                 st.progress(row['progress']/100)
@@ -1020,7 +1040,6 @@ def main():
                 st.markdown("---")
         elif selected_nav == "📄 MPR Reports":
             st.markdown("## 📄 Monthly Progress Reports")
-            
             col1, col2 = st.columns(2)
             with col1:
                 report_year = st.selectbox("Select Year", [2026, 2027, 2028])
@@ -1028,21 +1047,15 @@ def main():
                 report_month = st.selectbox("Select Month", range(1, 13), 
                                             format_func=lambda x: ["January","February","March","April","May","June",
                                                                   "July","August","September","October","November","December"][x-1])
-            
             if st.button("Generate MPR Report", use_container_width=True):
                 html = generate_mpr_html(report_year, report_month)
                 st.markdown(get_download_link(html, f"MPR_{report_year}_{report_month}.html"), unsafe_allow_html=True)
-        elif selected_nav == "📋 Task Overview":
-            st.markdown("## 📋 Task Overview")
-            all_tasks = load_tasks()
-            st.dataframe(pd.DataFrame(list(all_tasks.items()), columns=["Date", "Task Info"]), use_container_width=True)
     
     else:  # data_analyst
         if selected_nav == "📝 My Tasks":
             data_analyst_dashboard(email, user_info)
         elif selected_nav == "📊 My Progress":
             st.markdown(f"## 📊 My Progress - {user_info.get('name')}")
-            
             user_tasks = get_user_tasks(email)
             future_tasks = [t for t in user_tasks if t["date"] > "2026-06-05"]
             completed = sum(1 for t in future_tasks if t["status"] == "Completed")
@@ -1059,8 +1072,6 @@ def main():
             st.progress(completed/total if total > 0 else 0)
             
             st.markdown("---")
-            
-            # Monthly progress chart
             st.subheader("Monthly Progress")
             monthly_data = {}
             for task in future_tasks:
@@ -1080,9 +1091,7 @@ def main():
                 st.plotly_chart(fig, use_container_width=True)
         elif selected_nav == "📅 Calendar View":
             st.markdown(f"## 📅 Calendar View - {user_info.get('name')}")
-            
             user_tasks = get_user_tasks(email)
-            
             for task in user_tasks:
                 if task["date"] > "2026-06-05":
                     status_icon = "✅" if task["status"] == "Completed" else "⏳"
