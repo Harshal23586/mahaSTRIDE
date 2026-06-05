@@ -166,7 +166,6 @@ def log_audit(email, action, details):
         "action": action,
         "details": details
     })
-    # Keep only last 500 entries
     if len(audit_log) > 500:
         audit_log = audit_log[-500:]
     save_audit_log(audit_log)
@@ -210,7 +209,6 @@ def generate_all_unique_tasks():
     """Generate unique tasks for every working day from May 2026 to April 2028"""
     all_tasks = {}
     
-    # Pre-defined unique tasks
     monthly_tasks = {
         "2026-06-08": "Conduct kickoff meeting with Mumbai University VC and IQAC team",
         "2026-06-09": "Interview 10 faculty members at Mumbai University for research assessment",
@@ -275,7 +273,6 @@ def generate_all_unique_tasks():
         "2026-08-31": "Submit August MPR to PMU with IDP status report",
     }
     
-    # Generate tasks for remaining months
     current_date = datetime(2026, 9, 1)
     end_date = datetime(2028, 4, 28)
     
@@ -394,7 +391,7 @@ def initialize_completed_tasks():
     
     return len(completed_dates)
 
-def get_user_tasks(email):
+def get_user_tasks(email, year=None, month=None):
     user = USERS.get(email, {})
     all_tasks = load_tasks()
     completions = load_completions()
@@ -403,6 +400,13 @@ def get_user_tasks(email):
     user_tasks = []
     for date_str, task_info in all_tasks.items():
         if user.get("role") == "data_analyst":
+            # Filter by year and month if specified
+            task_date = datetime.strptime(date_str, "%Y-%m-%d")
+            if year is not None and task_date.year != year:
+                continue
+            if month is not None and task_date.month != month:
+                continue
+                
             is_completed = date_str in user_completions
             completion_info = user_completions.get(date_str, {})
             user_tasks.append({
@@ -544,7 +548,7 @@ def show_credentials():
     """, unsafe_allow_html=True)
 
 # ============================================================
-# DATA ANALYST DASHBOARD
+# DATA ANALYST DASHBOARD WITH YEAR/MONTH DROPDOWN
 # ============================================================
 
 def data_analyst_dashboard(email, user):
@@ -559,29 +563,32 @@ def data_analyst_dashboard(email, user):
     # Motivational quote
     st.info(get_motivational_quote())
     
-    user_tasks = get_user_tasks(email)
-    achievements = load_achievements().get(email, {"points": 0, "badges": []})
+    # Get all tasks for stats (without filter)
+    all_user_tasks = get_user_tasks(email)
     
-    pending_tasks = [t for t in user_tasks if t["date"] > "2026-06-05" and t["status"] == "Pending"]
-    completed_tasks = [t for t in user_tasks if t["date"] > "2026-06-05" and t["status"] == "Completed"]
-    initial_completed = [t for t in user_tasks if t["date"] <= "2026-06-05"]
+    pending_tasks_all = [t for t in all_user_tasks if t["date"] > "2026-06-05" and t["status"] == "Pending"]
+    completed_tasks_all = [t for t in all_user_tasks if t["date"] > "2026-06-05" and t["status"] == "Completed"]
+    initial_completed_all = [t for t in all_user_tasks if t["date"] <= "2026-06-05"]
+    
+    achievements = load_achievements().get(email, {"points": 0, "badges": []})
     
     # Weekly summary
     today = datetime.now()
     week_start = today - timedelta(days=today.weekday())
-    week_tasks = [t for t in user_tasks if t["date"] > "2026-06-05" and datetime.strptime(t["date"], "%Y-%m-%d") >= week_start and datetime.strptime(t["date"], "%Y-%m-%d") <= today]
+    week_tasks = [t for t in all_user_tasks if t["date"] > "2026-06-05" and datetime.strptime(t["date"], "%Y-%m-%d") >= week_start and datetime.strptime(t["date"], "%Y-%m-%d") <= today]
     week_completed = sum(1 for t in week_tasks if t["status"] == "Completed")
     week_total = len(week_tasks)
     
+    # Stats row
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     with col1:
-        st.metric("📅 Total", len(user_tasks))
+        st.metric("📅 Total", len(all_user_tasks))
     with col2:
-        st.metric("✅ Initial", len(initial_completed))
+        st.metric("✅ Initial", len(initial_completed_all))
     with col3:
-        st.metric("✅ Your Work", len(completed_tasks))
+        st.metric("✅ Your Work", len(completed_tasks_all))
     with col4:
-        st.metric("⏳ Pending", len(pending_tasks))
+        st.metric("⏳ Pending", len(pending_tasks_all))
     with col5:
         st.metric("🏆 Points", achievements.get("points", 0))
     with col6:
@@ -598,7 +605,7 @@ def data_analyst_dashboard(email, user):
     
     # Today's task with complete button
     today = datetime.now().strftime("%Y-%m-%d")
-    today_task = next((t for t in user_tasks if t["date"] == today and t["date"] > "2026-06-05"), None)
+    today_task = next((t for t in all_user_tasks if t["date"] == today and t["date"] > "2026-06-05"), None)
     
     if today_task:
         st.subheader("📌 Today's Task")
@@ -643,12 +650,13 @@ def data_analyst_dashboard(email, user):
     
     st.markdown("---")
     
+    # Tabs for different views
     tab1, tab2, tab3, tab4 = st.tabs(["📅 Pending Tasks", "📊 My Progress", "🏆 Leaderboard", "🔔 Notifications"])
     
     with tab1:
-        st.subheader(f"Pending Tasks ({len(pending_tasks)})")
-        if pending_tasks:
-            for task in pending_tasks[:20]:
+        st.subheader(f"Pending Tasks ({len(pending_tasks_all)})")
+        if pending_tasks_all:
+            for task in pending_tasks_all[:20]:
                 priority_badge = "🔴" if task["priority"] == "High" else "🟡" if task["priority"] == "Medium" else "🟢"
                 with st.expander(f"{priority_badge} 📅 {task['date']} - {task['task'][:80]}..."):
                     st.markdown(f"""
@@ -679,13 +687,194 @@ def data_analyst_dashboard(email, user):
     
     with tab2:
         st.subheader("My Progress")
-        total_future = len(pending_tasks) + len(completed_tasks)
-        progress_pct = (len(completed_tasks) / total_future * 100) if total_future > 0 else 0
+        total_future = len(pending_tasks_all) + len(completed_tasks_all)
+        progress_pct = (len(completed_tasks_all) / total_future * 100) if total_future > 0 else 0
         st.progress(progress_pct / 100)
-        st.caption(f"{len(completed_tasks)}/{total_future} tasks completed ({progress_pct:.1f}%)")
+        st.caption(f"{len(completed_tasks_all)}/{total_future} tasks completed ({progress_pct:.1f}%)")
         
         monthly_data = {}
-        for task in user_tasks:
+        for task in all_user_tasks:
+            if task["date"] > "2026-06-05":
+                month_key = task["date"][:7]
+                if month_key not in monthly_data:
+                    monthly_data[month_key] = {"total": 0, "completed": 0}
+                monthly_data[month_key]["total"] += 1
+                if task["status"] == "Completed":
+                    monthly_data[month_key]["completed"] += 1
+        
+        if monthly_data:
+            df_monthly = pd.DataFrame([{"Month": k, "Completed": v["completed"], "Total": v["total"]} for k, v in monthly_data.items()])
+            fig = px.bar(df_monthly, x="Month", y="Completed", title="Monthly Task Completion", text="Total")
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with tab3:
+        st.subheader("Team Leaderboard")
+        progress_df = get_all_analysts_progress()
+        for idx, (_, row) in enumerate(progress_df.head(10).iterrows()):
+            medal = "🥇" if idx == 0 else "🥈" if idx == 1 else "🥉" if idx == 2 else f"{idx+1}."
+            st.markdown(f"""
+            <div class="leaderboard-card">
+                <strong>{medal} {row['avatar']} {row['name']}</strong> ({row['team']})<br>
+                📊 Progress: {row['progress']}% | ✅ Completed: {row['completed']} | 🏆 Points: {row['points']} | 🎖️ Badges: {row['badges']}
+            </div>
+            """, unsafe_allow_html=True)
+    
+    with tab4:
+        st.subheader("Notifications")
+        notifications = load_notifications().get(email, [])
+        if notifications:
+            for notif in reversed(notifications[-10:]):
+                st.info(f"**{notif['title']}**\n\n{notif['message']}\n\n*{notif['timestamp'][:16]}*")
+        else:
+            st.info("No notifications yet")
+
+# ============================================================
+# UPGRADED DATA ANALYST DASHBOARD WITH YEAR/MONTH SELECTOR
+# ============================================================
+
+def data_analyst_dashboard_with_filter(email, user):
+    st.markdown(f"## {user.get('avatar', '📝')} My Tasks - {user.get('name')}")
+    st.markdown(f"**Team:** {user.get('team', 'N/A')}")
+    
+    # Real-time clock
+    current_time = datetime.now().strftime("%I:%M %p")
+    current_date = datetime.now().strftime("%A, %B %d, %Y")
+    st.markdown(f"<div style='text-align: center; padding: 10px; background: #e8f4f8; border-radius: 10px; margin-bottom: 10px;'>📅 {current_date} | 🕐 {current_time} | Working Hours: 10:00 AM - 6:00 PM</div>", unsafe_allow_html=True)
+    
+    # Motivational quote
+    st.info(get_motivational_quote())
+    
+    # Get all tasks for stats (without filter)
+    all_user_tasks = get_user_tasks(email)
+    
+    pending_tasks_all = [t for t in all_user_tasks if t["date"] > "2026-06-05" and t["status"] == "Pending"]
+    completed_tasks_all = [t for t in all_user_tasks if t["date"] > "2026-06-05" and t["status"] == "Completed"]
+    initial_completed_all = [t for t in all_user_tasks if t["date"] <= "2026-06-05"]
+    
+    achievements = load_achievements().get(email, {"points": 0, "badges": []})
+    
+    # Weekly summary
+    today = datetime.now()
+    week_start = today - timedelta(days=today.weekday())
+    week_tasks = [t for t in all_user_tasks if t["date"] > "2026-06-05" and datetime.strptime(t["date"], "%Y-%m-%d") >= week_start and datetime.strptime(t["date"], "%Y-%m-%d") <= today]
+    week_completed = sum(1 for t in week_tasks if t["status"] == "Completed")
+    week_total = len(week_tasks)
+    
+    # Stats row
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    with col1:
+        st.metric("📅 Total", len(all_user_tasks))
+    with col2:
+        st.metric("✅ Initial", len(initial_completed_all))
+    with col3:
+        st.metric("✅ Your Work", len(completed_tasks_all))
+    with col4:
+        st.metric("⏳ Pending", len(pending_tasks_all))
+    with col5:
+        st.metric("🏆 Points", achievements.get("points", 0))
+    with col6:
+        st.metric("📅 This Week", f"{week_completed}/{week_total}")
+    
+    if achievements.get("badges"):
+        st.markdown("### 🎖️ Your Badges")
+        cols = st.columns(len(achievements["badges"]))
+        for idx, badge in enumerate(achievements["badges"]):
+            with cols[idx]:
+                st.markdown(f'<div class="achievement-badge">🏅 {badge}</div>', unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Today's task with complete button
+    today = datetime.now().strftime("%Y-%m-%d")
+    today_task = next((t for t in all_user_tasks if t["date"] == today and t["date"] > "2026-06-05"), None)
+    
+    if today_task:
+        st.subheader("📌 Today's Task")
+        if today_task["status"] == "Completed":
+            st.markdown(f"""
+            <div class="task-card task-completed">
+                ✅ <strong>COMPLETED</strong><br>
+                <strong>Task:</strong> {today_task['task']}<br>
+                <strong>Phase:</strong> {today_task.get('phase', 'N/A')}<br>
+                <strong>Completed:</strong> {today_task.get('completed_at', 'N/A')[:16] if today_task.get('completed_at') else 'N/A'}
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            with st.form(key="complete_today_task"):
+                priority_badge = "🔴 HIGH" if today_task["priority"] == "High" else "🟡 MEDIUM" if today_task["priority"] == "Medium" else "🟢 LOW"
+                st.markdown(f"""
+                <div class="task-card task-pending">
+                    <strong>⏳ PENDING - {priority_badge}</strong><br>
+                    <strong>Task:</strong> {today_task['task']}<br>
+                    <strong>Phase:</strong> {today_task.get('phase', 'N/A')}
+                </div>
+                """, unsafe_allow_html=True)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    start_time = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time())
+                with col2:
+                    end_time = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time())
+                
+                work_hours = f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}"
+                remarks = st.text_area("📝 Work Accomplished", height=100)
+                
+                if st.form_submit_button("✅ MARK AS COMPLETE", use_container_width=True, type="primary"):
+                    if remarks:
+                        if mark_task_complete(email, today_task["date"], remarks, work_hours):
+                            st.success("🎉 Task completed! Great work!")
+                            st.balloons()
+                            time.sleep(1)
+                            st.rerun()
+                    else:
+                        st.error("Please describe your work")
+    
+    st.markdown("---")
+    
+    # Tabs for different views
+    tab1, tab2, tab3, tab4 = st.tabs(["📅 Pending Tasks", "📊 My Progress", "🏆 Leaderboard", "🔔 Notifications"])
+    
+    with tab1:
+        st.subheader(f"Pending Tasks ({len(pending_tasks_all)})")
+        if pending_tasks_all:
+            for task in pending_tasks_all[:20]:
+                priority_badge = "🔴" if task["priority"] == "High" else "🟡" if task["priority"] == "Medium" else "🟢"
+                with st.expander(f"{priority_badge} 📅 {task['date']} - {task['task'][:80]}..."):
+                    st.markdown(f"""
+                    **Task:** {task['task']}<br>
+                    **Phase:** {task.get('phase', 'N/A')}<br>
+                    **Priority:** {task['priority']}
+                    """, unsafe_allow_html=True)
+                    
+                    with st.form(key=f"complete_pending_{task['date']}"):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            task_start = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time(), key=f"start_{task['date']}")
+                        with col2:
+                            task_end = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time(), key=f"end_{task['date']}")
+                        
+                        task_hours = f"{task_start.strftime('%H:%M')} - {task_end.strftime('%H:%M')}"
+                        task_remarks = st.text_area("Work Accomplished", height=80, key=f"remarks_{task['date']}")
+                        
+                        if st.form_submit_button(f"✅ Complete Task for {task['date']}", use_container_width=True):
+                            if task_remarks:
+                                if mark_task_complete(email, task["date"], task_remarks, task_hours):
+                                    st.success(f"✅ Task for {task['date']} completed!")
+                                    st.rerun()
+                            else:
+                                st.error("Please describe your work")
+        else:
+            st.success("🎉 All tasks completed! Great job!")
+    
+    with tab2:
+        st.subheader("My Progress")
+        total_future = len(pending_tasks_all) + len(completed_tasks_all)
+        progress_pct = (len(completed_tasks_all) / total_future * 100) if total_future > 0 else 0
+        st.progress(progress_pct / 100)
+        st.caption(f"{len(completed_tasks_all)}/{total_future} tasks completed ({progress_pct:.1f}%)")
+        
+        monthly_data = {}
+        for task in all_user_tasks:
             if task["date"] > "2026-06-05":
                 month_key = task["date"][:7]
                 if month_key not in monthly_data:
@@ -888,7 +1077,7 @@ def main():
             <p>24-Month Detailed Task Plan | May 2026 - April 2028</p>
             <p>Monday to Friday | 10:00 AM - 6:00 PM</p>
             <p>✅ May 4 to June 5, 2026: COMPLETED | June 8, 2026 onwards: PENDING</p>
-            <p>✨ New: Dark Mode | Task Timer | Achievements | Real-time Clock</p>
+            <p>✨ New: Year/Month Filter | Dark Mode | Task Timer | Achievements | Real-time Clock</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -936,6 +1125,34 @@ def main():
         
         selected_nav = st.radio("Navigation", nav_options, label_visibility="collapsed")
         
+        # Year and Month dropdown for Data Analyst - Added in sidebar
+        if role == "data_analyst" and selected_nav == "📝 My Tasks":
+            st.markdown("---")
+            st.markdown("### 📅 Filter by Month")
+            
+            # Year dropdown
+            selected_year = st.selectbox(
+                "Select Year",
+                options=[2026, 2027, 2028],
+                index=0,
+                key="sidebar_year"
+            )
+            
+            # Month dropdown
+            month_names = ["January", "February", "March", "April", "May", "June", 
+                           "July", "August", "September", "October", "November", "December"]
+            selected_month_index = st.selectbox(
+                "Select Month",
+                options=list(range(12)),
+                format_func=lambda x: month_names[x],
+                key="sidebar_month"
+            )
+            selected_month = selected_month_index + 1
+            
+            # Store in session state
+            st.session_state.selected_year = selected_year
+            st.session_state.selected_month = selected_month
+        
         st.markdown("---")
         st.markdown("ℹ️ **Information**")
         st.markdown("🕐 **Hours:** 10 AM - 6 PM")
@@ -958,6 +1175,7 @@ def main():
             st.session_state.authenticated = False
             st.rerun()
     
+    # Main content
     if role == "admin":
         if selected_nav == "📊 Dashboard":
             admin_dashboard()
@@ -986,9 +1204,87 @@ def main():
                 html = generate_mpr_html(report_year, report_month)
                 st.markdown(get_download_link(html, f"MPR_{report_year}_{report_month}.html"), unsafe_allow_html=True)
     
-    else:
+    else:  # data_analyst
         if selected_nav == "📝 My Tasks":
-            data_analyst_dashboard(email, user_info)
+            # Get the selected year and month from session state
+            selected_year = getattr(st.session_state, 'selected_year', 2026)
+            selected_month = getattr(st.session_state, 'selected_month', 6)
+            
+            # Get filtered tasks
+            filtered_tasks = get_user_tasks(email, selected_year, selected_month)
+            
+            st.markdown(f"## {user_info.get('avatar', '📝')} Tasks for {month_names[selected_month-1]} {selected_year}")
+            st.markdown(f"**Team:** {user_info.get('team', 'N/A')}")
+            
+            # Real-time clock
+            current_time = datetime.now().strftime("%I:%M %p")
+            current_date = datetime.now().strftime("%A, %B %d, %Y")
+            st.markdown(f"<div style='text-align: center; padding: 10px; background: #e8f4f8; border-radius: 10px; margin-bottom: 10px;'>📅 {current_date} | 🕐 {current_time} | Working Hours: 10:00 AM - 6:00 PM</div>", unsafe_allow_html=True)
+            
+            # Motivational quote
+            st.info(get_motivational_quote())
+            
+            if filtered_tasks:
+                # Statistics for filtered month
+                pending = [t for t in filtered_tasks if t["status"] == "Pending"]
+                completed = [t for t in filtered_tasks if t["status"] == "Completed"]
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("📅 Total Tasks", len(filtered_tasks))
+                with col2:
+                    st.metric("✅ Completed", len(completed))
+                with col3:
+                    st.metric("⏳ Pending", len(pending))
+                
+                st.progress(len(completed)/len(filtered_tasks) if filtered_tasks else 0)
+                st.markdown("---")
+                
+                # Display tasks for selected month
+                for task in filtered_tasks:
+                    if task["status"] == "Completed":
+                        st.markdown(f"""
+                        <div class="task-card task-completed">
+                            ✅ <strong>COMPLETED</strong><br>
+                            <strong>Date:</strong> {task['date']}<br>
+                            <strong>Task:</strong> {task['task']}<br>
+                            <strong>Phase:</strong> {task.get('phase', 'N/A')}<br>
+                            <strong>Remarks:</strong> {task.get('remarks', 'No remarks')}
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        with st.form(key=f"complete_month_task_{task['date']}"):
+                            priority_badge = "🔴 HIGH" if task["priority"] == "High" else "🟡 MEDIUM" if task["priority"] == "Medium" else "🟢 LOW"
+                            st.markdown(f"""
+                            <div class="task-card task-pending">
+                                <strong>⏳ PENDING - {priority_badge}</strong><br>
+                                <strong>Date:</strong> {task['date']}<br>
+                                <strong>Task:</strong> {task['task']}<br>
+                                <strong>Phase:</strong> {task.get('phase', 'N/A')}
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                start_time = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time(), key=f"start_{task['date']}")
+                            with col2:
+                                end_time = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time(), key=f"end_{task['date']}")
+                            
+                            work_hours = f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}"
+                            remarks = st.text_area("📝 Work Accomplished", height=80, key=f"remarks_{task['date']}")
+                            
+                            if st.form_submit_button(f"✅ MARK AS COMPLETE", use_container_width=True, type="primary"):
+                                if remarks:
+                                    if mark_task_complete(email, task["date"], remarks, work_hours):
+                                        st.success(f"🎉 Task completed! Great work!")
+                                        st.balloons()
+                                        time.sleep(1)
+                                        st.rerun()
+                                else:
+                                    st.error("Please describe your work")
+            else:
+                st.info(f"No tasks found for {month_names[selected_month-1]} {selected_year}. Please select a different month.")
+        
         elif selected_nav == "🏆 Achievements":
             st.markdown(f"## 🏆 My Achievements - {user_info.get('name')}")
             achievements = load_achievements().get(email, {"points": 0, "badges": []})
