@@ -10,7 +10,7 @@ from hashlib import sha256
 
 # Page configuration
 st.set_page_config(
-    page_title="MahaSTRIDE - Complete 24-Month Task Management System",
+    page_title="MahaSTRIDE - 24-Month Task Management System",
     page_icon="📋",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -66,18 +66,18 @@ st.markdown("""
     .admin-badge { background-color: #dc3545; color: white; }
     .lead-badge { background-color: #17a2b8; color: white; }
     .analyst-badge { background-color: #28a745; color: white; }
-    .weekday-header {
-        background-color: #2a5298;
-        color: white;
-        padding: 0.5rem;
-        text-align: center;
+    .info-note {
+        background-color: #d1ecf1;
+        border-left: 4px solid #17a2b8;
+        padding: 1rem;
         border-radius: 5px;
+        margin: 1rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# USER CREDENTIALS
+# USER CREDENTIALS (from app(6).py)
 # ============================================================
 USERS = {
     "admin@mahastride.com": {
@@ -147,26 +147,17 @@ USERS = {
 }
 
 # ============================================================
-# TEAMS DETAILS
-# ============================================================
-TEAMS = {
-    "ICARE": {"members": ["Dr. Harshal Kotwal"], "type": "leadership"},
-    "MITRA": {"members": ["Shubham Singh"], "type": "coordination"},
-    "Mumbai University": {"members": ["Sneha Kashitkar", "Sagar Teli"], "type": "university"},
-    "Savitribai Phule Pune University": {"members": ["Jagan Sridhar"], "type": "university"},
-    "COEP Technological University": {"members": ["Vaibhav Ambekar"], "type": "university"},
-    "Sant Gadge Baba Amravati University": {"members": ["Prathamesh Babhulkar"], "type": "university"},
-    "Rashtrasant Tukadoji Maharaj Nagpur University": {"members": ["Anjali Singh"], "type": "university"},
-    "KBCNMU, Jalgaon": {"members": ["Nitish Kumbhar"], "type": "university"},
-    "Dr. Babasaheb Ambedkar Marathwada University": {"members": ["Atharav Paturkar"], "type": "university"}
-}
-
-# ============================================================
 # DATA FILES
 # ============================================================
 TASKS_FILE = "complete_24month_tasks.json"
 TASK_COMPLETION_FILE = "task_completion.json"
-ASSIGNMENTS_FILE = "assignments.json"
+
+# ============================================================
+# COMPLETED DATE RANGE (May 4 to June 5, 2026)
+# ============================================================
+COMPLETED_START_DATE = datetime(2026, 5, 4)
+COMPLETED_END_DATE = datetime(2026, 6, 5)
+START_FRESH_DATE = datetime(2026, 6, 8)  # Monday after June 5
 
 # ============================================================
 # WORKING HOURS
@@ -233,40 +224,49 @@ def generate_phase_1_tasks(date, week_num, day_num):
         return tasks[idx] if tasks else {"task": "Continue data collection", "category": "Data Collection", "priority": "Medium", "target": "coordinator"}
     
     elif month == 6:  # June 2026 - Diagnostic Assessments
-        tasks_by_week = {
-            1: [  # Week 1: June 1-5
-                {"task": "Complete Diagnostic Assessment Framework", "category": "Assessment", "priority": "High", "target": "coordinator"},
-                {"task": "Begin University-wise Assessments", "category": "Assessment", "priority": "High", "target": "coordinator"},
-                {"task": "Review existing data quality", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                {"task": "Identify data gaps per university", "category": "Assessment", "priority": "High", "target": "coordinator"},
-                {"task": "Prepare assessment templates", "category": "Documentation", "priority": "Medium", "target": "coordinator"}
-            ],
-            2: [  # Week 2: June 8-12
-                {"task": "Conduct faculty interviews", "category": "Assessment", "priority": "High", "target": "coordinator"},
-                {"task": "Analyze research output metrics", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                {"task": "Evaluate infrastructure readiness", "category": "Assessment", "priority": "Medium", "target": "coordinator"},
-                {"task": "Assess international collaboration", "category": "Assessment", "priority": "Medium", "target": "coordinator"},
-                {"task": "Compile assessment findings", "category": "Analysis", "priority": "High", "target": "coordinator"}
-            ],
-            3: [  # Week 3: June 15-19
-                {"task": "GRDAU Training Session for Coordinators", "category": "Training", "priority": "High", "target": "coordinator"},
-                {"task": "Data validation workshop", "category": "Training", "priority": "High", "target": "coordinator"},
-                {"task": "NIRF submission preparation", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                {"task": "Review progress with VC", "category": "Meetings", "priority": "High", "target": "coordinator"},
-                {"task": "Update data repository", "category": "Data Collection", "priority": "Medium", "target": "coordinator"}
-            ],
-            4: [  # Week 4: June 22-26
-                {"task": "Finalize Diagnostic Reports", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                {"task": "Submit Diagnostic Assessment Reports", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                {"task": "Prepare June MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                {"task": "Plan July activities", "category": "Planning", "priority": "Medium", "target": "coordinator"},
-                {"task": "Client review meeting", "category": "Meetings", "priority": "High", "target": "all"}
-            ]
-        }
-        week_key = week_num if week_num <= 4 else 4
-        tasks = tasks_by_week.get(week_key, [{"task": "Continue assessments", "category": "Assessment", "priority": "Medium", "target": "coordinator"}])
-        idx = min(day_num - 1, len(tasks) - 1)
-        return tasks[idx]
+        # June 1-5 are completed, June 8 onward are pending
+        if date.day <= 5:
+            tasks_by_week = {
+                1: [  # Week 1: June 1-5
+                    {"task": "Complete Diagnostic Assessment Framework", "category": "Assessment", "priority": "High", "target": "coordinator"},
+                    {"task": "Begin University-wise Assessments", "category": "Assessment", "priority": "High", "target": "coordinator"},
+                    {"task": "Review existing data quality", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                    {"task": "Identify data gaps per university", "category": "Assessment", "priority": "High", "target": "coordinator"},
+                    {"task": "Prepare assessment templates", "category": "Documentation", "priority": "Medium", "target": "coordinator"}
+                ]
+            }
+            week_key = 1
+            tasks = tasks_by_week.get(week_key, [{"task": "Continue assessments", "category": "Assessment", "priority": "Medium", "target": "coordinator"}])
+            idx = min(day_num - 1, len(tasks) - 1)
+            return tasks[idx]
+        else:
+            tasks_by_week = {
+                2: [  # Week 2: June 8-12
+                    {"task": "Conduct faculty interviews", "category": "Assessment", "priority": "High", "target": "coordinator"},
+                    {"task": "Analyze research output metrics", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                    {"task": "Evaluate infrastructure readiness", "category": "Assessment", "priority": "Medium", "target": "coordinator"},
+                    {"task": "Assess international collaboration", "category": "Assessment", "priority": "Medium", "target": "coordinator"},
+                    {"task": "Compile assessment findings", "category": "Analysis", "priority": "High", "target": "coordinator"}
+                ],
+                3: [  # Week 3: June 15-19
+                    {"task": "GRDAU Training Session for Coordinators", "category": "Training", "priority": "High", "target": "coordinator"},
+                    {"task": "Data validation workshop", "category": "Training", "priority": "High", "target": "coordinator"},
+                    {"task": "NIRF submission preparation", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                    {"task": "Review progress with VC", "category": "Meetings", "priority": "High", "target": "coordinator"},
+                    {"task": "Update data repository", "category": "Data Collection", "priority": "Medium", "target": "coordinator"}
+                ],
+                4: [  # Week 4: June 22-26
+                    {"task": "Finalize Diagnostic Reports", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                    {"task": "Submit Diagnostic Assessment Reports", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                    {"task": "Prepare June MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                    {"task": "Plan July activities", "category": "Planning", "priority": "Medium", "target": "coordinator"},
+                    {"task": "Client review meeting", "category": "Meetings", "priority": "High", "target": "all"}
+                ]
+            }
+            week_key = week_num if 2 <= week_num <= 4 else 2
+            tasks = tasks_by_week.get(week_key, [{"task": "Continue assessments", "category": "Assessment", "priority": "Medium", "target": "coordinator"}])
+            idx = min(day_num - 1, len(tasks) - 1)
+            return tasks[idx]
     
     else:  # July 2026 - Gap Analysis and GRDAU Setup
         tasks_by_week = {
@@ -488,141 +488,132 @@ def generate_phase_3_tasks(date, week_num, day_num):
         idx = min(day_num - 1, len(tasks) - 1)
         return tasks[idx]
     
-    elif date.month == 1:  # January 2027 - Data Quality
-        tasks_by_week = {
-            1: [  # Week 1: Jan 4-8
-                {"task": "Data quality framework implementation", "category": "Technical", "priority": "High", "target": "analyst"},
-                {"task": "Data validation rules setup", "category": "Technical", "priority": "High", "target": "analyst"},
-                {"task": "Automated data checks", "category": "Technical", "priority": "High", "target": "analyst"},
-                {"task": "Data cleaning procedures", "category": "Data Collection", "priority": "High", "target": "coordinator"},
-                {"task": "Data quality dashboard", "category": "Technical", "priority": "Medium", "target": "analyst"}
-            ],
-            2: [  # Week 2: Jan 11-15
-                {"task": "Data audit and validation", "category": "Data Collection", "priority": "High", "target": "coordinator"},
-                {"task": "Identify data inconsistencies", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                {"task": "Correct data errors", "category": "Data Collection", "priority": "High", "target": "coordinator"},
-                {"task": "Data completeness check", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                {"task": "Update data repository", "category": "Data Collection", "priority": "Medium", "target": "coordinator"}
-            ],
-            3: [  # Week 3: Jan 18-22
-                {"task": "Research output enhancement planning", "category": "Planning", "priority": "High", "target": "coordinator"},
-                {"task": "Identify research strengths", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                {"task": "Develop research strategy", "category": "Planning", "priority": "High", "target": "coordinator"},
-                {"task": "Publication support framework", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                {"task": "Research collaboration mapping", "category": "Analysis", "priority": "Medium", "target": "coordinator"}
-            ],
-            4: [  # Week 4: Jan 25-29
-                {"task": "Prepare January MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                {"task": "Data quality report", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                {"task": "Research enhancement plan", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                {"task": "Client review meeting", "category": "Meetings", "priority": "High", "target": "all"},
-                {"task": "Plan February activities", "category": "Planning", "priority": "Medium", "target": "lead"}
-            ]
-        }
-        week_key = week_num if week_num <= 4 else 4
-        tasks = tasks_by_week.get(week_key, [{"task": "Continue data quality work", "category": "Data Collection", "priority": "Medium", "target": "coordinator"}])
-        idx = min(day_num - 1, len(tasks) - 1)
-        return tasks[idx]
-    
-    elif date.month == 2:  # February 2027 - Research Enhancement
-        tasks_by_week = {
-            1: [  # Week 1: Feb 1-5
-                {"task": "Research output tracking system", "category": "Technical", "priority": "High", "target": "analyst"},
-                {"task": "Citation analysis setup", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                {"task": "Research publication database", "category": "Data Collection", "priority": "High", "target": "coordinator"},
-                {"task": "Faculty research profiles", "category": "Data Collection", "priority": "Medium", "target": "coordinator"},
-                {"task": "Research impact metrics", "category": "Analysis", "priority": "High", "target": "coordinator"}
-            ],
-            2: [  # Week 2: Feb 8-12
-                {"task": "International collaboration development", "category": "Outreach", "priority": "High", "target": "coordinator"},
-                {"task": "MoU templates preparation", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                {"task": "Partner university identification", "category": "Research", "priority": "High", "target": "coordinator"},
-                {"task": "Collaboration framework", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                {"task": "International visibility plan", "category": "Planning", "priority": "Medium", "target": "coordinator"}
-            ],
-            3: [  # Week 3: Feb 15-19
-                {"task": "Outcome-based education (OBE) implementation", "category": "Training", "priority": "High", "target": "coordinator"},
-                {"task": "OBE framework development", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                {"task": "Faculty OBE training", "category": "Training", "priority": "High", "target": "coordinator"},
-                {"task": "Curriculum alignment", "category": "Planning", "priority": "High", "target": "coordinator"},
-                {"task": "OBE assessment tools", "category": "Technical", "priority": "Medium", "target": "analyst"}
-            ],
-            4: [  # Week 4: Feb 22-26
-                {"task": "Prepare February MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                {"task": "Research enhancement report", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                {"task": "Collaboration status update", "category": "Reporting", "priority": "Medium", "target": "coordinator"},
-                {"task": "Client review meeting", "category": "Meetings", "priority": "High", "target": "all"},
-                {"task": "Plan March activities", "category": "Planning", "priority": "Medium", "target": "lead"}
-            ]
-        }
-        week_key = week_num if week_num <= 4 else 4
-        tasks = tasks_by_week.get(week_key, [{"task": "Continue research enhancement", "category": "Research", "priority": "Medium", "target": "coordinator"}])
-        idx = min(day_num - 1, len(tasks) - 1)
-        return tasks[idx]
-    
-    else:  # March-April 2027 - Accreditation and QA
-        if date.month == 3:
+    else:  # January-April 2027 - Data Quality to Accreditation
+        if date.month == 1:
             tasks_by_week = {
-                1: [  # Week 1: Mar 1-5
-                    {"task": "Accreditation preparedness assessment", "category": "Assessment", "priority": "High", "target": "coordinator"},
-                    {"task": "NAAC/NBA criteria review", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                    {"task": "Gap analysis for accreditation", "category": "Assessment", "priority": "High", "target": "coordinator"},
-                    {"task": "Accreditation action plan", "category": "Planning", "priority": "High", "target": "coordinator"},
-                    {"task": "Documentation preparation", "category": "Documentation", "priority": "High", "target": "coordinator"}
+                1: [  # Jan 4-8
+                    {"task": "Data quality framework implementation", "category": "Technical", "priority": "High", "target": "analyst"},
+                    {"task": "Data validation rules setup", "category": "Technical", "priority": "High", "target": "analyst"},
+                    {"task": "Automated data checks", "category": "Technical", "priority": "High", "target": "analyst"},
+                    {"task": "Data cleaning procedures", "category": "Data Collection", "priority": "High", "target": "coordinator"},
+                    {"task": "Data quality dashboard", "category": "Technical", "priority": "Medium", "target": "analyst"}
                 ],
-                2: [  # Week 2: Mar 8-12
-                    {"task": "Quality assurance framework implementation", "category": "Technical", "priority": "High", "target": "analyst"},
-                    {"task": "QA metrics definition", "category": "Planning", "priority": "High", "target": "coordinator"},
-                    {"task": "Internal audit preparation", "category": "Assessment", "priority": "High", "target": "coordinator"},
-                    {"task": "QA dashboard development", "category": "Technical", "priority": "High", "target": "analyst"},
-                    {"task": "Quality improvement plan", "category": "Documentation", "priority": "Medium", "target": "coordinator"}
+                2: [  # Jan 11-15
+                    {"task": "Data audit and validation", "category": "Data Collection", "priority": "High", "target": "coordinator"},
+                    {"task": "Identify data inconsistencies", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                    {"task": "Correct data errors", "category": "Data Collection", "priority": "High", "target": "coordinator"},
+                    {"task": "Data completeness check", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                    {"task": "Update data repository", "category": "Data Collection", "priority": "Medium", "target": "coordinator"}
                 ],
-                3: [  # Week 3: Mar 15-19
-                    {"task": "Milestone 4 preparation (10% improvement)", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Performance data analysis", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                    {"task": "Improvement metrics calculation", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                    {"task": "Submit Milestone 4 report", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Client presentation", "category": "Meetings", "priority": "High", "target": "all"}
+                3: [  # Jan 18-22
+                    {"task": "Research output enhancement planning", "category": "Planning", "priority": "High", "target": "coordinator"},
+                    {"task": "Identify research strengths", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                    {"task": "Develop research strategy", "category": "Planning", "priority": "High", "target": "coordinator"},
+                    {"task": "Publication support framework", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                    {"task": "Research collaboration mapping", "category": "Analysis", "priority": "Medium", "target": "coordinator"}
                 ],
-                4: [  # Week 4: Mar 22-26, 29-31
-                    {"task": "Prepare March MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Quarterly performance review", "category": "Meetings", "priority": "High", "target": "all"},
-                    {"task": "Phase 3 progress review", "category": "Meetings", "priority": "High", "target": "all"},
-                    {"task": "Plan Phase 4 activities", "category": "Planning", "priority": "High", "target": "lead"},
-                    {"task": "Stakeholder update", "category": "Meetings", "priority": "Medium", "target": "coordinator"}
+                4: [  # Jan 25-29
+                    {"task": "Prepare January MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                    {"task": "Data quality report", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                    {"task": "Research enhancement plan", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                    {"task": "Client review meeting", "category": "Meetings", "priority": "High", "target": "all"},
+                    {"task": "Plan February activities", "category": "Planning", "priority": "Medium", "target": "lead"}
                 ]
             }
-        else:  # April 2027
-            tasks_by_week = {
-                1: [  # Week 1: Apr 1-2, 5-9
-                    {"task": "Phase 3 completion review", "category": "Meetings", "priority": "High", "target": "all"},
-                    {"task": "Year 1 achievements documentation", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                    {"task": "Annual report drafting", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Prepare April MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Client annual review meeting", "category": "Meetings", "priority": "High", "target": "all"}
-                ],
-                2: [  # Week 2: Apr 12-16
-                    {"task": "Plan Year 2 activities", "category": "Planning", "priority": "High", "target": "lead"},
-                    {"task": "Update project plan", "category": "Planning", "priority": "High", "target": "lead"},
-                    {"task": "Resource planning for Year 2", "category": "Planning", "priority": "High", "target": "lead"},
-                    {"task": "Budget review", "category": "Meetings", "priority": "Medium", "target": "lead"},
-                    {"task": "Team meeting for Year 2", "category": "Meetings", "priority": "High", "target": "all"}
-                ],
-                3: [  # Week 3: Apr 19-23
-                    {"task": "Lessons learned documentation", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                    {"task": "Best practices compilation", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                    {"task": "Success stories collection", "category": "Documentation", "priority": "Medium", "target": "coordinator"},
-                    {"task": "Knowledge management system", "category": "Technical", "priority": "High", "target": "analyst"},
-                    {"task": "Case study development", "category": "Documentation", "priority": "Medium", "target": "coordinator"}
-                ],
-                4: [  # Week 4: Apr 26-30
-                    {"task": "Finalize Year 1 Annual Report", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Submit Annual Report to MITRA", "category": "Reporting", "priority": "High", "target": "lead"},
-                    {"task": "Phase 4 kick-off planning", "category": "Planning", "priority": "High", "target": "lead"},
-                    {"task": "Client presentation - Year 1 results", "category": "Meetings", "priority": "High", "target": "all"},
-                    {"task": "May 2027 planning", "category": "Planning", "priority": "Medium", "target": "lead"}
-                ]
-            }
+        else:  # Feb-April 2027
+            if date.month == 2:
+                tasks_by_week = {
+                    1: [  # Feb 1-5
+                        {"task": "Research output tracking system", "category": "Technical", "priority": "High", "target": "analyst"},
+                        {"task": "Citation analysis setup", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                        {"task": "Research publication database", "category": "Data Collection", "priority": "High", "target": "coordinator"},
+                        {"task": "Faculty research profiles", "category": "Data Collection", "priority": "Medium", "target": "coordinator"},
+                        {"task": "Research impact metrics", "category": "Analysis", "priority": "High", "target": "coordinator"}
+                    ],
+                    2: [  # Feb 8-12
+                        {"task": "International collaboration development", "category": "Outreach", "priority": "High", "target": "coordinator"},
+                        {"task": "MoU templates preparation", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                        {"task": "Partner university identification", "category": "Research", "priority": "High", "target": "coordinator"},
+                        {"task": "Collaboration framework", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                        {"task": "International visibility plan", "category": "Planning", "priority": "Medium", "target": "coordinator"}
+                    ],
+                    3: [  # Feb 15-19
+                        {"task": "Outcome-based education (OBE) implementation", "category": "Training", "priority": "High", "target": "coordinator"},
+                        {"task": "OBE framework development", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                        {"task": "Faculty OBE training", "category": "Training", "priority": "High", "target": "coordinator"},
+                        {"task": "Curriculum alignment", "category": "Planning", "priority": "High", "target": "coordinator"},
+                        {"task": "OBE assessment tools", "category": "Technical", "priority": "Medium", "target": "analyst"}
+                    ],
+                    4: [  # Feb 22-26
+                        {"task": "Prepare February MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                        {"task": "Research enhancement report", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                        {"task": "Collaboration status update", "category": "Reporting", "priority": "Medium", "target": "coordinator"},
+                        {"task": "Client review meeting", "category": "Meetings", "priority": "High", "target": "all"},
+                        {"task": "Plan March activities", "category": "Planning", "priority": "Medium", "target": "lead"}
+                    ]
+                }
+            elif date.month == 3:
+                tasks_by_week = {
+                    1: [  # Mar 1-5
+                        {"task": "Accreditation preparedness assessment", "category": "Assessment", "priority": "High", "target": "coordinator"},
+                        {"task": "NAAC/NBA criteria review", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                        {"task": "Gap analysis for accreditation", "category": "Assessment", "priority": "High", "target": "coordinator"},
+                        {"task": "Accreditation action plan", "category": "Planning", "priority": "High", "target": "coordinator"},
+                        {"task": "Documentation preparation", "category": "Documentation", "priority": "High", "target": "coordinator"}
+                    ],
+                    2: [  # Mar 8-12
+                        {"task": "Quality assurance framework implementation", "category": "Technical", "priority": "High", "target": "analyst"},
+                        {"task": "QA metrics definition", "category": "Planning", "priority": "High", "target": "coordinator"},
+                        {"task": "Internal audit preparation", "category": "Assessment", "priority": "High", "target": "coordinator"},
+                        {"task": "QA dashboard development", "category": "Technical", "priority": "High", "target": "analyst"},
+                        {"task": "Quality improvement plan", "category": "Documentation", "priority": "Medium", "target": "coordinator"}
+                    ],
+                    3: [  # Mar 15-19
+                        {"task": "Milestone 4 preparation (10% improvement)", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                        {"task": "Performance data analysis", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                        {"task": "Improvement metrics calculation", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                        {"task": "Submit Milestone 4 report", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                        {"task": "Client presentation", "category": "Meetings", "priority": "High", "target": "all"}
+                    ],
+                    4: [  # Mar 22-26, 29-31
+                        {"task": "Prepare March MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                        {"task": "Quarterly performance review", "category": "Meetings", "priority": "High", "target": "all"},
+                        {"task": "Phase 3 progress review", "category": "Meetings", "priority": "High", "target": "all"},
+                        {"task": "Plan Phase 4 activities", "category": "Planning", "priority": "High", "target": "lead"},
+                        {"task": "Stakeholder update", "category": "Meetings", "priority": "Medium", "target": "coordinator"}
+                    ]
+                }
+            else:  # April 2027
+                tasks_by_week = {
+                    1: [  # Apr 1-2, 5-9
+                        {"task": "Phase 3 completion review", "category": "Meetings", "priority": "High", "target": "all"},
+                        {"task": "Year 1 achievements documentation", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                        {"task": "Annual report drafting", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                        {"task": "Prepare April MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                        {"task": "Client annual review meeting", "category": "Meetings", "priority": "High", "target": "all"}
+                    ],
+                    2: [  # Apr 12-16
+                        {"task": "Plan Year 2 activities", "category": "Planning", "priority": "High", "target": "lead"},
+                        {"task": "Update project plan", "category": "Planning", "priority": "High", "target": "lead"},
+                        {"task": "Resource planning for Year 2", "category": "Planning", "priority": "High", "target": "lead"},
+                        {"task": "Budget review", "category": "Meetings", "priority": "Medium", "target": "lead"},
+                        {"task": "Team meeting for Year 2", "category": "Meetings", "priority": "High", "target": "all"}
+                    ],
+                    3: [  # Apr 19-23
+                        {"task": "Lessons learned documentation", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                        {"task": "Best practices compilation", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                        {"task": "Success stories collection", "category": "Documentation", "priority": "Medium", "target": "coordinator"},
+                        {"task": "Knowledge management system", "category": "Technical", "priority": "High", "target": "analyst"},
+                        {"task": "Case study development", "category": "Documentation", "priority": "Medium", "target": "coordinator"}
+                    ],
+                    4: [  # Apr 26-30
+                        {"task": "Finalize Year 1 Annual Report", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                        {"task": "Submit Annual Report to MITRA", "category": "Reporting", "priority": "High", "target": "lead"},
+                        {"task": "Phase 4 kick-off planning", "category": "Planning", "priority": "High", "target": "lead"},
+                        {"task": "Client presentation - Year 1 results", "category": "Meetings", "priority": "High", "target": "all"},
+                        {"task": "May 2027 planning", "category": "Planning", "priority": "Medium", "target": "lead"}
+                    ]
+                }
         week_key = week_num if week_num <= 4 else 4
         tasks = tasks_by_week.get(week_key, [{"task": "Continue Phase 3 activities", "category": "Implementation", "priority": "Medium", "target": "coordinator"}])
         idx = min(day_num - 1, len(tasks) - 1)
@@ -667,44 +658,39 @@ def generate_phase_4_tasks(date, week_num, day_num):
         idx = min(day_num - 1, len(tasks) - 1)
         return tasks[idx]
     
-    elif date.month == 6:  # June 2027 - Milestone 4 (10% Improvement)
-        tasks_by_week = {
-            1: [  # Week 1: May 31-Jun 4
-                {"task": "Milestone 4 data collection", "category": "Data Collection", "priority": "High", "target": "coordinator"},
-                {"task": "Performance improvement calculation", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                {"task": "Baseline vs current comparison", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                {"task": "Improvement validation", "category": "Assessment", "priority": "High", "target": "coordinator"},
-                {"task": "Prepare evidence documentation", "category": "Documentation", "priority": "High", "target": "coordinator"}
-            ],
-            2: [  # Week 2: Jun 7-11
-                {"task": "Submit Milestone 4 report", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                {"task": "Client presentation - 10% improvement", "category": "Meetings", "priority": "High", "target": "all"},
-                {"task": "Mid-year performance assessment", "category": "Assessment", "priority": "High", "target": "coordinator"},
-                {"task": "Identify areas for further improvement", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                {"task": "Action plan for remaining year", "category": "Planning", "priority": "High", "target": "coordinator"}
-            ],
-            3: [  # Week 3: Jun 14-18
-                {"task": "Advanced training programs", "category": "Training", "priority": "High", "target": "coordinator"},
-                {"task": "GRDAU advanced training", "category": "Training", "priority": "High", "target": "coordinator"},
-                {"task": "Data analytics advanced workshop", "category": "Training", "priority": "High", "target": "analyst"},
-                {"task": "Research publication workshop", "category": "Training", "priority": "High", "target": "coordinator"},
-                {"task": "Training effectiveness assessment", "category": "Assessment", "priority": "Medium", "target": "coordinator"}
-            ],
-            4: [  # Week 4: Jun 21-25, 28-30
-                {"task": "Prepare June MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                {"task": "Research publication tracking", "category": "Data Collection", "priority": "High", "target": "coordinator"},
-                {"task": "Citation analysis report", "category": "Analysis", "priority": "High", "target": "coordinator"},
-                {"task": "Client review meeting", "category": "Meetings", "priority": "High", "target": "all"},
-                {"task": "Plan July activities", "category": "Planning", "priority": "Medium", "target": "lead"}
-            ]
-        }
-        week_key = week_num if week_num <= 4 else 4
-        tasks = tasks_by_week.get(week_key, [{"task": "Continue Milestone 4 activities", "category": "Reporting", "priority": "Medium", "target": "coordinator"}])
-        idx = min(day_num - 1, len(tasks) - 1)
-        return tasks[idx]
-    
-    else:  # July-October 2027 - Enhancement and Global Engagement
-        if date.month == 7:
+    else:  # June-October 2027 - Milestones and Global Engagement
+        if date.month == 6:
+            tasks_by_week = {
+                1: [  # June 1-4
+                    {"task": "Milestone 4 data collection", "category": "Data Collection", "priority": "High", "target": "coordinator"},
+                    {"task": "Performance improvement calculation", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                    {"task": "Baseline vs current comparison", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                    {"task": "Improvement validation", "category": "Assessment", "priority": "High", "target": "coordinator"},
+                    {"task": "Prepare evidence documentation", "category": "Documentation", "priority": "High", "target": "coordinator"}
+                ],
+                2: [  # June 7-11
+                    {"task": "Submit Milestone 4 report", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                    {"task": "Client presentation - 10% improvement", "category": "Meetings", "priority": "High", "target": "all"},
+                    {"task": "Mid-year performance assessment", "category": "Assessment", "priority": "High", "target": "coordinator"},
+                    {"task": "Identify areas for further improvement", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                    {"task": "Action plan for remaining year", "category": "Planning", "priority": "High", "target": "coordinator"}
+                ],
+                3: [  # June 14-18
+                    {"task": "Advanced training programs", "category": "Training", "priority": "High", "target": "coordinator"},
+                    {"task": "GRDAU advanced training", "category": "Training", "priority": "High", "target": "coordinator"},
+                    {"task": "Data analytics advanced workshop", "category": "Training", "priority": "High", "target": "analyst"},
+                    {"task": "Research publication workshop", "category": "Training", "priority": "High", "target": "coordinator"},
+                    {"task": "Training effectiveness assessment", "category": "Assessment", "priority": "Medium", "target": "coordinator"}
+                ],
+                4: [  # June 21-25, 28-30
+                    {"task": "Prepare June MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                    {"task": "Research publication tracking", "category": "Data Collection", "priority": "High", "target": "coordinator"},
+                    {"task": "Citation analysis report", "category": "Analysis", "priority": "High", "target": "coordinator"},
+                    {"task": "Client review meeting", "category": "Meetings", "priority": "High", "target": "all"},
+                    {"task": "Plan July activities", "category": "Planning", "priority": "Medium", "target": "lead"}
+                ]
+            }
+        elif date.month == 7:
             tasks_by_week = {
                 1: [  # July 1-2, 5-9
                     {"task": "Publication support program", "category": "Research", "priority": "High", "target": "coordinator"},
@@ -836,7 +822,7 @@ def generate_phase_4_tasks(date, week_num, day_num):
 def generate_phase_5_tasks(date, week_num, day_num):
     """Phase 5: Finalization (Months 19-24) - November 2027 to April 2028"""
     
-    if date.month == 11:  # November 2027
+    if date.month == 11:
         tasks_by_week = {
             1: [  # Nov 1-5
                 {"task": "Phase 5 kick-off", "category": "Meetings", "priority": "High", "target": "all"},
@@ -867,12 +853,7 @@ def generate_phase_5_tasks(date, week_num, day_num):
                 {"task": "Plan December activities", "category": "Planning", "priority": "Medium", "target": "lead"}
             ]
         }
-        week_key = week_num if week_num <= 4 else 4
-        tasks = tasks_by_week.get(week_key, [{"task": "Continue Phase 5 activities", "category": "Finalization", "priority": "Medium", "target": "coordinator"}])
-        idx = min(day_num - 1, len(tasks) - 1)
-        return tasks[idx]
-    
-    elif date.month == 12:  # December 2027
+    elif date.month == 12:
         tasks_by_week = {
             1: [  # Nov 29-Dec 3
                 {"task": "Final performance review", "category": "Analysis", "priority": "High", "target": "coordinator"},
@@ -903,12 +884,7 @@ def generate_phase_5_tasks(date, week_num, day_num):
                 {"task": "Plan January 2028 activities", "category": "Planning", "priority": "Medium", "target": "lead"}
             ]
         }
-        week_key = week_num if week_num <= 4 else 4
-        tasks = tasks_by_week.get(week_key, [{"task": "Continue finalization", "category": "Finalization", "priority": "Medium", "target": "coordinator"}])
-        idx = min(day_num - 1, len(tasks) - 1)
-        return tasks[idx]
-    
-    elif date.month == 1:  # January 2028
+    elif date.month == 1:
         tasks_by_week = {
             1: [  # Jan 3-7
                 {"task": "Final dashboard review", "category": "Technical", "priority": "High", "target": "analyst"},
@@ -939,12 +915,7 @@ def generate_phase_5_tasks(date, week_num, day_num):
                 {"task": "Plan February activities", "category": "Planning", "priority": "Medium", "target": "lead"}
             ]
         }
-        week_key = week_num if week_num <= 4 else 4
-        tasks = tasks_by_week.get(week_key, [{"task": "Continue finalization", "category": "Finalization", "priority": "Medium", "target": "coordinator"}])
-        idx = min(day_num - 1, len(tasks) - 1)
-        return tasks[idx]
-    
-    elif date.month == 2:  # February 2028
+    elif date.month == 2:
         tasks_by_week = {
             1: [  # Feb 1-4
                 {"task": "Final evaluation report submission", "category": "Reporting", "priority": "High", "target": "coordinator"},
@@ -975,78 +946,73 @@ def generate_phase_5_tasks(date, week_num, day_num):
                 {"task": "Plan March activities (wrap-up)", "category": "Planning", "priority": "Medium", "target": "lead"}
             ]
         }
-        week_key = week_num if week_num <= 4 else 4
-        tasks = tasks_by_week.get(week_key, [{"task": "Continue handover", "category": "Handover", "priority": "Medium", "target": "coordinator"}])
-        idx = min(day_num - 1, len(tasks) - 1)
-        return tasks[idx]
+    elif date.month == 3:
+        tasks_by_week = {
+            1: [  # Mar 1-3, 6-10
+                {"task": "Final report submission to World Bank", "category": "Reporting", "priority": "High", "target": "lead"},
+                {"task": "Project success documentation", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                {"task": "Impact assessment report", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                {"task": "Policy recommendations", "category": "Documentation", "priority": "High", "target": "lead"},
+                {"task": "Final client presentation", "category": "Meetings", "priority": "High", "target": "all"}
+            ],
+            2: [  # Mar 13-17
+                {"task": "Complete all pending documentation", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                {"task": "Finalize all reports", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                {"task": "Archive all project data", "category": "Documentation", "priority": "High", "target": "analyst"},
+                {"task": "Knowledge management system handover", "category": "Technical", "priority": "High", "target": "analyst"},
+                {"task": "Final system backup", "category": "Technical", "priority": "Medium", "target": "analyst"}
+            ],
+            3: [  # Mar 20-24
+                {"task": "Prepare March MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                {"task": "Final project evaluation", "category": "Assessment", "priority": "High", "target": "lead"},
+                {"task": "Team debrief session", "category": "Meetings", "priority": "High", "target": "all"},
+                {"task": "Lessons learned workshop", "category": "Meetings", "priority": "High", "target": "all"},
+                {"task": "Project completion certificate", "category": "Documentation", "priority": "Medium", "target": "lead"}
+            ],
+            4: [  # Mar 27-31
+                {"task": "Final client sign-off", "category": "Meetings", "priority": "High", "target": "lead"},
+                {"task": "Contract closure", "category": "Documentation", "priority": "High", "target": "lead"},
+                {"task": "Final financial closure", "category": "Documentation", "priority": "High", "target": "lead"},
+                {"task": "Release of Bank Guarantee", "category": "Documentation", "priority": "High", "target": "lead"},
+                {"task": "Project closure party", "category": "Meetings", "priority": "Medium", "target": "all"}
+            ]
+        }
+    else:  # April 2028
+        tasks_by_week = {
+            1: [  # Apr 3-7
+                {"task": "Final project completion report", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                {"task": "Submit final deliverables", "category": "Reporting", "priority": "High", "target": "lead"},
+                {"task": "Project closure documentation", "category": "Documentation", "priority": "High", "target": "coordinator"},
+                {"task": "Final MPR submission", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                {"task": "Client acknowledgment", "category": "Meetings", "priority": "High", "target": "lead"}
+            ],
+            2: [  # Apr 10-14
+                {"task": "Final team meeting", "category": "Meetings", "priority": "High", "target": "all"},
+                {"task": "Project success celebration", "category": "Meetings", "priority": "High", "target": "all"},
+                {"task": "Individual performance reviews", "category": "Meetings", "priority": "High", "target": "lead"},
+                {"task": "Future recommendations", "category": "Documentation", "priority": "Medium", "target": "lead"},
+                {"task": "Project archive finalization", "category": "Documentation", "priority": "Medium", "target": "coordinator"}
+            ],
+            3: [  # Apr 17-21
+                {"task": "Final report submission to MITRA", "category": "Reporting", "priority": "High", "target": "lead"},
+                {"task": "Project completion presentation", "category": "Meetings", "priority": "High", "target": "all"},
+                {"task": "Contract completion certificate", "category": "Documentation", "priority": "High", "target": "lead"},
+                {"task": "Team appreciation", "category": "Meetings", "priority": "Medium", "target": "lead"},
+                {"task": "Project close-out", "category": "Meetings", "priority": "High", "target": "all"}
+            ],
+            4: [  # Apr 24-28
+                {"task": "Final project closure", "category": "Meetings", "priority": "High", "target": "all"},
+                {"task": "Handover completion", "category": "Documentation", "priority": "High", "target": "lead"},
+                {"task": "Project success metrics", "category": "Reporting", "priority": "High", "target": "coordinator"},
+                {"task": "Lessons learned final compilation", "category": "Documentation", "priority": "Medium", "target": "coordinator"},
+                {"task": "CONTRACT COMPLETION - May 6, 2028", "category": "Milestone", "priority": "High", "target": "all"}
+            ]
+        }
     
-    else:  # March-April 2028 - Final Wrap-up
-        if date.month == 3:
-            tasks_by_week = {
-                1: [  # Mar 1-3, 6-10
-                    {"task": "Final report submission to World Bank", "category": "Reporting", "priority": "High", "target": "lead"},
-                    {"task": "Project success documentation", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                    {"task": "Impact assessment report", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Policy recommendations", "category": "Documentation", "priority": "High", "target": "lead"},
-                    {"task": "Final client presentation", "category": "Meetings", "priority": "High", "target": "all"}
-                ],
-                2: [  # Mar 13-17
-                    {"task": "Complete all pending documentation", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                    {"task": "Finalize all reports", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Archive all project data", "category": "Documentation", "priority": "High", "target": "analyst"},
-                    {"task": "Knowledge management system handover", "category": "Technical", "priority": "High", "target": "analyst"},
-                    {"task": "Final system backup", "category": "Technical", "priority": "Medium", "target": "analyst"}
-                ],
-                3: [  # Mar 20-24
-                    {"task": "Prepare March MPR", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Final project evaluation", "category": "Assessment", "priority": "High", "target": "lead"},
-                    {"task": "Team debrief session", "category": "Meetings", "priority": "High", "target": "all"},
-                    {"task": "Lessons learned workshop", "category": "Meetings", "priority": "High", "target": "all"},
-                    {"task": "Project completion certificate", "category": "Documentation", "priority": "Medium", "target": "lead"}
-                ],
-                4: [  # Mar 27-31
-                    {"task": "Final client sign-off", "category": "Meetings", "priority": "High", "target": "lead"},
-                    {"task": "Contract closure", "category": "Documentation", "priority": "High", "target": "lead"},
-                    {"task": "Final financial closure", "category": "Documentation", "priority": "High", "target": "lead"},
-                    {"task": "Release of Bank Guarantee", "category": "Documentation", "priority": "High", "target": "lead"},
-                    {"task": "Project closure party", "category": "Meetings", "priority": "Medium", "target": "all"}
-                ]
-            }
-        else:  # April 2028
-            tasks_by_week = {
-                1: [  # Apr 3-7
-                    {"task": "Final project completion report", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Submit final deliverables", "category": "Reporting", "priority": "High", "target": "lead"},
-                    {"task": "Project closure documentation", "category": "Documentation", "priority": "High", "target": "coordinator"},
-                    {"task": "Final MPR submission", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Client acknowledgment", "category": "Meetings", "priority": "High", "target": "lead"}
-                ],
-                2: [  # Apr 10-14
-                    {"task": "Final team meeting", "category": "Meetings", "priority": "High", "target": "all"},
-                    {"task": "Project success celebration", "category": "Meetings", "priority": "High", "target": "all"},
-                    {"task": "Individual performance reviews", "category": "Meetings", "priority": "High", "target": "lead"},
-                    {"task": "Future recommendations", "category": "Documentation", "priority": "Medium", "target": "lead"},
-                    {"task": "Project archive finalization", "category": "Documentation", "priority": "Medium", "target": "coordinator"}
-                ],
-                3: [  # Apr 17-21
-                    {"task": "Final report submission to MITRA", "category": "Reporting", "priority": "High", "target": "lead"},
-                    {"task": "Project completion presentation", "category": "Meetings", "priority": "High", "target": "all"},
-                    {"task": "Contract completion certificate", "category": "Documentation", "priority": "High", "target": "lead"},
-                    {"task": "Team appreciation", "category": "Meetings", "priority": "Medium", "target": "lead"},
-                    {"task": "Project close-out", "category": "Meetings", "priority": "High", "target": "all"}
-                ],
-                4: [  # Apr 24-28
-                    {"task": "Final project closure", "category": "Meetings", "priority": "High", "target": "all"},
-                    {"task": "Handover completion", "category": "Documentation", "priority": "High", "target": "lead"},
-                    {"task": "Project success metrics", "category": "Reporting", "priority": "High", "target": "coordinator"},
-                    {"task": "Lessons learned final compilation", "category": "Documentation", "priority": "Medium", "target": "coordinator"},
-                    {"task": "CONTRACT COMPLETION - May 6, 2028", "category": "Milestone", "priority": "High", "target": "all"}
-                ]
-            }
-        week_key = week_num if week_num <= 4 else 4
-        tasks = tasks_by_week.get(week_key, [{"task": "Complete project closure", "category": "Closure", "priority": "High", "target": "all"}])
-        idx = min(day_num - 1, len(tasks) - 1)
-        return tasks[idx]
+    week_key = week_num if week_num <= 4 else 4
+    tasks = tasks_by_week.get(week_key, [{"task": "Continue finalization", "category": "Finalization", "priority": "Medium", "target": "coordinator"}])
+    idx = min(day_num - 1, len(tasks) - 1)
+    return tasks[idx]
 
 def generate_all_tasks():
     """Generate complete 24-month daily tasks"""
@@ -1128,20 +1094,37 @@ def save_completions(completions):
     with open(TASK_COMPLETION_FILE, 'w') as f:
         json.dump(completions, f, indent=2)
 
-def load_assignments():
-    if os.path.exists(ASSIGNMENTS_FILE):
-        with open(ASSIGNMENTS_FILE, 'r') as f:
-            return json.load(f)
-    return {}
-
-def save_assignments(assignments):
-    with open(ASSIGNMENTS_FILE, 'w') as f:
-        json.dump(assignments, f, indent=2)
+def initialize_completed_tasks():
+    """Mark all tasks from May 4 to June 5, 2026 as completed for all data analysts"""
+    completions = load_completions()
+    
+    # Get all dates from May 4 to June 5, 2026
+    completed_dates = []
+    current = COMPLETED_START_DATE
+    while current <= COMPLETED_END_DATE:
+        if current.weekday() < 5:  # Working day
+            completed_dates.append(current.strftime("%Y-%m-%d"))
+        current += timedelta(days=1)
+    
+    # Mark as completed for all data analysts
+    for email, user in USERS.items():
+        if user.get("role") == "data_analyst":
+            if email not in completions:
+                completions[email] = {}
+            
+            for date_str in completed_dates:
+                if date_str not in completions[email]:
+                    completions[email][date_str] = {
+                        "completed_at": datetime(2026, 6, 5, 17, 0, 0).isoformat(),
+                        "remarks": "Auto-completed by system - May 4 to June 5 tasks completed as per project plan"
+                    }
+    
+    save_completions(completions)
+    return len(completed_dates)
 
 def get_user_tasks(email, target_date=None):
     user = USERS.get(email, {})
     user_role = user.get("role", "")
-    user_team = user.get("team", "")
     
     all_tasks = load_tasks()
     completions = load_completions()
@@ -1194,18 +1177,23 @@ def mark_task_complete(email, date_str, remarks=""):
 def get_team_summary():
     completions = load_completions()
     all_tasks = load_tasks()
-    total_tasks = len(all_tasks)
+    
+    # Count only future tasks (after June 5, 2026) for progress calculation
+    future_dates = [d for d in all_tasks.keys() if d > "2026-06-05"]
+    total_future_tasks = len(future_dates)
     
     summary = []
     for email, user in USERS.items():
         if user.get("role") == "data_analyst":
-            user_completions = len(completions.get(email, {}))
+            user_completions = completions.get(email, {})
+            # Count only completions for future dates
+            future_completions = sum(1 for d in user_completions.keys() if d in future_dates)
             summary.append({
                 "Name": user["name"],
                 "Team": user.get("team", "N/A"),
-                "Completed": user_completions,
-                "Total": total_tasks,
-                "Progress %": round((user_completions / total_tasks * 100), 1) if total_tasks > 0 else 0
+                "Completed (Future)": future_completions,
+                "Total (Future)": total_future_tasks,
+                "Progress %": round((future_completions / total_future_tasks * 100), 1) if total_future_tasks > 0 else 0
             })
     
     return pd.DataFrame(summary)
@@ -1217,12 +1205,15 @@ def show_credentials():
         <p><strong>Password format:</strong> <code>FirstName@2026</code> (e.g., Admin@2026, Sneha@2026)</p>
         <table style="width:100%">
             <tr><th>Role</th><th>Email</th><th>Password</th></tr>
-            <tr><td><span class="role-badge admin-badge">Admin</span></td><td>admin@mahastride.com</td><td>Admin@2026</td></tr>
-            <tr><td><span class="role-badge lead-badge">Project Lead</span></td><td>projectlead@mahastride.com</td><td>ProjectLead@2026</td></tr>
-            <tr><td rowspan="2"><span class="role-badge analyst-badge">Data Analyst</span></td><td>sneha@mu.edu</td><td>Sneha@2026</td></tr>
-            <tr><td>shubham@mitra.gov.in</td><td>Shubham@2026</td></tr>
+            <tr><td style="background:#dc3545;color:white;padding:2px 8px;border-radius:5px;">Admin</td>
+                <td>admin@mahastride.com</div><td>Admin@2026</td></tr>
+            <tr><td style="background:#17a2b8;color:white;padding:2px 8px;border-radius:5px;">Project Lead</td>
+                <td>projectlead@mahastride.com</div><td>ProjectLead@2026</td></tr>
+            <tr><td rowspan="2" style="background:#28a745;color:white;padding:2px 8px;border-radius:5px;">Data Analyst</td>
+                <td>sneha@mu.edu</div><td>Sneha@2026</td></tr>
+            <tr><td>shubham@mitra.gov.in</div><td>Shubham@2026</td></tr>
         </table>
-        <p style="margin-top:10px; font-size:12px;">Use any email from the credentials above with password: <strong>FirstName@2026</strong></p>
+        <p style="margin-top:10px; font-size:12px;">Use any email from the list above with password: <strong>FirstName@2026</strong></p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1236,11 +1227,27 @@ def admin_dashboard():
     all_tasks = load_tasks()
     completions = load_completions()
     
+    # Calculate stats
+    total_working_days = len(all_tasks)
+    completed_initial = len([d for d in all_tasks.keys() if d <= "2026-06-05"])
+    future_tasks = len([d for d in all_tasks.keys() if d > "2026-06-05"])
+    
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("📅 Total Working Days", len(all_tasks))
-    col2.metric("👥 Total Users", len(USERS))
-    col3.metric("📊 Data Analysts", sum(1 for u in USERS.values() if u.get("role") == "data_analyst"))
-    col4.metric("✅ Total Completions", sum(len(c) for c in completions.values()))
+    col1.metric("📅 Total Working Days", total_working_days)
+    col2.metric("✅ Initial Completed", f"{completed_initial} days (May 4 - June 5)")
+    col3.metric("⏳ Remaining Tasks", future_tasks)
+    col4.metric("👥 Data Analysts", sum(1 for u in USERS.values() if u.get("role") == "data_analyst"))
+    
+    st.markdown("---")
+    
+    # Info note about completed tasks
+    st.markdown("""
+    <div class="info-note">
+        <strong>ℹ️ Note:</strong> All tasks from <strong>May 4 to June 5, 2026</strong> have been automatically marked as 
+        <strong>COMPLETED</strong> for all Data Analysts. Data Analysts should start working on tasks from 
+        <strong>June 8, 2026</strong> (Monday) onwards.
+    </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -1255,7 +1262,7 @@ def admin_dashboard():
     st.plotly_chart(fig, use_container_width=True)
     
     # Team performance
-    st.subheader("👥 Team Performance")
+    st.subheader("👥 Team Performance (Tasks from June 8, 2026 onwards)")
     df_summary = get_team_summary()
     st.dataframe(df_summary, use_container_width=True, hide_index=True)
     
@@ -1266,22 +1273,29 @@ def project_lead_dashboard():
     st.markdown("## 👨‍💼 Project Lead Dashboard")
     st.markdown("**Dr. Harshal Kotwal** - ICARE Project Director")
     
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Progress Overview", "📅 Today's Plan", "👥 Team Tasks", "📈 Analytics"])
-    
     all_tasks = load_tasks()
     completions = load_completions()
+    
+    # Info note
+    st.markdown("""
+    <div class="info-note">
+        <strong>✅ Completed Tasks:</strong> All tasks from <strong>May 4 to June 5, 2026</strong> are marked as completed for all team members.
+        Team members are now working on tasks from <strong>June 8, 2026</strong> onwards.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    tab1, tab2, tab3 = st.tabs(["📊 Progress Overview", "👥 Team Tasks", "📈 Analytics"])
     
     with tab1:
         col1, col2 = st.columns(2)
         
         with col1:
-            # Overall progress
-            total_tasks = len(all_tasks)
-            total_completions = sum(len(c) for c in completions.values())
-            st.metric("📊 Total Task Completions", f"{total_completions}/{total_tasks * len([u for u in USERS.values() if u.get('role') == 'data_analyst'])}")
+            future_tasks = len([d for d in all_tasks.keys() if d > "2026-06-05"])
+            st.metric("📊 Total Remaining Tasks", future_tasks)
         
         with col2:
-            # Completion rate
             df_summary = get_team_summary()
             avg_progress = df_summary["Progress %"].mean() if not df_summary.empty else 0
             st.metric("📈 Average Team Progress", f"{avg_progress:.1f}%")
@@ -1289,12 +1303,12 @@ def project_lead_dashboard():
         st.markdown("---")
         
         # Phase progress
-        st.subheader("Phase-wise Progress")
+        st.subheader("Phase-wise Tasks Distribution")
         phase_data = []
         for phase in ["Phase 1: Foundation", "Phase 2: Planning", "Phase 3: Implementation", "Phase 4: Enhancement", "Phase 5: Finalization"]:
             phase_tasks = [t for t in all_tasks.values() if t["phase"] == phase]
             phase_data.append({
-                "Phase": phase,
+                "Phase": phase.split(":")[0],
                 "Total Tasks": len(phase_tasks)
             })
         
@@ -1303,40 +1317,33 @@ def project_lead_dashboard():
         st.plotly_chart(fig, use_container_width=True)
     
     with tab2:
-        today = datetime.now().strftime("%Y-%m-%d")
-        if today in all_tasks:
-            task = all_tasks[today]
-            st.markdown(f"""
-            <div class="task-card">
-                <strong>📅 {today} ({datetime.now().strftime('%A')})</strong><br>
-                <strong>🎯 Task:</strong> {task['task']}<br>
-                <strong>📂 Category:</strong> {task['category']}<br>
-                <strong>🏷️ Priority:</strong> {task['priority']}<br>
-                <strong>📍 Phase:</strong> {task['phase']}
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.info("No task scheduled for today (weekend or holiday)")
-    
-    with tab3:
-        st.subheader("Team Member Task Status")
+        st.subheader("Team Member Task Status (From June 8, 2026)")
+        
+        future_dates = [d for d in all_tasks.keys() if d > "2026-06-05"]
         
         for email, user in USERS.items():
             if user.get("role") == "data_analyst":
                 with st.expander(f"👤 {user['name']} - {user.get('team', 'N/A')}"):
-                    user_tasks = get_user_tasks(email)
-                    completed = sum(1 for t in user_tasks if t["status"] == "Completed")
-                    total = len(user_tasks)
-                    st.progress(completed/total if total > 0 else 0)
-                    st.caption(f"Progress: {completed}/{total} tasks completed")
+                    user_completions = completions.get(email, {})
+                    future_completions = sum(1 for d in user_completions.keys() if d in future_dates)
+                    total_future = len(future_dates)
                     
-                    # Show recent tasks
-                    recent = user_tasks[-5:] if len(user_tasks) > 5 else user_tasks
-                    for task in recent:
-                        status_icon = "✅" if task["status"] == "Completed" else "⏳"
-                        st.markdown(f"{status_icon} {task['date']}: {task['task'][:60]}...")
+                    st.progress(future_completions/total_future if total_future > 0 else 0)
+                    st.caption(f"Progress: {future_completions}/{total_future} tasks completed")
+                    
+                    # Show recent pending tasks
+                    pending_tasks = []
+                    for date_str in future_dates[:10]:  # Show next 10 tasks
+                        if date_str not in user_completions:
+                            task_info = all_tasks.get(date_str, {})
+                            pending_tasks.append(f"📅 {date_str}: {task_info.get('task', 'No task')[:60]}...")
+                    
+                    if pending_tasks:
+                        st.markdown("**Pending Tasks:**")
+                        for task in pending_tasks[:5]:
+                            st.markdown(f"- {task}")
     
-    with tab4:
+    with tab3:
         st.subheader("Analytics Dashboard")
         
         col1, col2 = st.columns(2)
@@ -1358,7 +1365,8 @@ def project_lead_dashboard():
                 pri = task["priority"]
                 priority_counts[pri] = priority_counts.get(pri, 0) + 1
             
-            fig = px.bar(x=list(priority_counts.keys()), y=list(priority_counts.values()), title="Task Priorities", color=list(priority_counts.keys()))
+            fig = px.bar(x=list(priority_counts.keys()), y=list(priority_counts.values()), 
+                         title="Task Priorities", color=list(priority_counts.keys()))
             st.plotly_chart(fig, use_container_width=True)
 
 def data_analyst_dashboard(email, user):
@@ -1367,64 +1375,78 @@ def data_analyst_dashboard(email, user):
     st.markdown(f"**Team:** {user.get('team', 'N/A')}")
     st.markdown(f"**Working Hours:** 10:00 AM - 6:00 PM (Monday to Friday)")
     
+    # Info about completed tasks
+    st.markdown("""
+    <div class="info-note">
+        <strong>✅ Good News!</strong> All tasks from <strong>May 4 to June 5, 2026</strong> have been marked as completed for you.
+        Your task list below starts from <strong>June 8, 2026</strong> (Monday).
+    </div>
+    """, unsafe_allow_html=True)
+    
     tab1, tab2, tab3 = st.tabs(["📝 Today's Tasks", "📊 My Progress", "📅 All Tasks"])
     
     today = datetime.now().strftime("%Y-%m-%d")
-    today_tasks = get_user_tasks(email, today)
+    
+    # Only show tasks from June 8, 2026 onwards
+    all_user_tasks = get_user_tasks(email)
+    future_tasks = [t for t in all_user_tasks if t["date"] > "2026-06-05"]
     
     with tab1:
-        if today_tasks:
-            for task in today_tasks:
-                if task["status"] == "Completed":
+        today_task = next((t for t in future_tasks if t["date"] == today), None)
+        
+        if today_task:
+            if today_task["status"] == "Completed":
+                st.markdown(f"""
+                <div class="task-card task-card-completed">
+                    ✅ <strong>COMPLETED</strong><br>
+                    📅 {today_task['date']} ({today_task['day']})<br>
+                    🎯 {today_task['task']}<br>
+                    📂 Category: {today_task['category']}<br>
+                    🏷️ Priority: {today_task['priority']}<br>
+                    📍 Phase: {today_task['phase']}<br>
+                    💬 Remarks: {today_task.get('remarks', 'No remarks')}
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                with st.form(key=f"task_{today_task['date']}"):
                     st.markdown(f"""
-                    <div class="task-card task-card-completed">
-                        ✅ <strong>COMPLETED</strong><br>
-                        📅 {task['date']} ({task['day']})<br>
-                        🎯 {task['task']}<br>
-                        📂 Category: {task['category']}<br>
-                        🏷️ Priority: {task['priority']}<br>
-                        📍 Phase: {task['phase']}<br>
-                        💬 Remarks: {task.get('remarks', 'No remarks')}
+                    <div class="task-card task-card-pending">
+                        ⏳ <strong>TASK TO COMPLETE</strong><br>
+                        🎯 {today_task['task']}<br>
+                        📂 Category: {today_task['category']}<br>
+                        🏷️ Priority: {today_task['priority']}<br>
+                        📍 Phase: {today_task['phase']}
                     </div>
                     """, unsafe_allow_html=True)
-                else:
-                    with st.form(key=f"task_{task['date']}"):
-                        st.markdown(f"""
-                        <div class="task-card task-card-pending">
-                            ⏳ <strong>PENDING</strong><br>
-                            🎯 {task['task']}<br>
-                            📂 Category: {task['category']}<br>
-                            🏷️ Priority: {task['priority']}<br>
-                            📍 Phase: {task['phase']}
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        st.markdown("**Work Log (10:00 AM - 6:00 PM)**")
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            start_time = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time())
-                        with col2:
-                            end_time = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time())
-                        
-                        remarks = st.text_area("Work Accomplished / Remarks", height=100, 
-                                              placeholder="Describe what you worked on today...")
-                        
-                        if st.form_submit_button("✅ Mark as Complete", use_container_width=True):
-                            work_log = f"Worked from {start_time} to {end_time}. {remarks}"
-                            if mark_task_complete(email, task["date"], work_log):
-                                st.success("Task completed! Great work!")
-                                st.rerun()
+                    
+                    st.markdown("**Work Log (10:00 AM - 6:00 PM)**")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        start_time = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time())
+                    with col2:
+                        end_time = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time())
+                    
+                    remarks = st.text_area("Work Accomplished / Remarks", height=100, 
+                                          placeholder="Describe what you worked on today...")
+                    
+                    if st.form_submit_button("✅ Mark as Complete", use_container_width=True):
+                        work_log = f"Worked from {start_time} to {end_time}. {remarks}"
+                        if mark_task_complete(email, today_task["date"], work_log):
+                            st.success("Task completed! Great work!")
+                            st.rerun()
         else:
-            st.info("No tasks assigned for today. This may be a weekend or holiday.")
+            if today < "2026-06-08":
+                st.info("📅 Your tasks will start from June 8, 2026. Please check back then!")
+            else:
+                st.info("No task assigned for today. This may be a weekend or holiday.")
             st.markdown("**Working Days:** Monday to Friday only")
     
     with tab2:
-        all_user_tasks = get_user_tasks(email)
-        completed = sum(1 for t in all_user_tasks if t["status"] == "Completed")
-        total = len(all_user_tasks)
+        completed = sum(1 for t in future_tasks if t["status"] == "Completed")
+        total = len(future_tasks)
         
         col1, col2, col3 = st.columns(3)
-        col1.metric("📊 Total Tasks", total)
+        col1.metric("📊 Total Tasks (From June 8)", total)
         col2.metric("✅ Completed", completed)
         col3.metric("⏳ Remaining", total - completed)
         
@@ -1436,7 +1458,7 @@ def data_analyst_dashboard(email, user):
         phases = ["Phase 1: Foundation", "Phase 2: Planning", "Phase 3: Implementation", "Phase 4: Enhancement", "Phase 5: Finalization"]
         
         for phase in phases:
-            phase_tasks = [t for t in all_user_tasks if t["phase"] == phase]
+            phase_tasks = [t for t in future_tasks if t["phase"] == phase]
             phase_completed = sum(1 for t in phase_tasks if t["status"] == "Completed")
             phase_data.append({
                 "Phase": phase.split(":")[0],
@@ -1450,16 +1472,14 @@ def data_analyst_dashboard(email, user):
         st.plotly_chart(fig, use_container_width=True)
     
     with tab3:
-        all_user_tasks = get_user_tasks(email)
-        
         # Filter options
         col1, col2 = st.columns(2)
         with col1:
-            filter_phase = st.selectbox("Filter by Phase", ["All"] + list(set(t["phase"] for t in all_user_tasks)))
+            filter_phase = st.selectbox("Filter by Phase", ["All"] + list(set(t["phase"] for t in future_tasks)))
         with col2:
             filter_status = st.selectbox("Filter by Status", ["All", "Pending", "Completed"])
         
-        filtered_tasks = all_user_tasks
+        filtered_tasks = future_tasks
         if filter_phase != "All":
             filtered_tasks = [t for t in filtered_tasks if t["phase"] == filter_phase]
         if filter_status != "All":
@@ -1469,8 +1489,9 @@ def data_analyst_dashboard(email, user):
         st.dataframe(df_tasks, use_container_width=True, hide_index=True)
         
         # Export option
-        csv = df_tasks.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 Download Tasks as CSV", csv, f"my_tasks_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+        if not df_tasks.empty:
+            csv = df_tasks.to_csv(index=False).encode('utf-8')
+            st.download_button("📥 Download Tasks as CSV", csv, f"my_tasks_{datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
 
 # ============================================================
 # MAIN APP
@@ -1482,6 +1503,9 @@ def main():
         tasks = generate_all_tasks()
         save_tasks(tasks)
     
+    # Initialize completed tasks for May 4 to June 5, 2026
+    initialize_completed_tasks()
+    
     # Authentication
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
@@ -1491,7 +1515,7 @@ def main():
         <div class="main-header">
             <h1>📋 MahaSTRIDE 24-Month Task Management System</h1>
             <p>May 2026 - April 2028 | Monday to Friday | 10:00 AM - 6:00 PM</p>
-            <p>Complete daily task assignment and progress tracking for all 24 months</p>
+            <p>✅ <strong>May 4 to June 5, 2026 tasks are pre-completed</strong> | Starting fresh from <strong>June 8, 2026</strong></p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -1548,6 +1572,12 @@ def main():
         st.markdown("📅 Monday to Friday")
         
         st.markdown("---")
+        st.markdown("**Completed Period**")
+        st.markdown("✅ May 4 - June 5, 2026")
+        st.markdown("**Current Period**")
+        st.markdown("📅 June 8, 2026 onwards")
+        
+        st.markdown("---")
         
         if st.button("🚪 Logout", use_container_width=True):
             st.session_state.authenticated = False
@@ -1578,6 +1608,7 @@ def main():
     <div style="text-align: center; color: #666; font-size: 0.8rem;">
         <p>© 2026-2028 MahaSTRIDE Project | World Bank Loan No: IBRD 9737-IN | ICARE Pvt. Ltd.</p>
         <p>24-Month Project: May 2026 - April 2028 | Working Days: Monday to Friday | Hours: 10:00 - 18:00</p>
+        <p>✅ May 4 to June 5, 2026 tasks completed | 📅 Starting fresh from June 8, 2026</p>
         <p>Last Updated: {datetime.now().strftime('%d %B %Y, %H:%M:%S')}</p>
     </div>
     """, unsafe_allow_html=True)
