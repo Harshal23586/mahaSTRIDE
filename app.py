@@ -1,64 +1,136 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
 import os
+import json
 from hashlib import sha256
 import base64
 import time
-import random
 
-# Page configuration
-st.set_page_config(
-    page_title="MahaSTRIDE - Enterprise Task Management",
-    page_icon="🎯",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# ============================================================
+# GITHUB STORAGE CLASS
+# ============================================================
 
-# Theme state
-if "theme" not in st.session_state:
-    st.session_state.theme = "light"
+class GitHubStorage:
+    """Handle data storage using GitHub API"""
+    
+    DATA_FILES = {
+        "progress": "progress_data.json",
+        "attendance": "attendance_data.json",
+        "mpr_config": "mpr_data.json"
+    }
+    
+    def __init__(self):
+        self.repo = None
+        self._auth_success = False
+        self.file_shas = {}
+        
+        # Try to get secrets from Streamlit Cloud secrets
+        try:
+            self.token = st.secrets.get("GITHUB_TOKEN")
+            self.repo_name = st.secrets.get("GITHUB_REPO")
+            self.branch = st.secrets.get("GITHUB_BRANCH", "main")
+            self.data_prefix = st.secrets.get("DATA_FILE_PREFIX", "")
+        except:
+            self.token = None
+            self.repo_name = None
+            self.branch = "main"
+            self.data_prefix = ""
+        
+        if not self.token or not self.repo_name:
+            return
+        
+        try:
+            from github import Github, GithubException
+            self.g = Github(self.token)
+            user = self.g.get_user()
+            self._auth_success = True
+            self.repo = self.g.get_repo(self.repo_name)
+        except:
+            self.repo = None
+    
+    def is_authenticated(self):
+        return self._auth_success and self.repo is not None
+    
+    def _get_full_path(self, file_key):
+        file_name = self.DATA_FILES.get(file_key, f"{file_key}.json")
+        if self.data_prefix:
+            return f"{self.data_prefix}{file_name}"
+        return file_name
+    
+    def save_data(self, data, file_key="progress"):
+        if not self.repo:
+            return self._save_local(data, file_key)
+        
+        try:
+            from github import GithubException
+            file_path = self._get_full_path(file_key)
+            content = json.dumps(data, indent=2, default=str)
+            
+            try:
+                contents = self.repo.get_contents(file_path, ref=self.branch)
+                self.repo.update_file(
+                    file_path,
+                    f"Update {file_key} data",
+                    content,
+                    contents.sha,
+                    branch=self.branch
+                )
+                return True
+            except GithubException as e:
+                if e.status == 404:
+                    self.repo.create_file(
+                        file_path,
+                        f"Create {file_key} data file",
+                        content,
+                        branch=self.branch
+                    )
+                    return True
+                raise
+        except Exception:
+            return self._save_local(data, file_key)
+    
+    def load_data(self, file_key="progress"):
+        if not self.repo:
+            return self._load_local(file_key)
+        
+        try:
+            from github import GithubException
+            file_path = self._get_full_path(file_key)
+            contents = self.repo.get_contents(file_path, ref=self.branch)
+            content = base64.b64decode(contents.content).decode('utf-8')
+            return json.loads(content)
+        except:
+            return self._load_local(file_key)
+    
+    def _save_local(self, data, file_key):
+        try:
+            file_name = self.DATA_FILES.get(file_key, f"{file_key}.json")
+            with open(file_name, 'w') as f:
+                json.dump(data, f, indent=2, default=str)
+            return True
+        except:
+            return False
+    
+    def _load_local(self, file_key):
+        try:
+            file_name = self.DATA_FILES.get(file_key, f"{file_key}.json")
+            if os.path.exists(file_name):
+                with open(file_name, 'r') as f:
+                    return json.load(f)
+            return None
+        except:
+            return None
 
-# Custom CSS with theme support
-def get_theme_css():
-    if st.session_state.theme == "dark":
-        return """
-        <style>
-            .main-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; }
-            .stat-card { background: linear-gradient(135deg, #0f3460 0%, #16213e 100%); color: white; }
-            .task-card { background: #1a1a2e; border-left-color: #e94560; color: white; }
-            .task-completed { background: #0a3d2f; border-left-color: #00ff88; }
-            .task-pending { background: #3d2f0a; border-left-color: #ffaa00; }
-            .leaderboard-card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; }
-            .credentials-box { background: #1a1a2e; border-color: #e94560; color: white; }
-            .stMarkdown, .stMetric, .stDataFrame { color: white; }
-            .stApp { background-color: #0f0f1a; }
-        </style>
-        """
-    else:
-        return """
-        <style>
-            .main-header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; }
-            .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-            .task-card { background: white; border-left-color: #2a5298; }
-            .task-completed { background: #d4edda; border-left-color: #28a745; }
-            .task-pending { background: #fff3cd; border-left-color: #ffc107; }
-            .leaderboard-card { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-            .credentials-box { background: #f8f9fa; border-color: #2a5298; }
-        </style>
-        """
 
-st.markdown(get_theme_css(), unsafe_allow_html=True)
+# Initialize storage
+@st.cache_resource
+def get_storage():
+    return GitHubStorage()
 
-# Theme toggle button
-col_theme1, col_theme2 = st.columns([6, 1])
-with col_theme2:
-    if st.button("🌓" if st.session_state.theme == "light" else "☀️"):
-        st.session_state.theme = "dark" if st.session_state.theme == "light" else "light"
-        st.rerun()
+storage = get_storage()
+
 
 # ============================================================
 # USER CREDENTIALS
@@ -67,461 +139,598 @@ USERS = {
     "admin@mahastride.com": {
         "password": sha256("Admin@2026".encode()).hexdigest(),
         "role": "admin",
-        "name": "Administrator",
-        "team": "MITRA",
-        "avatar": "👨‍💼"
+        "name": "Admin"
     },
     "projectlead@mahastride.com": {
         "password": sha256("ProjectLead@2026".encode()).hexdigest(),
         "role": "project_lead",
-        "name": "Dr. Harshal Kotwal",
-        "team": "ICARE",
-        "avatar": "👨‍🔬"
-    },
-    "sneha@mu.edu": {
-        "password": sha256("Sneha@2026".encode()).hexdigest(),
-        "role": "data_analyst",
-        "name": "Sneha Kashitkar",
-        "team": "Mumbai University",
-        "avatar": "👩‍🎓"
+        "name": "Dr. Harshal Kotwal"
     },
     "shubham@mitra.gov.in": {
         "password": sha256("Shubham@2026".encode()).hexdigest(),
-        "role": "data_analyst",
+        "role": "coordinator",
         "name": "Shubham Singh",
-        "team": "MITRA",
-        "avatar": "👨‍💻"
+        "university": "MITRA"
+    },
+    "sneha@mu.edu": {
+        "password": sha256("Sneha@2026".encode()).hexdigest(),
+        "role": "coordinator",
+        "name": "Sneha Kashitkar",
+        "university": "MU"
     },
     "sagar@mu.edu": {
         "password": sha256("Sagar@2026".encode()).hexdigest(),
-        "role": "data_analyst",
+        "role": "coordinator",
         "name": "Sagar Teli",
-        "team": "Mumbai University",
-        "avatar": "👨‍🎓"
+        "university": "MU"
     },
     "jagan@sspu.edu": {
         "password": sha256("Jagan@2026".encode()).hexdigest(),
-        "role": "data_analyst",
+        "role": "coordinator",
         "name": "Jagan Sridhar",
-        "team": "SPPU Pune",
-        "avatar": "👨‍🏫"
+        "university": "SSPU"
     },
     "vaibhav@coep.edu": {
         "password": sha256("Vaibhav@2026".encode()).hexdigest(),
-        "role": "data_analyst",
+        "role": "coordinator",
         "name": "Vaibhav Ambekar",
-        "team": "COEP Pune",
-        "avatar": "👨‍🔧"
+        "university": "COEP"
     },
     "pratham@au.edu": {
         "password": sha256("Pratham@2026".encode()).hexdigest(),
-        "role": "data_analyst",
+        "role": "coordinator",
         "name": "Prathamesh Babhulkar",
-        "team": "Amravati University",
-        "avatar": "👨‍🎓"
+        "university": "AU"
     },
     "anjali@nu.edu": {
         "password": sha256("Anjali@2026".encode()).hexdigest(),
-        "role": "data_analyst",
+        "role": "coordinator",
         "name": "Anjali Singh",
-        "team": "Nagpur University",
-        "avatar": "👩‍🎓"
+        "university": "NU"
     },
     "nitish@kbcnmu.edu": {
         "password": sha256("Nitish@2026".encode()).hexdigest(),
-        "role": "data_analyst",
+        "role": "coordinator",
         "name": "Nitish Kumbhar",
-        "team": "KBCNMU Jalgaon",
-        "avatar": "👨‍🎓"
+        "university": "KBCNMU"
     },
     "atharv@bamu.edu": {
         "password": sha256("Atharv@2026".encode()).hexdigest(),
-        "role": "data_analyst",
+        "role": "coordinator",
         "name": "Atharav Paturkar",
-        "team": "BAMU Aurangabad",
-        "avatar": "👨‍🎓"
+        "university": "BAMU"
     }
 }
 
 # ============================================================
-# DATA FILES
+# UNIVERSITY DETAILS
 # ============================================================
-DAILY_TASKS_FILE = "daily_tasks_complete.json"
-TASK_COMPLETION_FILE = "task_completion.json"
-ACHIEVEMENTS_FILE = "achievements.json"
-NOTIFICATIONS_FILE = "notifications.json"
-AUDIT_LOG_FILE = "audit_log.json"
+UNIVERSITIES = {
+    "MU": {"name": "Mumbai University", "coordinators": ["Sneha Kashitkar", "Sagar Teli"], "nodal_officer": "Dr. Varsha Kelkar Mane", "registrar": "To be updated"},
+    "SSPU": {"name": "Savitribai Phule Pune University", "coordinators": ["Jagan Sridhar"], "nodal_officer": "Prof. Vinayak Joshi", "registrar": "To be updated"},
+    "COEP": {"name": "COEP Technological University, Pune", "coordinators": ["Vaibhav Ambekar"], "nodal_officer": "Dr. Uttam Chaskar", "registrar": "To be updated"},
+    "AU": {"name": "Sant Gadge Baba Amravati University", "coordinators": ["Prathamesh Babhulkar"], "nodal_officer": "Dr. A. B. Naik", "registrar": "To be updated"},
+    "NU": {"name": "Rashtrasant Tukadoji Maharaj Nagpur University", "coordinators": ["Anjali Singh"], "nodal_officer": "Prof. Nandkishor Karade", "registrar": "To be updated"},
+    "KBCNMU": {"name": "KBCNMU, Jalgaon", "coordinators": ["Nitish Kumbhar"], "nodal_officer": "Prof. Sameer Narkhede", "registrar": "To be updated"},
+    "BAMU": {"name": "Dr. Babasaheb Ambedkar Marathwada University", "coordinators": ["Atharav Paturkar"], "nodal_officer": "Prof. G.D. Khedkar", "registrar": "To be updated"},
+    "MITRA": {"name": "MITRA (PMU)", "coordinators": ["Shubham Singh"], "nodal_officer": "Dr. Harshal Kotwal", "registrar": "To be updated"}
+}
 
-# ============================================================
-# AUDIT LOG FUNCTION
-# ============================================================
-
-def log_audit(email, action, details):
-    """Log user actions for admin audit"""
-    audit_log = load_audit_log()
-    audit_log.append({
-        "timestamp": datetime.now().isoformat(),
-        "user": email,
-        "user_name": USERS.get(email, {}).get("name", email),
-        "action": action,
-        "details": details
-    })
-    if len(audit_log) > 500:
-        audit_log = audit_log[-500:]
-    save_audit_log(audit_log)
-
-def load_audit_log():
-    if os.path.exists(AUDIT_LOG_FILE):
-        with open(AUDIT_LOG_FILE, 'r') as f:
-            return json.load(f)
-    return []
-
-def save_audit_log(log):
-    with open(AUDIT_LOG_FILE, 'w') as f:
-        json.dump(log, f, indent=2)
+MITRA_OFFICIALS = {"project_director": "Dr. Harshal Kotwal, Project Director, MahaSTRIDE", "jt_ceo": "Jt. CEO, MITRA"}
+ICARE_OFFICIALS = {"project_head": "Shri Karthick Sridhar, Project Head, ICARE Pvt. Ltd."}
+WORKING_HOURS = "10:00 AM - 6:00 PM"
 
 # ============================================================
-# MOTIVATIONAL QUOTES
+# DEFAULT PLAN - 24 MONTHS (Full working days)
 # ============================================================
 
-MOTIVATIONAL_QUOTES = [
-    ("🌟", "The secret of getting ahead is getting started.", "Mark Twain"),
-    ("💪", "Your limitation—it’s only your imagination.", "Unknown"),
-    ("🎯", "Push yourself, because no one else is going to do it for you.", "Unknown"),
-    ("🏆", "Great things never come from comfort zones.", "Unknown"),
-    ("🚀", "Dream it. Wish it. Do it.", "Unknown"),
-    ("⭐", "Success doesn’t just find you. You have to go out and get it.", "Unknown"),
-    ("📈", "The harder you work for something, the greater you’ll feel when you achieve it.", "Unknown"),
-    ("💡", "Dream bigger. Do bigger.", "Unknown"),
-    ("🔥", "Don’t stop when you’re tired. Stop when you’re done.", "Unknown"),
-    ("🎉", "Wake up with determination. Go to bed with satisfaction.", "Unknown")
-]
-
-def get_motivational_quote():
-    icon, quote, author = random.choice(MOTIVATIONAL_QUOTES)
-    return f"{icon} *\"{quote}\"* — {author}"
-
-# ============================================================
-# TASK FUNCTIONS
-# ============================================================
-
-def generate_all_unique_tasks():
-    """Generate unique tasks for every working day from May 2026 to April 2028"""
-    all_tasks = {}
-    
-    monthly_tasks = {
-        "2026-06-08": "Conduct kickoff meeting with Mumbai University VC and IQAC team",
-        "2026-06-09": "Interview 10 faculty members at Mumbai University for research assessment",
-        "2026-06-10": "Collect and verify student enrollment data from all departments",
-        "2026-06-11": "Document faculty publication records for last 5 years",
-        "2026-06-12": "Compile research grants and project funding data",
-        "2026-06-15": "Analyze placement data and graduate outcomes for last 3 years",
-        "2026-06-16": "Review library resources and digital infrastructure across campuses",
-        "2026-06-17": "Assess laboratory facilities and research equipment availability",
-        "2026-06-18": "Evaluate international collaboration MoUs and joint research projects",
-        "2026-06-19": "Prepare data gap analysis report for all 7 universities",
-        "2026-06-22": "Constitute GRDAU team with nominated members from each department",
-        "2026-06-23": "Develop standard operating procedures for GRDAU operations",
-        "2026-06-24": "Train GRDAU staff on NIRF data collection and validation",
-        "2026-06-25": "Setup data management system with access controls for GRDAU",
-        "2026-06-26": "Review diagnostic assessment findings with university leadership",
-        "2026-06-29": "Finalize diagnostic reports for submission to PMU",
-        "2026-06-30": "Submit June Monthly Progress Report with all achievements",
-        "2026-07-01": "Complete comprehensive gap analysis against NIRF 2026 parameters",
-        "2026-07-02": "Prepare SWOT analysis report for Mumbai University",
-        "2026-07-03": "Prepare SWOT analysis report for Pune University",
-        "2026-07-06": "Prepare SWOT analysis report for Nagpur University",
-        "2026-07-07": "Prepare SWOT analysis report for Amravati University",
-        "2026-07-08": "Prepare SWOT analysis report for COEP University",
-        "2026-07-09": "Prepare SWOT analysis report for KBCNMU Jalgaon",
-        "2026-07-10": "Prepare SWOT analysis report for BAMU Aurangabad",
-        "2026-07-13": "Finalize GRDAU establishment plan and submit for approval",
-        "2026-07-14": "Setup GRDAU office with required hardware and software",
-        "2026-07-15": "Conduct data entry training for newly appointed GRDAU staff",
-        "2026-07-16": "Create data validation protocols and quality checklists",
-        "2026-07-17": "Develop dashboard requirements document with stakeholder inputs",
-        "2026-07-20": "Design baseline report template for Phase 1 completion",
-        "2026-07-21": "Compile all Phase 1 deliverables and prepare completion report",
-        "2026-07-22": "Present Phase 1 findings to MITRA steering committee",
-        "2026-07-23": "Document lessons learned and best practices from Phase 1",
-        "2026-07-24": "Plan Phase 2 activities with detailed work breakdown structure",
-        "2026-07-27": "Prepare July Monthly Progress Report with Phase 1 summary",
-        "2026-07-28": "Submit July MPR and Phase 1 completion report to PMU",
-        "2026-07-29": "Review and incorporate client feedback on Phase 1 deliverables",
-        "2026-07-30": "Finalize Phase 2 work plan and resource allocation",
-        "2026-07-31": "Conduct Phase 2 kickoff meeting with all university coordinators",
-        "2026-08-03": "Develop IDP framework template aligned with NIRF metrics",
-        "2026-08-04": "Collect strategic plans from Mumbai University leadership",
-        "2026-08-05": "Collect strategic plans from Pune University VC office",
-        "2026-08-06": "Collect strategic plans from Nagpur University administration",
-        "2026-08-07": "Collect strategic plans from Amravati University",
-        "2026-08-10": "Collect strategic plans from COEP University Director",
-        "2026-08-11": "Collect strategic plans from KBCNMU Jalgaon",
-        "2026-08-12": "Collect strategic plans from BAMU Aurangabad",
-        "2026-08-13": "Analyze collected strategic plans and identify common themes",
-        "2026-08-14": "Draft Institutional Development Plan for Mumbai University",
-        "2026-08-17": "Draft IDP for Pune University with specific KPIs",
-        "2026-08-18": "Draft IDP for Nagpur University focusing on research excellence",
-        "2026-08-19": "Draft IDP for Amravati University with timeline",
-        "2026-08-20": "Draft IDP for COEP University emphasizing industry connect",
-        "2026-08-21": "Draft IDP for KBCNMU Jalgaon with internationalization goals",
-        "2026-08-24": "Draft IDP for BAMU Aurangabad focusing on infrastructure",
-        "2026-08-25": "Present IDP drafts to respective Vice Chancellors for feedback",
-        "2026-08-26": "Incorporate VC feedback and finalize IDPs for all universities",
-        "2026-08-27": "Get formal institutional sign-off on approved IDPs",
-        "2026-08-28": "Prepare August MPR documenting IDP development progress",
-        "2026-08-31": "Submit August MPR to PMU with IDP status report",
-    }
-    
-    current_date = datetime(2026, 9, 1)
+def get_all_working_dates():
+    """Generate all working dates from May 4, 2026 to April 28, 2028"""
+    dates = []
+    start_date = datetime(2026, 5, 4)
     end_date = datetime(2028, 4, 28)
     
-    phase_tasks = [
-        "Design data portal architecture", "Create dashboard wireframes", "Develop backend APIs",
-        "Implement user authentication", "Build KPI dashboard", "Integrate research charts",
-        "Add faculty-student ratio analytics", "Implement financial tracking", "Develop placement dashboard",
-        "Create international metrics", "Add citation analysis", "Implement infrastructure dashboard",
-        "Prepare Milestone Report", "Submit to PMU for review", "Conduct user testing",
-        "Fix bugs and optimize", "Deploy to staging", "Complete beta testing",
-        "Conduct training for administrators", "Create user manual", "Prepare Mid-Term Review",
-        "Deploy to production", "Monitor performance", "Setup analytics tracking",
-        "Create backup procedures", "Plan Phase 3 activities", "Develop Phase 3 schedule"
-    ]
-    
-    task_index = 0
-    while current_date <= end_date:
-        if current_date.weekday() < 5:
-            date_str = current_date.strftime("%Y-%m-%d")
-            task = phase_tasks[task_index % len(phase_tasks)]
-            priority = "High" if any(w in task.lower() for w in ["milestone", "submit", "present", "final"]) else "Medium"
-            all_tasks[date_str] = {"task": task, "priority": priority, "phase": "Implementation"}
-            task_index += 1
-        current_date += timedelta(days=1)
-    
-    for date_str, task_info in monthly_tasks.items():
-        all_tasks[date_str] = {"task": task_info, "priority": "High", "phase": "Foundation"}
-    
-    return all_tasks
-
-def load_tasks():
-    if os.path.exists(DAILY_TASKS_FILE):
-        with open(DAILY_TASKS_FILE, 'r') as f:
-            return json.load(f)
-    tasks = generate_all_unique_tasks()
-    with open(DAILY_TASKS_FILE, 'w') as f:
-        json.dump(tasks, f, indent=2)
-    return tasks
-
-def load_completions():
-    if os.path.exists(TASK_COMPLETION_FILE):
-        with open(TASK_COMPLETION_FILE, 'r') as f:
-            return json.load(f)
-    return {}
-
-def save_completions(completions):
-    with open(TASK_COMPLETION_FILE, 'w') as f:
-        json.dump(completions, f, indent=2)
-
-def load_achievements():
-    if os.path.exists(ACHIEVEMENTS_FILE):
-        with open(ACHIEVEMENTS_FILE, 'r') as f:
-            return json.load(f)
-    return {}
-
-def save_achievements(achievements):
-    with open(ACHIEVEMENTS_FILE, 'w') as f:
-        json.dump(achievements, f, indent=2)
-
-def load_notifications():
-    if os.path.exists(NOTIFICATIONS_FILE):
-        with open(NOTIFICATIONS_FILE, 'r') as f:
-            return json.load(f)
-    return {}
-
-def save_notifications(notifications):
-    with open(NOTIFICATIONS_FILE, 'w') as f:
-        json.dump(notifications, f, indent=2)
-
-def add_notification(email, title, message):
-    notifications = load_notifications()
-    if email not in notifications:
-        notifications[email] = []
-    notifications[email].append({
-        "id": len(notifications[email]) + 1,
-        "title": title,
-        "message": message,
-        "timestamp": datetime.now().isoformat(),
-        "read": False
-    })
-    save_notifications(notifications)
-
-def initialize_completed_tasks():
-    completions = load_completions()
-    all_tasks = load_tasks()
-    
-    completed_dates = []
-    start_date = datetime(2026, 5, 4)
-    end_date = datetime(2026, 6, 5)
     current = start_date
     while current <= end_date:
-        if current.weekday() < 5:
-            date_str = current.strftime("%Y-%m-%d")
-            if date_str in all_tasks:
-                completed_dates.append(date_str)
+        if current.weekday() < 5:  # Monday to Friday
+            dates.append(current.strftime("%Y-%m-%d"))
         current += timedelta(days=1)
-    
-    for email, user in USERS.items():
-        if user.get("role") == "data_analyst":
-            if email not in completions:
-                completions[email] = {}
-            for date_str in completed_dates:
-                if date_str not in completions[email]:
-                    completions[email][date_str] = {
-                        "completed_at": datetime(2026, 6, 5, 17, 0, 0).isoformat(),
-                        "remarks": "Completed - Initial project setup phase"
-                    }
-    
-    save_completions(completions)
-    
-    achievements = load_achievements()
-    for email, user in USERS.items():
-        if user.get("role") == "data_analyst" and email not in achievements:
-            achievements[email] = {"points": 0, "badges": []}
-    save_achievements(achievements)
-    
-    return len(completed_dates)
+    return dates
 
-def get_user_tasks(email, year=None, month=None):
-    user = USERS.get(email, {})
-    all_tasks = load_tasks()
-    completions = load_completions()
-    user_completions = completions.get(email, {})
+def get_task_for_date(date_str):
+    """Get task for a specific date"""
+    date = datetime.strptime(date_str, "%Y-%m-%d")
+    month = date.month
+    year = date.year
     
-    user_tasks = []
-    for date_str, task_info in all_tasks.items():
-        if user.get("role") == "data_analyst":
-            # Filter by year and month if specified
-            task_date = datetime.strptime(date_str, "%Y-%m-%d")
-            if year is not None and task_date.year != year:
-                continue
-            if month is not None and task_date.month != month:
-                continue
-                
-            is_completed = date_str in user_completions
-            completion_info = user_completions.get(date_str, {})
-            user_tasks.append({
-                "date": date_str,
-                "task": task_info.get("task", "No task assigned"),
-                "priority": task_info.get("priority", "Medium"),
-                "phase": task_info.get("phase", "Unknown"),
-                "status": "Completed" if is_completed else "Pending",
-                "completed_at": completion_info.get("completed_at", ""),
-                "remarks": completion_info.get("remarks", "")
-            })
-    return sorted(user_tasks, key=lambda x: x["date"])
+    # Phase 1 tasks (May-July 2026)
+    if year == 2026 and month == 5:
+        tasks = {
+            "2026-05-04": "SANGAM Orientation Day 1 - Project Overview",
+            "2026-05-05": "SANGAM Training Day 2 - NIRF Framework",
+            "2026-05-06": "SANGAM Workshop Day 3 - GRDAU Concept",
+            "2026-05-07": "University Reporting & Onboarding",
+            "2026-05-08": "NIRF Data Source Mapping",
+            "2026-05-11": "Create Data Gap Template",
+            "2026-05-12": "Collect Student & Faculty Data",
+            "2026-05-13": "Collect Research & Placement Data",
+            "2026-05-14": "Collect Financial & Infrastructure Data",
+            "2026-05-15": "Data Consolidation & Validation",
+            "2026-05-18": "Stakeholder Consultation Meeting",
+            "2026-05-19": "Missing Data Follow-up",
+            "2026-05-20": "NIRF Template Preparation",
+            "2026-05-21": "SWOT Analysis & Gap Report",
+            "2026-05-22": "Inception Report Drafting",
+            "2026-05-25": "GRDAU Team Identification",
+            "2026-05-26": "GRDAU Operational Framework",
+            "2026-05-27": "Review Meeting with ICARE",
+            "2026-05-29": "May MPR Finalization"
+        }
+        return tasks.get(date_str, "Continue project activities")
+    
+    elif year == 2026 and month == 6:
+        tasks = {
+            "2026-06-01": "Complete Diagnostic Assessment Framework",
+            "2026-06-02": "Begin University-wise Assessments",
+            "2026-06-03": "Review existing data quality",
+            "2026-06-04": "Identify data gaps per university",
+            "2026-06-05": "Prepare assessment templates",
+            "2026-06-08": "Conduct faculty interviews",
+            "2026-06-09": "Analyze research output metrics",
+            "2026-06-10": "Evaluate infrastructure readiness",
+            "2026-06-11": "Assess international collaboration",
+            "2026-06-12": "Compile assessment findings",
+            "2026-06-15": "GRDAU Training Session for Coordinators",
+            "2026-06-16": "Data validation workshop",
+            "2026-06-17": "NIRF submission preparation",
+            "2026-06-18": "Review progress with VC",
+            "2026-06-19": "Update data repository",
+            "2026-06-22": "Finalize Diagnostic Reports",
+            "2026-06-23": "Submit Diagnostic Assessment Reports",
+            "2026-06-24": "Prepare June MPR",
+            "2026-06-25": "Plan July activities",
+            "2026-06-26": "Client review meeting",
+            "2026-06-29": "Continue data analysis",
+            "2026-06-30": "Finalize monthly report"
+        }
+        return tasks.get(date_str, "Continue diagnostic assessments")
+    
+    elif year == 2026 and month == 7:
+        tasks = {
+            "2026-07-01": "Complete gap analysis against NIRF",
+            "2026-07-02": "Prepare SWOT analysis for universities",
+            "2026-07-03": "Submit GRDAU establishment plan",
+            "2026-07-06": "Finalize GRDAU in all universities",
+            "2026-07-07": "Train GRDAU staff",
+            "2026-07-08": "Develop SOP for GRDAU",
+            "2026-07-09": "Setup data management systems",
+            "2026-07-10": "Review GRDAU readiness",
+            "2026-07-13": "Data quality framework implementation",
+            "2026-07-14": "Dashboard requirements gathering",
+            "2026-07-15": "Prepare baseline report",
+            "2026-07-16": "Stakeholder feedback session",
+            "2026-07-17": "Update project plan",
+            "2026-07-20": "Finalize July MPR",
+            "2026-07-21": "Phase 1 completion review",
+            "2026-07-22": "Plan Phase 2 activities",
+            "2026-07-23": "Client presentation",
+            "2026-07-24": "Document lessons learned"
+        }
+        return tasks.get(date_str, "Continue Phase 1 wrap-up")
+    
+    # For remaining months, provide phase-appropriate tasks
+    elif year == 2026 and month >= 8:
+        phase = "Phase 2: Planning (IDP Development)"
+        task_templates = [
+            "Develop IDP framework", "Collect strategic plans", "Analyze existing plans",
+            "Draft IDP document", "Review with VC", "Incorporate feedback",
+            "Finalize IDP", "Design portal architecture", "Create dashboard wireframes"
+        ]
+        day = date.day
+        return f"{phase} - {task_templates[day % len(task_templates)]}"
+    
+    elif year == 2027 and month <= 4:
+        phase = "Phase 3: Implementation"
+        task_templates = [
+            "Deploy data portal", "Conduct training", "Upload baseline data",
+            "Verify data accuracy", "Implement dashboards", "Generate reports"
+        ]
+        day = date.day
+        return f"{phase} - {task_templates[day % len(task_templates)]}"
+    
+    elif year == 2027 and month <= 10:
+        phase = "Phase 4: Enhancement"
+        task_templates = [
+            "Enhance analytics", "Prepare ranking data", "Conduct workshops",
+            "Improve dashboards", "Train users", "Submit ranking submissions"
+        ]
+        day = date.day
+        return f"{phase} - {task_templates[day % len(task_templates)]}"
+    
+    else:
+        phase = "Phase 5: Finalization"
+        task_templates = [
+            "Prepare final report", "Submit deliverables", "Handover documentation",
+            "Complete closure", "Celebrate success"
+        ]
+        day = date.day
+        return f"{phase} - {task_templates[day % len(task_templates)]}"
 
-def mark_task_complete(email, date_str, remarks, work_hours):
-    completions = load_completions()
-    if email not in completions:
-        completions[email] = {}
-    
-    completions[email][date_str] = {
-        "completed_at": datetime.now().isoformat(),
-        "remarks": remarks,
-        "work_hours": work_hours
+
+DEFAULT_PLAN = {}
+for date_str in get_all_working_dates():
+    DEFAULT_PLAN[date_str] = {
+        "task": get_task_for_date(date_str),
+        "category": "Project Activity",
+        "description": "As per project plan",
+        "venue": "Respective Location"
     }
-    save_completions(completions)
+
+TASK_CATEGORIES = {
+    "Training": ["SANGAM", "NIRF training", "GRDAU training"],
+    "Setup": ["Onboarding", "Data mapping", "GRDAU setup"],
+    "Data Collection": ["Student", "Faculty", "Research", "Placement", "NIRF data"],
+    "Analysis": ["Consolidation", "Validation", "Gap analysis", "SWOT"],
+    "Reporting": ["NIRF template", "Inception Report", "MPR", "Diagnostic Reports"],
+    "Meetings": ["Consultation", "Review", "VC meeting", "Client meeting"],
+    "Documentation": ["Gap template", "SWOT", "GRDAU", "SOP", "IDP"],
+    "Technical": ["Portal", "Dashboard", "Development", "Testing"],
+    "Planning": ["IDP", "Work plan", "Phase planning"],
+    "Implementation": ["Deployment", "Training", "Data upload"],
+    "Enhancement": ["Analytics", "Rankings", "Workshops"],
+    "Finalization": ["Reports", "Handover", "Closure"]
+}
+
+# ============================================================
+# TEAM MEMBERS
+# ============================================================
+TEAM_MEMBERS = {
+    "MITRA": [
+        {"name": "Dr. Harshal Kotwal", "profile": "Project Director, MahaSTRIDE", "location": "MITRA, Mumbai"},
+        {"name": "Shubham Singh", "profile": "Data Analytics Specialist", "location": "MITRA, Mumbai"}
+    ],
+    "MU": [
+        {"name": "Sneha Kashitkar", "profile": "Institutional Coordinator", "location": "Mumbai University"},
+        {"name": "Sagar Teli", "profile": "Institutional Coordinator", "location": "Mumbai University"}
+    ],
+    "SSPU": [{"name": "Jagan Sridhar", "profile": "Institutional Coordinator", "location": "SPPU, Pune"}],
+    "COEP": [{"name": "Vaibhav Ambekar", "profile": "Institutional Coordinator", "location": "COEP, Pune"}],
+    "AU": [{"name": "Prathamesh Babhulkar", "profile": "Institutional Coordinator", "location": "Amravati University"}],
+    "NU": [{"name": "Anjali Singh", "profile": "Institutional Coordinator", "location": "Nagpur University"}],
+    "KBCNMU": [{"name": "Nitish Kumbhar", "profile": "Institutional Coordinator", "location": "KBCNMU, Jalgaon"}],
+    "BAMU": [{"name": "Atharav Paturkar", "profile": "Institutional Coordinator", "location": "BAMU, Aurangabad"}]
+}
+
+# ============================================================
+# DATA MANAGEMENT FUNCTIONS
+# ============================================================
+
+def load_progress():
+    data = storage.load_data("progress")
+    if data is None:
+        return {}
+    return data
+
+def save_progress(data):
+    return storage.save_data(data, "progress")
+
+def load_attendance():
+    data = storage.load_data("attendance")
+    if data is None:
+        return {}
+    return data
+
+def save_attendance(data):
+    return storage.save_data(data, "attendance")
+
+def load_mpr_config():
+    data = storage.load_data("mpr_config")
+    if data is None:
+        return {"work_order_ref": "MITRA/Research/MahaSTRIDE/EduRFP/49/2025", "work_order_date": "25-03-2026", "period_start": "2026-05-04", "period_end": "2026-05-29"}
+    return data
+
+def save_mpr_config(data):
+    return storage.save_data(data, "mpr_config")
+
+def get_all_dates():
+    return list(DEFAULT_PLAN.keys())
+
+def get_pending(university):
+    data = load_progress()
+    completed = set(data.get(university, {}).keys())
+    pending = []
+    for date in get_all_dates():
+        if date not in completed:
+            plan = DEFAULT_PLAN.get(date)
+            if plan:
+                pending.append({"date": date, "task": plan["task"], "category": plan["category"], "description": plan["description"], "venue": plan["venue"]})
+    return pending
+
+def log_work(university, date, category, task, description, hours, remarks, user):
+    data = load_progress()
+    if university not in data:
+        data[university] = {}
+    data[university][date] = {
+        "category": category, 
+        "task": task, 
+        "description": description, 
+        "status": "completed", 
+        "hours": hours, 
+        "remarks": remarks, 
+        "updated_by": user, 
+        "updated_at": datetime.now().isoformat()
+    }
+    return save_progress(data)
+
+def mark_all_completed(university):
+    data = load_progress()
+    if university not in data:
+        data[university] = {}
+    for date, plan in DEFAULT_PLAN.items():
+        if date not in data[university]:
+            data[university][date] = {
+                "category": plan["category"], 
+                "task": plan["task"], 
+                "description": plan["description"], 
+                "status": "completed", 
+                "hours": 8.0, 
+                "remarks": "Auto-completed", 
+                "updated_by": "system", 
+                "updated_at": datetime.now().isoformat()
+            }
+    return save_progress(data)
+
+def get_entries(university):
+    data = load_progress()
+    if university not in data:
+        return pd.DataFrame()
+    records = []
+    for date, entry in data[university].items():
+        records.append({"Date": date, "Task": entry.get("task", ""), "Status": entry.get("status", "").upper(), "Hours": entry.get("hours", 0)})
+    return pd.DataFrame(records).sort_values("Date")
+
+def get_summary():
+    data = load_progress()
+    stats = []
+    for code, info in UNIVERSITIES.items():
+        entries = data.get(code, {})
+        total = len(DEFAULT_PLAN)
+        completed = sum(1 for e in entries.values() if e.get("status") == "completed")
+        stats.append({"University": info["name"], "Completed": completed, "Total": total})
+    return pd.DataFrame(stats)
+
+def init_all():
+    for code in UNIVERSITIES:
+        mark_all_completed(code)
     
-    user_tasks = get_user_tasks(email)
-    completed_count = sum(1 for t in user_tasks if t["status"] == "Completed" and t["date"] > "2026-06-05")
-    
-    achievements = load_achievements()
-    if email not in achievements:
-        achievements[email] = {"points": 0, "badges": []}
-    
-    new_badges = []
-    if completed_count >= 5 and "Rising Star" not in achievements[email]["badges"]:
-        new_badges.append("Rising Star")
-        add_notification(email, "🏅 Badge Earned!", "You earned the 'Rising Star' badge!")
-    if completed_count >= 15 and "Dedicated Worker" not in achievements[email]["badges"]:
-        new_badges.append("Dedicated Worker")
-        add_notification(email, "🏅 Badge Earned!", "You earned the 'Dedicated Worker' badge!")
-    if completed_count >= 30 and "Task Master" not in achievements[email]["badges"]:
-        new_badges.append("Task Master")
-        add_notification(email, "🏅 Badge Earned!", "You earned the 'Task Master' badge!")
-    
-    achievements[email]["badges"].extend(new_badges)
-    achievements[email]["points"] = completed_count * 10
-    save_achievements(achievements)
-    
-    add_notification(email, "✅ Task Completed", f"Completed task on {date_str}")
-    log_audit(email, "task_completed", f"Completed task on {date_str}")
-    
+    attendance = {}
+    for team_type, members in TEAM_MEMBERS.items():
+        attendance[team_type] = {}
+        for member in members:
+            attendance[team_type][member["name"]] = {"present": 19, "absent": 0, "holidays": 12}
+    save_attendance(attendance)
     return True
 
-def get_all_analysts_progress():
-    all_tasks = load_tasks()
-    completions = load_completions()
-    achievements = load_achievements()
-    total_tasks = len(all_tasks)
-    
-    progress_data = []
-    for email, user in USERS.items():
-        if user.get("role") == "data_analyst":
-            user_completions = completions.get(email, {})
-            completed = len(user_completions)
-            user_achievements = achievements.get(email, {"points": 0, "badges": []})
-            progress_data.append({
-                "name": user["name"],
-                "team": user.get("team", "N/A"),
-                "avatar": user.get("avatar", "👤"),
-                "completed": completed,
-                "total": total_tasks,
-                "progress": round((completed / total_tasks * 100), 1),
-                "points": user_achievements.get("points", 0),
-                "badges": len(user_achievements.get("badges", []))
-            })
-    return pd.DataFrame(progress_data).sort_values("progress", ascending=False)
+def reset_all():
+    for file_key in ["progress", "attendance", "mpr_config"]:
+        storage.save_data({}, file_key)
+    init_all()
+    return True
 
-def generate_mpr_html(year, month):
-    month_names = ["January", "February", "March", "April", "May", "June", 
-                   "July", "August", "September", "October", "November", "December"]
-    month_name = month_names[month-1]
-    progress_df = get_all_analysts_progress()
+# ============================================================
+# MPR GENERATION FUNCTIONS
+# ============================================================
+
+def generate_mpr_html(university_code):
+    uni = UNIVERSITIES[university_code]
+    attendance = load_attendance()
+    mpr = load_mpr_config()
+    
+    period_start = datetime.strptime(mpr.get("period_start", "2026-05-04"), "%Y-%m-%d")
+    period_end = datetime.strptime(mpr.get("period_end", "2026-05-29"), "%Y-%m-%d")
+    
+    # Build team table
+    team_rows = ""
+    sr_no = 1
+    
+    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></td>'
+    for m in TEAM_MEMBERS.get("MITRA", []):
+        att = attendance.get("MITRA", {}).get(m["name"], {})
+        team_rows += f"""
+        <tr>
+            <td>{sr_no}</td>
+            <td>{m['name']}</td>
+            <td>{m['profile']}</td>
+            <td>{m['location']}</td>
+            <td>{att.get('present', 19)}</div>
+            <td>{att.get('absent', 0)}</div>
+            <td>{att.get('holidays', 12)}</div>
+        </tr>"""
+        sr_no += 1
+    
+    team_rows += f'<tr class="sub-header"><td colspan="7"><strong>{uni["name"]}</strong></div></tr>'
+    for m in TEAM_MEMBERS.get(university_code, []):
+        att = attendance.get(university_code, {}).get(m["name"], {})
+        team_rows += f"""
+        <tr>
+            <td>{sr_no}</div>
+            <td>{m['name']}</div>
+            <td>{m['profile']}</div>
+            <td>{m['location']}</div>
+            <td>{att.get('present', 19)}</div>
+            <td>{att.get('absent', 0)}</div>
+            <td>{att.get('holidays', 12)}</div>
+        </tr>"""
+        sr_no += 1
+    
+    coordinators = ", ".join(uni["coordinators"])
+    
+    # Get recent completed tasks
+    progress_data = load_progress()
+    uni_progress = progress_data.get(university_code, {})
+    completed_tasks = [date for date, info in uni_progress.items() if info.get("status") == "completed"]
     
     html = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Monthly Progress Report - {month_name} {year}</title>
+    <title>Monthly Progress Report - {uni['name']}</title>
     <style>
         body {{ font-family: 'Times New Roman', serif; margin: 0.7in; font-size: 11pt; }}
         .header {{ text-align: center; margin-bottom: 20px; }}
+        .mitra-title {{ font-size: 12pt; font-weight: bold; }}
+        .confidential {{ text-align: right; font-weight: bold; margin-bottom: 20px; }}
         .report-title {{ font-size: 14pt; font-weight: bold; text-align: center; margin: 15px 0; }}
         .section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; background-color: #f0f0f0; padding: 5px; }}
         table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
         th, td {{ border: 1px solid #000; padding: 6px; vertical-align: top; }}
         th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
+        .sub-header {{ background-color: #d0d0d0; font-weight: bold; }}
         .footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
     </style>
 </head>
 <body>
+<div class="confidential">Confidential</div>
 <div class="header">
-    <h2>Maharashtra Institution for Transformation (MITRA)</h2>
-    <h3>Monthly Progress Report - {month_name} {year}</h3>
+    <div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div>
+    <div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div>
+    <div>Email: pmu.mahastride@mahamitra.org</div>
 </div>
+<div class="report-title">MONTHLY PROGRESS REPORT</div>
+<div style="text-align: center;">(From {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')})</div>
 
-<div class="section-title">1. Team Performance Summary</div>
 <table>
-    <tr><th>Rank</th><th>Team Member</th><th>Team</th><th>Tasks Completed</th><th>Progress</th><th>Points</th><th>Badges</th></tr>
-    {''.join([f'<tr><td>{i+1}</td><td>{row["name"]}</td><td>{row["team"]}</td><td>{row["completed"]}</td><td>{row["progress"]}%</td><td>{row["points"]}</td><td>{row["badges"]}</td></tr>' for i, (_, row) in enumerate(progress_df.head(10).iterrows())])}
+    <tr><td style="width:30%"><strong>Work Order Reference</strong></div><td colspan="3">{mpr.get('work_order_ref')}<br>dated {mpr.get('work_order_date')}</div></tr>
+    <tr><th>University / Division</th><td colspan="3">{uni['name']}</div></tr>
+    <tr><th>Project Start Date</th><td>06 May 2026</div><th>Project End Date</th><td>06 May 2028</div></tr>
 </table>
 
-<div class="section-title">2. Overall Statistics</div>
+<div class="section-title">Project Team Deployment</div>
 <table>
-    <tr><td><strong>Total Working Days (24 months)</strong></td><td>{len(load_tasks())}</td></tr>
-    <tr><td><strong>Total Task Completions</strong></td><td>{sum(len(c) for c in load_completions().values())}</td></tr>
-    <tr><td><strong>Active Team Members</strong></td><td>{len(progress_df)}</td></tr>
+    <tr><th>Sr. No.</th><th>Name of the Key Professional</th><th>Profile as per contract</th><th>Location</th><th>Total Present Days</th><th>Total Absent Days</th><th>Total Holidays/Weekly offs</th></tr>
+    {team_rows}
+</table>
+
+<div class="section-title">A. Major Activities</div>
+<table>
+    <tr><th>Sr. No.</th><th>Major Activities</th><th>Team Member Name</th><th>Activity Status</th><th>Date of Submission</th></tr>
+    <tr><td>1.</div><td>SANGAM Orientation & Training</div><td>All Coordinators</div><td>✅ Completed</div><td>May 4-6, 2026</div></tr>
+    <tr><td>2.</div><td>University Onboarding & Data Source Mapping</div><td>{coordinators}</div><td>✅ Completed</div><td>May 7-8, 2026</div></tr>
+    <tr><td>3.</div><td>NIRF Data Collection</div><td>{coordinators}</div><td>✅ Completed</div><td>May 12-20, 2026</div></tr>
+    <tr><td>4.</div><td>Stakeholder Consultation & Review Meetings</div><td>{coordinators}</div><td>✅ Completed</div><td>May 18-27, 2026</div></tr>
+    <tr><td>5.</div><td>Inception Report & GRDAU Framework</div><td>{coordinators}</div><td>✅ Completed</div><td>May 22-26, 2026</div></tr>
+    <tr><td>6.</div><td>Monthly Progress Report</div><td>{coordinators}</div><td>✅ Completed</div><td>May 29, 2026</div></tr>
+</table>
+
+<div class="section-title">B. Tasks Completed ({len(completed_tasks)} tasks)</div>
+<table>
+    <tr><th>Date</th><th>Task Completed</th></tr>
+    {''.join([f'<tr><td>{date}</div><td>{DEFAULT_PLAN.get(date, {}).get("task", "Task completed")}</div></tr>' for date in sorted(completed_tasks)[-10:]])}
+</table>
+
+<div class="section-title">Approvals and Signatures</div>
+<table style="border:none">
+    <tr><td style="border:none; width:30%"><strong>Prepared by:</strong></div><td style="border:none">{coordinators}<br>(Institutional Coordinators)</div></tr>
+    <tr><td style="border:none"><strong>Verified by:</strong></div><td style="border:none">{uni['nodal_officer']}<br>(Nodal Officer)</div></tr>
+    <tr><td style="border:none"><strong>Approved by:</strong></div><td style="border:none">{MITRA_OFFICIALS['project_director']}<br>(Project Director, MahaSTRIDE)</div></tr>
+</table>
+
+<div class="footer">Generated on {datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</div>
+</body>
+</html>"""
+    return html
+
+def generate_consolidated_html():
+    summary = get_summary()
+    attendance = load_attendance()
+    mpr = load_mpr_config()
+    
+    period_start = datetime.strptime(mpr.get("period_start", "2026-05-04"), "%Y-%m-%d")
+    period_end = datetime.strptime(mpr.get("period_end", "2026-05-29"), "%Y-%m-%d")
+    
+    total_planned = len(DEFAULT_PLAN) * len(UNIVERSITIES)
+    total_completed = summary["Completed"].sum() if not summary.empty else 0
+    
+    # Build consolidated team table
+    team_rows = ""
+    sr_no = 1
+    
+    team_rows += '<tr class="sub-header"><td colspan="7"><strong>MITRA LEVEL</strong></td>'
+    for m in TEAM_MEMBERS.get("MITRA", []):
+        att = attendance.get("MITRA", {}).get(m["name"], {})
+        team_rows += f"""
+        <tr><td>{sr_no}</div><td>{m['name']}</div><td>{m['profile']}</div><td>{m['location']}</div>
+        <td>{att.get('present', 19)}</div><td>{att.get('absent', 0)}</div><td>{att.get('holidays', 12)}</div></tr>"""
+        sr_no += 1
+    
+    for code, uni in UNIVERSITIES.items():
+        if code != "MITRA":
+            team_rows += f'<tr class="sub-header"><td colspan="7"><strong>{uni["name"]}</strong></div></tr>'
+            for m in TEAM_MEMBERS.get(code, []):
+                att = attendance.get(code, {}).get(m["name"], {})
+                team_rows += f"""
+                <tr><td>{sr_no}</div><td>{m['name']}</div><td>{m['profile']}</div><td>{m['location']}</div>
+                <td>{att.get('present', 19)}</div><td>{att.get('absent', 0)}</div><td>{att.get('holidays', 12)}</div></tr>"""
+                sr_no += 1
+    
+    summary_rows = ""
+    for i, (_, row) in enumerate(summary.iterrows()):
+        status = "✅ Completed" if row["Completed"] == row["Total"] else "🔄 In Progress"
+        summary_rows += f"<tr><td>{i+1}</div><td>{row['University']}</div><td>{row['Completed']}</div><td>{row['Total']}</div><td>{status}</div></tr>"
+    
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Consolidated Monthly Progress Report - All Universities</title>
+    <style>
+        body {{ font-family: 'Times New Roman', serif; margin: 0.7in; font-size: 11pt; }}
+        .header {{ text-align: center; margin-bottom: 20px; }}
+        .mitra-title {{ font-size: 12pt; font-weight: bold; }}
+        .confidential {{ text-align: right; font-weight: bold; margin-bottom: 20px; }}
+        .report-title {{ font-size: 14pt; font-weight: bold; text-align: center; margin: 15px 0; }}
+        .section-title {{ font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 8px; background-color: #f0f0f0; padding: 5px; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+        th, td {{ border: 1px solid #000; padding: 6px; vertical-align: top; }}
+        th {{ background-color: #e8e8e8; font-weight: bold; text-align: center; }}
+        .sub-header {{ background-color: #d0d0d0; font-weight: bold; }}
+        .footer {{ text-align: center; font-size: 9pt; font-style: italic; margin-top: 30px; }}
+    </style>
+</head>
+<body>
+<div class="confidential">Confidential</div>
+<div class="header">
+    <div class="mitra-title">Maharashtra Institution for Transformation (MITRA)</div>
+    <div>5th Floor, Nirmal, Nariman Point, Mumbai-400021</div>
+</div>
+<div class="report-title">CONSOLIDATED MONTHLY PROGRESS REPORT</div>
+<div style="text-align: center;">All Maharashtra State Universities</div>
+<div style="text-align: center;">Reporting Period: {period_start.strftime('%d-%m-%Y')} to {period_end.strftime('%d-%m-%Y')}</div>
+
+<div class="section-title">Overall Project Progress</div>
+<div style="margin: 10px 0;">
+    <strong>Overall Status:</strong> {'✅ Fully Completed' if total_completed == total_planned else '🔄 In Progress'}<br>
+    <strong>Tasks Completed:</strong> {total_completed} / {total_planned}<br>
+    <strong>Working Days:</strong> {len(DEFAULT_PLAN)} days
+</div>
+
+<div class="section-title">Project Team Deployment</div>
+<table>
+    <tr><th>Sr. No.</th><th>Name</th><th>Profile</th><th>Location</th><th>Present</th><th>Absent</th><th>Holidays</th></tr>
+    {team_rows}
+</table>
+
+<div class="section-title">University-wise Progress Summary</div>
+<table>
+    <tr><th>Sr. No.</th><th>University</th><th>Tasks Completed</th><th>Total Tasks</th><th>Status</th></tr>
+    {summary_rows}
+</table>
+
+<div class="section-title">Approvals and Signatures</div>
+<table style="border:none">
+    <tr><td style="border:none; width:30%"><strong>Prepared by:</strong></div><td style="border:none">All Institutional Coordinators</div></tr>
+    <tr><td style="border:none"><strong>Verified by:</strong></div><td style="border:none">Nodal Officers of respective Universities</div></tr>
+    <tr><td style="border:none"><strong>Approved by:</strong></div><td style="border:none">{MITRA_OFFICIALS['project_director']}</div></tr>
 </table>
 
 <div class="footer">Generated on {datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</div>
@@ -531,786 +740,252 @@ def generate_mpr_html(year, month):
 
 def get_download_link(html, filename):
     b64 = base64.b64encode(html.encode()).decode()
-    return f'<a href="data:text/html;base64,{b64}" download="{filename}" style="background:#28a745;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">📥 Download {filename}</a>'
+    return f'<a href="data:text/html;base64,{b64}" download="{filename}" style="background:#4CAF50;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">📥 Download {filename}</a>'
 
 def show_credentials():
     st.markdown("""
     <div class="credentials-box">
-        <h4>🔐 Login Credentials</h4>
-        <p><strong>Password for all accounts:</strong> <code>Name@2026</code> (e.g., Admin@2026, Sneha@2026)</p>
-        <table style="width:100%; font-size:12px;">
-            <tr><th>Role</th><th>Email</th><th>Password</th></tr>
-            <td>🔴 Admin</div><td>admin@mahastride.com</div><td>Admin@2026</div></tr>
-            <td>🔵 Project Lead</div><td>projectlead@mahastride.com</div><td>ProjectLead@2026</div></tr>
-            <td>🟢 Data Analyst</div><td>sneha@mu.edu</div><td>Sneha@2026</div></tr>
-        </table>
+        <h4>🔐 Login Credentials (Password: <strong>Name@2026</strong> for all)</h4>
+        <div class="cred-row"><strong>Admin:</strong> admin@mahastride.com</div>
+        <div class="cred-row"><strong>Project Lead:</strong> projectlead@mahastride.com</div>
+        <div class="cred-row"><strong>MITRA Coordinator:</strong> shubham@mitra.gov.in</div>
+        <div class="cred-row"><strong>Mumbai University:</strong> sneha@mu.edu | sagar@mu.edu</div>
+        <div class="cred-row"><strong>SPPU Pune:</strong> jagan@sspu.edu</div>
+        <div class="cred-row"><strong>COEP Pune:</strong> vaibhav@coep.edu</div>
+        <div class="cred-row"><strong>Amravati University:</strong> pratham@au.edu</div>
+        <div class="cred-row"><strong>Nagpur University:</strong> anjali@nu.edu</div>
+        <div class="cred-row"><strong>KBCNMU Jalgaon:</strong> nitish@kbcnmu.edu</div>
+        <div class="cred-row"><strong>BAMU Aurangabad:</strong> atharv@bamu.edu</div>
     </div>
     """, unsafe_allow_html=True)
 
-# ============================================================
-# DATA ANALYST DASHBOARD WITH YEAR/MONTH DROPDOWN
-# ============================================================
-
-def data_analyst_dashboard(email, user):
-    st.markdown(f"## {user.get('avatar', '📝')} My Tasks - {user.get('name')}")
-    st.markdown(f"**Team:** {user.get('team', 'N/A')}")
-    
-    # Real-time clock
-    current_time = datetime.now().strftime("%I:%M %p")
-    current_date = datetime.now().strftime("%A, %B %d, %Y")
-    st.markdown(f"<div style='text-align: center; padding: 10px; background: #e8f4f8; border-radius: 10px; margin-bottom: 10px;'>📅 {current_date} | 🕐 {current_time} | Working Hours: 10:00 AM - 6:00 PM</div>", unsafe_allow_html=True)
-    
-    # Motivational quote
-    st.info(get_motivational_quote())
-    
-    # Get all tasks for stats (without filter)
-    all_user_tasks = get_user_tasks(email)
-    
-    pending_tasks_all = [t for t in all_user_tasks if t["date"] > "2026-06-05" and t["status"] == "Pending"]
-    completed_tasks_all = [t for t in all_user_tasks if t["date"] > "2026-06-05" and t["status"] == "Completed"]
-    initial_completed_all = [t for t in all_user_tasks if t["date"] <= "2026-06-05"]
-    
-    achievements = load_achievements().get(email, {"points": 0, "badges": []})
-    
-    # Weekly summary
-    today = datetime.now()
-    week_start = today - timedelta(days=today.weekday())
-    week_tasks = [t for t in all_user_tasks if t["date"] > "2026-06-05" and datetime.strptime(t["date"], "%Y-%m-%d") >= week_start and datetime.strptime(t["date"], "%Y-%m-%d") <= today]
-    week_completed = sum(1 for t in week_tasks if t["status"] == "Completed")
-    week_total = len(week_tasks)
-    
-    # Stats row
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    with col1:
-        st.metric("📅 Total", len(all_user_tasks))
-    with col2:
-        st.metric("✅ Initial", len(initial_completed_all))
-    with col3:
-        st.metric("✅ Your Work", len(completed_tasks_all))
-    with col4:
-        st.metric("⏳ Pending", len(pending_tasks_all))
-    with col5:
-        st.metric("🏆 Points", achievements.get("points", 0))
-    with col6:
-        st.metric("📅 This Week", f"{week_completed}/{week_total}")
-    
-    if achievements.get("badges"):
-        st.markdown("### 🎖️ Your Badges")
-        cols = st.columns(len(achievements["badges"]))
-        for idx, badge in enumerate(achievements["badges"]):
-            with cols[idx]:
-                st.markdown(f'<div class="achievement-badge">🏅 {badge}</div>', unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Today's task with complete button
-    today = datetime.now().strftime("%Y-%m-%d")
-    today_task = next((t for t in all_user_tasks if t["date"] == today and t["date"] > "2026-06-05"), None)
-    
-    if today_task:
-        st.subheader("📌 Today's Task")
-        if today_task["status"] == "Completed":
-            st.markdown(f"""
-            <div class="task-card task-completed">
-                ✅ <strong>COMPLETED</strong><br>
-                <strong>Task:</strong> {today_task['task']}<br>
-                <strong>Phase:</strong> {today_task.get('phase', 'N/A')}<br>
-                <strong>Completed:</strong> {today_task.get('completed_at', 'N/A')[:16] if today_task.get('completed_at') else 'N/A'}
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            with st.form(key="complete_today_task"):
-                priority_badge = "🔴 HIGH" if today_task["priority"] == "High" else "🟡 MEDIUM" if today_task["priority"] == "Medium" else "🟢 LOW"
-                st.markdown(f"""
-                <div class="task-card task-pending">
-                    <strong>⏳ PENDING - {priority_badge}</strong><br>
-                    <strong>Task:</strong> {today_task['task']}<br>
-                    <strong>Phase:</strong> {today_task.get('phase', 'N/A')}
-                </div>
-                """, unsafe_allow_html=True)
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    start_time = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time())
-                with col2:
-                    end_time = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time())
-                
-                work_hours = f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}"
-                remarks = st.text_area("📝 Work Accomplished", height=100)
-                
-                if st.form_submit_button("✅ MARK AS COMPLETE", use_container_width=True, type="primary"):
-                    if remarks:
-                        if mark_task_complete(email, today_task["date"], remarks, work_hours):
-                            st.success("🎉 Task completed! Great work!")
-                            st.balloons()
-                            time.sleep(1)
-                            st.rerun()
-                    else:
-                        st.error("Please describe your work")
-    
-    st.markdown("---")
-    
-    # Tabs for different views
-    tab1, tab2, tab3, tab4 = st.tabs(["📅 Pending Tasks", "📊 My Progress", "🏆 Leaderboard", "🔔 Notifications"])
-    
-    with tab1:
-        st.subheader(f"Pending Tasks ({len(pending_tasks_all)})")
-        if pending_tasks_all:
-            for task in pending_tasks_all[:20]:
-                priority_badge = "🔴" if task["priority"] == "High" else "🟡" if task["priority"] == "Medium" else "🟢"
-                with st.expander(f"{priority_badge} 📅 {task['date']} - {task['task'][:80]}..."):
-                    st.markdown(f"""
-                    **Task:** {task['task']}<br>
-                    **Phase:** {task.get('phase', 'N/A')}<br>
-                    **Priority:** {task['priority']}
-                    """, unsafe_allow_html=True)
-                    
-                    with st.form(key=f"complete_pending_{task['date']}"):
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            task_start = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time(), key=f"start_{task['date']}")
-                        with col2:
-                            task_end = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time(), key=f"end_{task['date']}")
-                        
-                        task_hours = f"{task_start.strftime('%H:%M')} - {task_end.strftime('%H:%M')}"
-                        task_remarks = st.text_area("Work Accomplished", height=80, key=f"remarks_{task['date']}")
-                        
-                        if st.form_submit_button(f"✅ Complete Task for {task['date']}", use_container_width=True):
-                            if task_remarks:
-                                if mark_task_complete(email, task["date"], task_remarks, task_hours):
-                                    st.success(f"✅ Task for {task['date']} completed!")
-                                    st.rerun()
-                            else:
-                                st.error("Please describe your work")
-        else:
-            st.success("🎉 All tasks completed! Great job!")
-    
-    with tab2:
-        st.subheader("My Progress")
-        total_future = len(pending_tasks_all) + len(completed_tasks_all)
-        progress_pct = (len(completed_tasks_all) / total_future * 100) if total_future > 0 else 0
-        st.progress(progress_pct / 100)
-        st.caption(f"{len(completed_tasks_all)}/{total_future} tasks completed ({progress_pct:.1f}%)")
-        
-        monthly_data = {}
-        for task in all_user_tasks:
-            if task["date"] > "2026-06-05":
-                month_key = task["date"][:7]
-                if month_key not in monthly_data:
-                    monthly_data[month_key] = {"total": 0, "completed": 0}
-                monthly_data[month_key]["total"] += 1
-                if task["status"] == "Completed":
-                    monthly_data[month_key]["completed"] += 1
-        
-        if monthly_data:
-            df_monthly = pd.DataFrame([{"Month": k, "Completed": v["completed"], "Total": v["total"]} for k, v in monthly_data.items()])
-            fig = px.bar(df_monthly, x="Month", y="Completed", title="Monthly Task Completion", text="Total")
-            st.plotly_chart(fig, use_container_width=True)
-    
-    with tab3:
-        st.subheader("Team Leaderboard")
-        progress_df = get_all_analysts_progress()
-        for idx, (_, row) in enumerate(progress_df.head(10).iterrows()):
-            medal = "🥇" if idx == 0 else "🥈" if idx == 1 else "🥉" if idx == 2 else f"{idx+1}."
-            st.markdown(f"""
-            <div class="leaderboard-card">
-                <strong>{medal} {row['avatar']} {row['name']}</strong> ({row['team']})<br>
-                📊 Progress: {row['progress']}% | ✅ Completed: {row['completed']} | 🏆 Points: {row['points']} | 🎖️ Badges: {row['badges']}
-            </div>
-            """, unsafe_allow_html=True)
-    
-    with tab4:
-        st.subheader("Notifications")
-        notifications = load_notifications().get(email, [])
-        if notifications:
-            for notif in reversed(notifications[-10:]):
-                st.info(f"**{notif['title']}**\n\n{notif['message']}\n\n*{notif['timestamp'][:16]}*")
-        else:
-            st.info("No notifications yet")
+def show_sangam():
+    st.markdown('<div class="sangam-card"><h3>🎉 SANGAM Orientation & Training</h3><p><strong>Dates:</strong> May 4-6, 2026 | <strong>Venue:</strong> Trident Board Room, Mumbai | ✅ Completed</p></div>', unsafe_allow_html=True)
 
 # ============================================================
-# UPGRADED DATA ANALYST DASHBOARD WITH YEAR/MONTH SELECTOR
-# ============================================================
-
-def data_analyst_dashboard_with_filter(email, user):
-    st.markdown(f"## {user.get('avatar', '📝')} My Tasks - {user.get('name')}")
-    st.markdown(f"**Team:** {user.get('team', 'N/A')}")
-    
-    # Real-time clock
-    current_time = datetime.now().strftime("%I:%M %p")
-    current_date = datetime.now().strftime("%A, %B %d, %Y")
-    st.markdown(f"<div style='text-align: center; padding: 10px; background: #e8f4f8; border-radius: 10px; margin-bottom: 10px;'>📅 {current_date} | 🕐 {current_time} | Working Hours: 10:00 AM - 6:00 PM</div>", unsafe_allow_html=True)
-    
-    # Motivational quote
-    st.info(get_motivational_quote())
-    
-    # Get all tasks for stats (without filter)
-    all_user_tasks = get_user_tasks(email)
-    
-    pending_tasks_all = [t for t in all_user_tasks if t["date"] > "2026-06-05" and t["status"] == "Pending"]
-    completed_tasks_all = [t for t in all_user_tasks if t["date"] > "2026-06-05" and t["status"] == "Completed"]
-    initial_completed_all = [t for t in all_user_tasks if t["date"] <= "2026-06-05"]
-    
-    achievements = load_achievements().get(email, {"points": 0, "badges": []})
-    
-    # Weekly summary
-    today = datetime.now()
-    week_start = today - timedelta(days=today.weekday())
-    week_tasks = [t for t in all_user_tasks if t["date"] > "2026-06-05" and datetime.strptime(t["date"], "%Y-%m-%d") >= week_start and datetime.strptime(t["date"], "%Y-%m-%d") <= today]
-    week_completed = sum(1 for t in week_tasks if t["status"] == "Completed")
-    week_total = len(week_tasks)
-    
-    # Stats row
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    with col1:
-        st.metric("📅 Total", len(all_user_tasks))
-    with col2:
-        st.metric("✅ Initial", len(initial_completed_all))
-    with col3:
-        st.metric("✅ Your Work", len(completed_tasks_all))
-    with col4:
-        st.metric("⏳ Pending", len(pending_tasks_all))
-    with col5:
-        st.metric("🏆 Points", achievements.get("points", 0))
-    with col6:
-        st.metric("📅 This Week", f"{week_completed}/{week_total}")
-    
-    if achievements.get("badges"):
-        st.markdown("### 🎖️ Your Badges")
-        cols = st.columns(len(achievements["badges"]))
-        for idx, badge in enumerate(achievements["badges"]):
-            with cols[idx]:
-                st.markdown(f'<div class="achievement-badge">🏅 {badge}</div>', unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Today's task with complete button
-    today = datetime.now().strftime("%Y-%m-%d")
-    today_task = next((t for t in all_user_tasks if t["date"] == today and t["date"] > "2026-06-05"), None)
-    
-    if today_task:
-        st.subheader("📌 Today's Task")
-        if today_task["status"] == "Completed":
-            st.markdown(f"""
-            <div class="task-card task-completed">
-                ✅ <strong>COMPLETED</strong><br>
-                <strong>Task:</strong> {today_task['task']}<br>
-                <strong>Phase:</strong> {today_task.get('phase', 'N/A')}<br>
-                <strong>Completed:</strong> {today_task.get('completed_at', 'N/A')[:16] if today_task.get('completed_at') else 'N/A'}
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            with st.form(key="complete_today_task"):
-                priority_badge = "🔴 HIGH" if today_task["priority"] == "High" else "🟡 MEDIUM" if today_task["priority"] == "Medium" else "🟢 LOW"
-                st.markdown(f"""
-                <div class="task-card task-pending">
-                    <strong>⏳ PENDING - {priority_badge}</strong><br>
-                    <strong>Task:</strong> {today_task['task']}<br>
-                    <strong>Phase:</strong> {today_task.get('phase', 'N/A')}
-                </div>
-                """, unsafe_allow_html=True)
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    start_time = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time())
-                with col2:
-                    end_time = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time())
-                
-                work_hours = f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}"
-                remarks = st.text_area("📝 Work Accomplished", height=100)
-                
-                if st.form_submit_button("✅ MARK AS COMPLETE", use_container_width=True, type="primary"):
-                    if remarks:
-                        if mark_task_complete(email, today_task["date"], remarks, work_hours):
-                            st.success("🎉 Task completed! Great work!")
-                            st.balloons()
-                            time.sleep(1)
-                            st.rerun()
-                    else:
-                        st.error("Please describe your work")
-    
-    st.markdown("---")
-    
-    # Tabs for different views
-    tab1, tab2, tab3, tab4 = st.tabs(["📅 Pending Tasks", "📊 My Progress", "🏆 Leaderboard", "🔔 Notifications"])
-    
-    with tab1:
-        st.subheader(f"Pending Tasks ({len(pending_tasks_all)})")
-        if pending_tasks_all:
-            for task in pending_tasks_all[:20]:
-                priority_badge = "🔴" if task["priority"] == "High" else "🟡" if task["priority"] == "Medium" else "🟢"
-                with st.expander(f"{priority_badge} 📅 {task['date']} - {task['task'][:80]}..."):
-                    st.markdown(f"""
-                    **Task:** {task['task']}<br>
-                    **Phase:** {task.get('phase', 'N/A')}<br>
-                    **Priority:** {task['priority']}
-                    """, unsafe_allow_html=True)
-                    
-                    with st.form(key=f"complete_pending_{task['date']}"):
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            task_start = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time(), key=f"start_{task['date']}")
-                        with col2:
-                            task_end = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time(), key=f"end_{task['date']}")
-                        
-                        task_hours = f"{task_start.strftime('%H:%M')} - {task_end.strftime('%H:%M')}"
-                        task_remarks = st.text_area("Work Accomplished", height=80, key=f"remarks_{task['date']}")
-                        
-                        if st.form_submit_button(f"✅ Complete Task for {task['date']}", use_container_width=True):
-                            if task_remarks:
-                                if mark_task_complete(email, task["date"], task_remarks, task_hours):
-                                    st.success(f"✅ Task for {task['date']} completed!")
-                                    st.rerun()
-                            else:
-                                st.error("Please describe your work")
-        else:
-            st.success("🎉 All tasks completed! Great job!")
-    
-    with tab2:
-        st.subheader("My Progress")
-        total_future = len(pending_tasks_all) + len(completed_tasks_all)
-        progress_pct = (len(completed_tasks_all) / total_future * 100) if total_future > 0 else 0
-        st.progress(progress_pct / 100)
-        st.caption(f"{len(completed_tasks_all)}/{total_future} tasks completed ({progress_pct:.1f}%)")
-        
-        monthly_data = {}
-        for task in all_user_tasks:
-            if task["date"] > "2026-06-05":
-                month_key = task["date"][:7]
-                if month_key not in monthly_data:
-                    monthly_data[month_key] = {"total": 0, "completed": 0}
-                monthly_data[month_key]["total"] += 1
-                if task["status"] == "Completed":
-                    monthly_data[month_key]["completed"] += 1
-        
-        if monthly_data:
-            df_monthly = pd.DataFrame([{"Month": k, "Completed": v["completed"], "Total": v["total"]} for k, v in monthly_data.items()])
-            fig = px.bar(df_monthly, x="Month", y="Completed", title="Monthly Task Completion", text="Total")
-            st.plotly_chart(fig, use_container_width=True)
-    
-    with tab3:
-        st.subheader("Team Leaderboard")
-        progress_df = get_all_analysts_progress()
-        for idx, (_, row) in enumerate(progress_df.head(10).iterrows()):
-            medal = "🥇" if idx == 0 else "🥈" if idx == 1 else "🥉" if idx == 2 else f"{idx+1}."
-            st.markdown(f"""
-            <div class="leaderboard-card">
-                <strong>{medal} {row['avatar']} {row['name']}</strong> ({row['team']})<br>
-                📊 Progress: {row['progress']}% | ✅ Completed: {row['completed']} | 🏆 Points: {row['points']} | 🎖️ Badges: {row['badges']}
-            </div>
-            """, unsafe_allow_html=True)
-    
-    with tab4:
-        st.subheader("Notifications")
-        notifications = load_notifications().get(email, [])
-        if notifications:
-            for notif in reversed(notifications[-10:]):
-                st.info(f"**{notif['title']}**\n\n{notif['message']}\n\n*{notif['timestamp'][:16]}*")
-        else:
-            st.info("No notifications yet")
-
-# ============================================================
-# ADMIN DASHBOARD
+# DASHBOARDS
 # ============================================================
 
 def admin_dashboard():
-    st.markdown("## 📊 Admin Dashboard")
+    st.markdown('<div class="admin-card"><h2>📊 Admin Dashboard</h2></div>', unsafe_allow_html=True)
     
-    all_tasks = load_tasks()
-    completions = load_completions()
-    progress_df = get_all_analysts_progress()
-    audit_log = load_audit_log()
+    with st.sidebar:
+        st.markdown("---")
+        if st.button("🔄 Reset All Data", use_container_width=True):
+            reset_all()
+            st.success("Data reset successfully!")
+            st.rerun()
+        if st.button("✅ Mark All Tasks Completed", use_container_width=True):
+            for code in UNIVERSITIES:
+                mark_all_completed(code)
+            st.success("All tasks marked completed!")
+            st.rerun()
     
-    total_users = len([u for u in USERS.values() if u.get("role") == "data_analyst"])
-    total_completions = sum(len(c) for c in completions.values())
-    avg_completion = total_completions / total_users if total_users > 0 else 0
-    
-    col1, col2, col3, col4, col5 = st.columns(5)
-    with col1:
-        st.markdown(f"""<div class="stat-card"><div class="metric-value">{len(all_tasks)}</div><div class="metric-label">Total Working Days</div></div>""", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"""<div class="stat-card"><div class="metric-value">{len([d for d in all_tasks.keys() if d <= "2026-06-05"])}</div><div class="metric-label">Initial Completed</div></div>""", unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"""<div class="stat-card"><div class="metric-value">{total_users}</div><div class="metric-label">Team Members</div></div>""", unsafe_allow_html=True)
-    with col4:
-        st.markdown(f"""<div class="stat-card"><div class="metric-value">{total_completions}</div><div class="metric-label">Total Completions</div></div>""", unsafe_allow_html=True)
-    with col5:
-        st.markdown(f"""<div class="stat-card"><div class="metric-value">{avg_completion:.1f}</div><div class="metric-label">Avg/User</div></div>""", unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Team Progress", "🏆 Leaderboard", "📄 Reports", "📋 Audit Log", "⚙️ System"])
-    
-    with tab1:
-        fig = px.bar(progress_df, x="name", y="progress", color="team", text="progress", height=450)
-        fig.update_traces(textposition="outside")
-        st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(progress_df, use_container_width=True, hide_index=True)
-    
-    with tab2:
-        for idx, (_, row) in enumerate(progress_df.head(10).iterrows()):
-            medal = "🥇" if idx == 0 else "🥈" if idx == 1 else "🥉" if idx == 2 else f"{idx+1}."
-            st.markdown(f"""
-            <div class="leaderboard-card">
-                <strong>{medal} {row['avatar']} {row['name']}</strong> - {row['team']}<br>
-                📊 Progress: {row['progress']}% | ✅ Completed: {row['completed']} | 🏆 Points: {row['points']} | 🎖️ Badges: {row['badges']}
-            </div>
-            """, unsafe_allow_html=True)
-    
-    with tab3:
-        col1, col2 = st.columns(2)
-        with col1:
-            report_year = st.selectbox("Year", [2026, 2027, 2028])
-        with col2:
-            report_month = st.selectbox("Month", range(1, 13), format_func=lambda x: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][x-1])
-        if st.button("Generate Report"):
-            html = generate_mpr_html(report_year, report_month)
-            st.markdown(get_download_link(html, f"MPR_{report_year}_{report_month}.html"), unsafe_allow_html=True)
-    
-    with tab4:
-        st.subheader("Audit Log - User Activity History")
-        if audit_log:
-            df_audit = pd.DataFrame(audit_log[-50:])
-            st.dataframe(df_audit, use_container_width=True, hide_index=True)
-            if st.button("Clear Audit Log", use_container_width=True):
-                save_audit_log([])
-                st.success("Audit log cleared!")
-                st.rerun()
-        else:
-            st.info("No audit logs available")
-    
-    with tab5:
-        st.subheader("System Settings")
-        st.info("📁 Data files are stored locally. Backups are recommended.")
-        if st.button("🔄 Force Data Reset", use_container_width=True):
-            for f in [DAILY_TASKS_FILE, TASK_COMPLETION_FILE, ACHIEVEMENTS_FILE, NOTIFICATIONS_FILE]:
-                if os.path.exists(f):
-                    os.remove(f)
-            st.success("Data reset successfully! Please refresh.")
-        st.warning("⚠️ This will reset all user progress. Use with caution.")
-
-def project_lead_dashboard():
-    st.markdown("## 👨‍💼 Project Lead Dashboard")
-    st.markdown("**Dr. Harshal Kotwal** - ICARE Project Director")
-    
-    all_tasks = load_tasks()
-    progress_df = get_all_analysts_progress()
-    
-    milestones = [
-        {"name": "Milestone 1: Data Systems", "due": "Sep 30, 2026", "status": "pending"},
-        {"name": "Milestone 2: IDP Execution", "due": "Oct 31, 2026", "status": "pending"},
-        {"name": "Milestone 3: Capacity Building", "due": "Dec 31, 2026", "status": "pending"},
-        {"name": "Milestone 4: 10% Improvement", "due": "Jun 30, 2027", "status": "pending"},
-        {"name": "Milestone 5: 20% Improvement", "due": "Dec 31, 2027", "status": "pending"},
-        {"name": "Milestone 6: Global Rankings", "due": "Feb 29, 2028", "status": "pending"},
-        {"name": "Milestone 7: Final Evaluation", "due": "Apr 30, 2028", "status": "pending"}
-    ]
+    show_sangam()
     
     col1, col2, col3, col4 = st.columns(4)
+    total_planned = len(DEFAULT_PLAN) * len(UNIVERSITIES)
+    summary = get_summary()
+    total_completed = summary["Completed"].sum() if not summary.empty else 0
+    col1.metric("Total Working Days", len(DEFAULT_PLAN))
+    col2.metric("Universities", len(UNIVERSITIES))
+    col3.metric("Total Tasks", total_planned)
+    col4.metric("Completed Tasks", total_completed)
+    
+    st.dataframe(summary, use_container_width=True)
+    
+    st.subheader("📄 Generate Reports")
+    col1, col2 = st.columns(2)
     with col1:
-        st.metric("📅 Total Working Days", len(all_tasks))
+        sel = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
+        if st.button("Generate University MPR"):
+            html = generate_mpr_html(sel)
+            st.markdown(get_download_link(html, f"MPR_{UNIVERSITIES[sel]['name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.html"), unsafe_allow_html=True)
     with col2:
-        st.metric("👥 Team Members", len(progress_df))
-    with col3:
-        avg_progress = progress_df["progress"].mean() if not progress_df.empty else 0
-        st.metric("📈 Avg Progress", f"{avg_progress:.1f}%")
-    with col4:
-        total_points = progress_df["points"].sum() if not progress_df.empty else 0
-        st.metric("🏆 Total Points", total_points)
+        if st.button("Generate Consolidated MPR"):
+            html = generate_consolidated_html()
+            st.markdown(get_download_link(html, f"Consolidated_MPR_{datetime.now().strftime('%Y%m%d')}.html"), unsafe_allow_html=True)
+    
+    # GitHub storage status
+    st.markdown("---")
+    if storage.is_authenticated():
+        st.success("✅ Data is being saved to GitHub cloud storage")
+    else:
+        st.warning("⚠️ GitHub storage not configured. Data is saved locally only.")
+
+def lead_dashboard():
+    st.markdown('<div class="projectlead-card"><h2>👨‍💼 Project Lead Dashboard</h2></div>', unsafe_allow_html=True)
+    show_sangam()
+    
+    st.subheader("📝 MPR Settings")
+    mpr = load_mpr_config()
+    col1, col2 = st.columns(2)
+    with col1:
+        wo_ref = st.text_input("Work Order Reference", value=mpr.get("work_order_ref"))
+        ps = st.date_input("Period Start", value=datetime.strptime(mpr.get("period_start", "2026-05-04"), "%Y-%m-%d").date())
+    with col2:
+        wo_date = st.text_input("Work Order Date", value=mpr.get("work_order_date"))
+        pe = st.date_input("Period End", value=datetime.strptime(mpr.get("period_end", "2026-05-29"), "%Y-%m-%d").date())
+    if st.button("Save Settings"):
+        mpr["work_order_ref"] = wo_ref
+        mpr["work_order_date"] = wo_date
+        mpr["period_start"] = ps.strftime("%Y-%m-%d")
+        mpr["period_end"] = pe.strftime("%Y-%m-%d")
+        save_mpr_config(mpr)
+        st.success("Settings saved!")
+    
+    st.subheader("📄 Generate Reports")
+    col1, col2 = st.columns(2)
+    with col1:
+        sel = st.selectbox("Select University", list(UNIVERSITIES.keys()), format_func=lambda x: UNIVERSITIES[x]["name"])
+        if st.button("Generate University MPR"):
+            html = generate_mpr_html(sel)
+            st.markdown(get_download_link(html, f"MPR_{UNIVERSITIES[sel]['name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.html"), unsafe_allow_html=True)
+    with col2:
+        if st.button("Generate Consolidated MPR"):
+            html = generate_consolidated_html()
+            st.markdown(get_download_link(html, f"Consolidated_MPR_{datetime.now().strftime('%Y%m%d')}.html"), unsafe_allow_html=True)
+    
+    # Show progress summary
+    st.markdown("---")
+    st.subheader("📊 Overall Progress")
+    summary = get_summary()
+    fig = px.bar(summary, x="University", y="Completed", title="Tasks Completed by University", text="Completed")
+    st.plotly_chart(fig, use_container_width=True)
+
+def coordinator_dashboard(code, name):
+    uni = UNIVERSITIES[code]
+    st.markdown(f'<div class="info-card"><h2>📋 Coordinator Dashboard</h2><p>{uni["name"]} | {name}</p></div>', unsafe_allow_html=True)
+    
+    pending = get_pending(code)
+    entries = get_entries(code)
+    total = len(DEFAULT_PLAN)
+    completed = len(entries)
+    
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Tasks", total)
+    col2.metric("Completed", completed)
+    col3.metric("Pending", total - completed)
+    st.progress(completed/total if total else 0)
     
     st.markdown("---")
+    st.subheader("📝 Log Your Work")
     
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Team Performance", "🏆 Leaderboard", "🎯 Milestones", "📄 Reports"])
-    
-    with tab1:
-        fig = px.bar(progress_df, x="name", y="progress", color="team", text="progress", height=450)
-        fig.update_traces(textposition="outside")
-        st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(progress_df[["name", "team", "completed", "progress", "points"]], use_container_width=True, hide_index=True)
-    
-    with tab2:
-        for idx, (_, row) in enumerate(progress_df.head(5).iterrows()):
-            medal = "🥇" if idx == 0 else "🥈" if idx == 1 else "🥉" if idx == 2 else f"{idx+1}."
-            st.markdown(f"""
-            <div class="leaderboard-card">
-                <strong>{medal} {row['name']}</strong> - {row['team']}<br>
-                ✅ Completed: {row['completed']} | 📊 Progress: {row['progress']}% | 🏆 Points: {row['points']}
-            </div>
-            """, unsafe_allow_html=True)
-    
-    with tab3:
-        st.subheader("Project Milestones")
-        for milestone in milestones:
-            status_icon = "⏳" if milestone["status"] == "pending" else "✅"
-            st.markdown(f"""
-            <div class="task-card">
-                <strong>{status_icon} {milestone['name']}</strong><br>
-                📅 Due: {milestone['due']}
-            </div>
-            """, unsafe_allow_html=True)
-    
-    with tab4:
-        col1, col2 = st.columns(2)
-        with col1:
-            report_year = st.selectbox("Year", [2026, 2027, 2028])
-        with col2:
-            report_month = st.selectbox("Month", range(1, 13), format_func=lambda x: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][x-1])
-        if st.button("Generate Report"):
-            html = generate_mpr_html(report_year, report_month)
-            st.markdown(get_download_link(html, f"MPR_{report_year}_{report_month}.html"), unsafe_allow_html=True)
-
-# ============================================================
-# MAIN APP
-# ============================================================
-
-def main():
-    load_tasks()
-    initialize_completed_tasks()
-    
-    if "authenticated" not in st.session_state:
-        st.session_state.authenticated = False
-    
-    if not st.session_state.authenticated:
-        st.markdown("""
-        <div class="main-header">
-            <h1>📋 MahaSTRIDE Enterprise Task Management System</h1>
-            <p>24-Month Detailed Task Plan | May 2026 - April 2028</p>
-            <p>Monday to Friday | 10:00 AM - 6:00 PM</p>
-            <p>✅ May 4 to June 5, 2026: COMPLETED | June 8, 2026 onwards: PENDING</p>
-            <p>✨ New: Year/Month Filter | Dark Mode | Task Timer | Achievements | Real-time Clock</p>
+    if pending:
+        # Date selector
+        selected_date = st.selectbox("Select Date", [p["date"] for p in pending], format_func=lambda x: f"{x} - {DEFAULT_PLAN.get(x, {}).get('task', 'No task')[:50]}...")
+        task = next(p for p in pending if p["date"] == selected_date)
+        
+        st.markdown(f"""
+        <div class="default-task-card">
+            <strong>📋 Task for {task['date']}</strong><br>
+            <strong>📍 Venue:</strong> {task['venue']}<br>
+            <strong>🎯 Task:</strong> {task['task']}<br>
+            <strong>📝 Description:</strong> {task['description']}
         </div>
         """, unsafe_allow_html=True)
         
-        col1, col2, col3 = st.columns([1, 2, 1])
+        with st.form("log_work_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                hours = st.number_input("Hours Spent", 0.5, 12.0, 8.0, step=0.5)
+                start_time = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time())
+            with col2:
+                end_time = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time())
+                work_hours = f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}"
+            
+            remarks = st.text_area("Work Accomplished / Remarks", height=100, placeholder="Describe what you accomplished today...")
+            
+            if st.form_submit_button("✅ Submit Work Log", use_container_width=True, type="primary"):
+                if remarks:
+                    if log_work(code, selected_date, task["category"], task["task"], task["description"], hours, f"{work_hours} - {remarks}", name):
+                        st.success("🎉 Work logged successfully!")
+                        st.balloons()
+                        time.sleep(1)
+                        st.rerun()
+                else:
+                    st.error("Please describe your work accomplishments")
+    else:
+        st.success("🎉 All tasks completed! Great job!")
+    
+    # Show recent completions
+    if completed > 0:
+        st.markdown("---")
+        st.subheader("✅ Recently Completed Tasks")
+        entries_df = get_entries(code).head(10)
+        st.dataframe(entries_df, use_container_width=True, hide_index=True)
+
+# ============================================================
+# MAIN
+# ============================================================
+
+def main():
+    if not os.path.exists("progress_data.json") and not storage.load_data("progress"):
+        init_all()
+    
+    if "auth" not in st.session_state:
+        st.session_state["auth"] = False
+    
+    if not st.session_state["auth"]:
+        st.markdown('<div class="main-header"><h1>🔐 mahaSTRIDE Project Tracker</h1><p>24-Month Project | May 2026 - April 2028</p><p>Monday to Friday | 10:00 AM - 6:00 PM</p></div>', unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1,2,1])
         with col2:
-            st.markdown("### 🔐 Login")
+            st.markdown("### Login")
             email = st.text_input("Email")
             password = st.text_input("Password", type="password")
-            
             if st.button("Login", use_container_width=True):
-                if email in USERS:
-                    hashed_input = sha256(password.encode()).hexdigest()
-                    if USERS[email]["password"] == hashed_input:
-                        st.session_state.authenticated = True
-                        st.session_state.user_email = email
-                        st.session_state.user_info = USERS[email]
-                        log_audit(email, "login", "User logged in")
-                        st.rerun()
-                    else:
-                        st.error("Invalid password")
+                ok, role, name, uni = authenticate_user(email, password)
+                if ok:
+                    st.session_state.update({"auth": True, "role": role, "name": name, "uni": uni})
+                    st.rerun()
                 else:
-                    st.error("Email not found")
-            
+                    st.error("Invalid credentials")
             show_credentials()
         return
     
-    user_info = st.session_state.user_info
-    email = st.session_state.user_email
-    role = user_info.get("role", "data_analyst")
+    role, name, uni = st.session_state["role"], st.session_state["name"], st.session_state.get("uni")
     
     with st.sidebar:
-        st.markdown(f"## {user_info.get('avatar', '📋')} MahaSTRIDE")
-        st.markdown(f"**Welcome, {user_info.get('name')}**")
-        if role == "data_analyst":
-            st.markdown(f"*Team: {user_info.get('team', 'N/A')}*")
-        st.markdown(f"*Role: {role.upper()}*")
+        st.title("📊 mahaSTRIDE")
+        st.markdown(f"**Welcome, {name}**")
         st.markdown("---")
-        
         if role == "admin":
-            nav_options = ["📊 Dashboard", "📄 Reports"]
+            menu = st.radio("Navigate", ["📊 Admin Dashboard", "ℹ️ About"])
         elif role == "project_lead":
-            nav_options = ["📊 Dashboard", "📄 Reports"]
+            menu = st.radio("Navigate", ["👨‍💼 Lead Dashboard", "ℹ️ About"])
         else:
-            nav_options = ["📝 My Tasks", "🏆 Achievements", "🔔 Notifications"]
-        
-        selected_nav = st.radio("Navigation", nav_options, label_visibility="collapsed")
-        
-        # Year and Month dropdown for Data Analyst - Added in sidebar
-        if role == "data_analyst" and selected_nav == "📝 My Tasks":
-            st.markdown("---")
-            st.markdown("### 📅 Filter by Month")
-            
-            # Year dropdown
-            selected_year = st.selectbox(
-                "Select Year",
-                options=[2026, 2027, 2028],
-                index=0,
-                key="sidebar_year"
-            )
-            
-            # Month dropdown
-            month_names = ["January", "February", "March", "April", "May", "June", 
-                           "July", "August", "September", "October", "November", "December"]
-            selected_month_index = st.selectbox(
-                "Select Month",
-                options=list(range(12)),
-                format_func=lambda x: month_names[x],
-                key="sidebar_month"
-            )
-            selected_month = selected_month_index + 1
-            
-            # Store in session state
-            st.session_state.selected_year = selected_year
-            st.session_state.selected_month = selected_month
+            menu = st.radio("Navigate", ["📋 My Tasks", "ℹ️ About"])
         
         st.markdown("---")
-        st.markdown("ℹ️ **Information**")
-        st.markdown("🕐 **Hours:** 10 AM - 6 PM")
-        st.markdown("📅 **Days:** Monday to Friday")
-        st.markdown("✅ **May 4 - June 5, 2026:** COMPLETED")
+        st.markdown("**Working Hours**")
+        st.markdown("🕐 10:00 AM - 6:00 PM")
+        st.markdown("📅 Monday to Friday")
         
-        if role == "data_analyst":
-            user_tasks = get_user_tasks(email)
-            completed = sum(1 for t in user_tasks if t["status"] == "Completed" and t["date"] > "2026-06-05")
-            total = len([t for t in user_tasks if t["date"] > "2026-06-05"])
-            if total > 0:
-                st.markdown("---")
-                st.markdown("**Your Progress**")
-                st.progress(completed/total)
-                st.caption(f"{completed}/{total} tasks completed")
-        
-        st.markdown("---")
-        if st.button("🚪 Logout", use_container_width=True):
-            log_audit(email, "logout", "User logged out")
-            st.session_state.authenticated = False
+        if st.button("🚪 Logout"):
+            for k in ["auth", "role", "name", "uni"]:
+                st.session_state.pop(k, None)
             st.rerun()
     
-    # Main content
     if role == "admin":
-        if selected_nav == "📊 Dashboard":
+        if menu == "📊 Admin Dashboard":
             admin_dashboard()
         else:
-            st.markdown("## 📄 Reports")
-            col1, col2 = st.columns(2)
-            with col1:
-                report_year = st.selectbox("Year", [2026, 2027, 2028])
-            with col2:
-                report_month = st.selectbox("Month", range(1, 13), format_func=lambda x: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][x-1])
-            if st.button("Generate Report"):
-                html = generate_mpr_html(report_year, report_month)
-                st.markdown(get_download_link(html, f"MPR_{report_year}_{report_month}.html"), unsafe_allow_html=True)
-    
+            st.title("ℹ️ About")
+            st.markdown("**mahaSTRIDE** - Maharashtra University Rankings Improvement Project\n\n- 24 Months Project (May 2026 - April 2028)\n- SANGAM Training: May 4-6 at Trident Board Room\n- 7 Universities + MITRA PMU\n- Working Hours: 10 AM - 6 PM (Mon-Fri)")
     elif role == "project_lead":
-        if selected_nav == "📊 Dashboard":
-            project_lead_dashboard()
+        if menu == "👨‍💼 Lead Dashboard":
+            lead_dashboard()
         else:
-            st.markdown("## 📄 Reports")
-            col1, col2 = st.columns(2)
-            with col1:
-                report_year = st.selectbox("Year", [2026, 2027, 2028])
-            with col2:
-                report_month = st.selectbox("Month", range(1, 13), format_func=lambda x: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][x-1])
-            if st.button("Generate Report"):
-                html = generate_mpr_html(report_year, report_month)
-                st.markdown(get_download_link(html, f"MPR_{report_year}_{report_month}.html"), unsafe_allow_html=True)
-    
-    else:  # data_analyst
-        if selected_nav == "📝 My Tasks":
-            # Get the selected year and month from session state
-            selected_year = getattr(st.session_state, 'selected_year', 2026)
-            selected_month = getattr(st.session_state, 'selected_month', 6)
-            
-            # Get filtered tasks
-            filtered_tasks = get_user_tasks(email, selected_year, selected_month)
-            
-            st.markdown(f"## {user_info.get('avatar', '📝')} Tasks for {month_names[selected_month-1]} {selected_year}")
-            st.markdown(f"**Team:** {user_info.get('team', 'N/A')}")
-            
-            # Real-time clock
-            current_time = datetime.now().strftime("%I:%M %p")
-            current_date = datetime.now().strftime("%A, %B %d, %Y")
-            st.markdown(f"<div style='text-align: center; padding: 10px; background: #e8f4f8; border-radius: 10px; margin-bottom: 10px;'>📅 {current_date} | 🕐 {current_time} | Working Hours: 10:00 AM - 6:00 PM</div>", unsafe_allow_html=True)
-            
-            # Motivational quote
-            st.info(get_motivational_quote())
-            
-            if filtered_tasks:
-                # Statistics for filtered month
-                pending = [t for t in filtered_tasks if t["status"] == "Pending"]
-                completed = [t for t in filtered_tasks if t["status"] == "Completed"]
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("📅 Total Tasks", len(filtered_tasks))
-                with col2:
-                    st.metric("✅ Completed", len(completed))
-                with col3:
-                    st.metric("⏳ Pending", len(pending))
-                
-                st.progress(len(completed)/len(filtered_tasks) if filtered_tasks else 0)
-                st.markdown("---")
-                
-                # Display tasks for selected month
-                for task in filtered_tasks:
-                    if task["status"] == "Completed":
-                        st.markdown(f"""
-                        <div class="task-card task-completed">
-                            ✅ <strong>COMPLETED</strong><br>
-                            <strong>Date:</strong> {task['date']}<br>
-                            <strong>Task:</strong> {task['task']}<br>
-                            <strong>Phase:</strong> {task.get('phase', 'N/A')}<br>
-                            <strong>Remarks:</strong> {task.get('remarks', 'No remarks')}
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        with st.form(key=f"complete_month_task_{task['date']}"):
-                            priority_badge = "🔴 HIGH" if task["priority"] == "High" else "🟡 MEDIUM" if task["priority"] == "Medium" else "🟢 LOW"
-                            st.markdown(f"""
-                            <div class="task-card task-pending">
-                                <strong>⏳ PENDING - {priority_badge}</strong><br>
-                                <strong>Date:</strong> {task['date']}<br>
-                                <strong>Task:</strong> {task['task']}<br>
-                                <strong>Phase:</strong> {task.get('phase', 'N/A')}
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                start_time = st.time_input("Start Time", value=datetime.strptime("10:00", "%H:%M").time(), key=f"start_{task['date']}")
-                            with col2:
-                                end_time = st.time_input("End Time", value=datetime.strptime("18:00", "%H:%M").time(), key=f"end_{task['date']}")
-                            
-                            work_hours = f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}"
-                            remarks = st.text_area("📝 Work Accomplished", height=80, key=f"remarks_{task['date']}")
-                            
-                            if st.form_submit_button(f"✅ MARK AS COMPLETE", use_container_width=True, type="primary"):
-                                if remarks:
-                                    if mark_task_complete(email, task["date"], remarks, work_hours):
-                                        st.success(f"🎉 Task completed! Great work!")
-                                        st.balloons()
-                                        time.sleep(1)
-                                        st.rerun()
-                                else:
-                                    st.error("Please describe your work")
-            else:
-                st.info(f"No tasks found for {month_names[selected_month-1]} {selected_year}. Please select a different month.")
-        
-        elif selected_nav == "🏆 Achievements":
-            st.markdown(f"## 🏆 My Achievements - {user_info.get('name')}")
-            achievements = load_achievements().get(email, {"points": 0, "badges": []})
-            user_tasks = get_user_tasks(email)
-            completed = sum(1 for t in user_tasks if t["status"] == "Completed" and t["date"] > "2026-06-05")
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("🏅 Points Earned", achievements.get("points", 0))
-            with col2:
-                st.metric("✅ Tasks Completed", completed)
-            with col3:
-                st.metric("🎖️ Badges Earned", len(achievements.get("badges", [])))
-            
-            if achievements.get("badges"):
-                st.markdown("### 🎖️ Your Badges")
-                for badge in achievements["badges"]:
-                    st.markdown(f'<div class="achievement-badge">🏅 {badge}</div>', unsafe_allow_html=True)
+            st.title("ℹ️ About")
+            st.markdown("**Project Lead Dashboard**\n- Configure MPR settings\n- Generate university-wise and consolidated reports\n- Track overall project progress")
+    else:
+        if uni and menu == "📋 My Tasks":
+            coordinator_dashboard(uni, name)
         else:
-            st.markdown(f"## 🔔 Notifications - {user_info.get('name')}")
-            notifications = load_notifications().get(email, [])
-            if notifications:
-                for notif in reversed(notifications):
-                    st.info(f"**{notif['title']}**\n\n{notif['message']}\n\n*{notif['timestamp'][:16]}*")
-            else:
-                st.info("No notifications yet")
+            st.title("ℹ️ About")
+            st.markdown("**Coordinator Dashboard**\n- Log daily work\n- Track your progress\n- 24-month project timeline")
 
 if __name__ == "__main__":
+    # Add timedelta import
+    from datetime import timedelta
     main()
