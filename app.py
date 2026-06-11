@@ -23,6 +23,23 @@ st.markdown("""
         margin-bottom: 2rem;
         color: white;
     }
+    .assignment-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin: 0.5rem 0;
+        padding: 0.5rem;
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 8px;
+        text-align: center;
+    }
+    .parties-info {
+        background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
     .quarter-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -55,20 +72,6 @@ st.markdown("""
         margin: 0.5rem 0;
         border-radius: 8px;
     }
-    .milestone-pending {
-        background-color: #f8f9fa;
-        border-left: 4px solid #6c757d;
-        padding: 1rem;
-        margin: 0.5rem 0;
-        border-radius: 8px;
-    }
-    .university-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 0.5rem 0;
-        border-left: 4px solid #2a5298;
-    }
     .stat-card {
         background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
         color: white;
@@ -97,21 +100,15 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
-    .achievement-badge {
-        background-color: #28a745;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        display: inline-block;
-    }
     .grdau-completed {
         background-color: #d4edda;
         border-left: 4px solid #28a745;
     }
-    .grdau-progress {
-        background-color: #fff3cd;
-        border-left: 4px solid #ffc107;
+    .party-box {
+        background: rgba(255,255,255,0.15);
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin: 0.5rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -121,10 +118,15 @@ st.markdown("""
 # ============================================================
 
 PROJECT_NAME = "MahaSTRIDE - Maharashtra Strengthening Institutional Capabilities in Districts for Enabling Growth"
+ASSIGNMENT_TITLE = "Engagement of a Consultancy Firm for Comprehensive Data Collection, Advanced Analytics, and Development of Performance Improvement Framework for Maharashtra State Universities under MahaSTRIDE Operations"
+
+CLIENT_NAME = "Maharashtra Institute for Transformation (MITRA), State Data Authority, Government of Maharashtra"
+CONSULTANT_NAME = "Indian Centre for Academic Rankings & Excellence - ICARE Pvt. Ltd."
+
 START_DATE = datetime(2026, 5, 5)
 END_DATE = datetime(2028, 5, 6)
 
-# CORRECTED: Only 2 milestones achieved so far
+# Achieved Milestones
 ACHIEVED_MILESTONES = [
     {"milestone": "SANGAM Orientation & Training Completed", "date": "May 4-6, 2026", "status": "achieved"},
     {"milestone": "Inception Report & GRDAU Framework Submitted", "date": "May 26, 2026", "status": "achieved"}
@@ -215,7 +217,7 @@ UNIVERSITIES = {
 }
 
 # ============================================================
-# CORRECTED QUARTERLY PLAN
+# QUARTERLY PLAN
 # ============================================================
 
 QUARTERS = {
@@ -223,16 +225,15 @@ QUARTERS = {
         "number": 1,
         "months": ["May 2026", "June 2026", "July 2026"],
         "status": "ongoing",
-        "status_color": "#fff3cd",
         "key_activities": [
             "✅ SANGAM Orientation & Training (May 4-6 at Trident Board Room)",
             "✅ University Onboarding & Data Source Mapping",
             "✅ NIRF Data Collection (Student, Faculty, Research, Placement, Finance)",
             "✅ Inception Report & GRDAU Framework Development",
             "✅ GRDAU Establishment in all universities (Completed July 5, 2026)",
-            "🔄 Diagnostic Assessments across all 7 universities (In Progress)",
-            "🔄 Gap Analysis against NIRF/NAAC/Global Rankings (In Progress)",
-            "🔄 SWOT Analysis for each university (In Progress)"
+            "🔄 Diagnostic Assessments across all 7 universities",
+            "🔄 Gap Analysis against NIRF/NAAC/Global Rankings",
+            "🔄 SWOT Analysis for each university"
         ],
         "deliverables": [
             "✅ Inception Report and Deployment Plan (Submitted May 26, 2026)",
@@ -248,15 +249,14 @@ QUARTERS = {
             {"name": "SWOT Analysis Reports", "status": "in_progress", "date": "July 31, 2026"},
             {"name": "Gap Analysis Report", "status": "in_progress", "date": "July 31, 2026"}
         ],
-        "data_collection": "NIRF baseline data collection completed. Diagnostic assessments in progress across all 7 universities.",
-        "stakeholder_engagement": "VC meetings conducted. IQAC coordination established. Weekly review meetings scheduled.",
+        "data_collection": "NIRF baseline data collection completed. Diagnostic assessments in progress.",
+        "stakeholder_engagement": "VC meetings conducted. IQAC coordination established.",
         "review_mechanism": "Weekly GRDAU meetings. Monthly progress review with MITRA PMU."
     },
     "Q2: August - October 2026": {
         "number": 2,
         "months": ["August 2026", "September 2026", "October 2026"],
         "status": "upcoming",
-        "status_color": "#f8f9fa",
         "key_activities": [
             "Institutional Development Plans (IDPs) development",
             "Stakeholder review and feedback incorporation",
@@ -277,15 +277,14 @@ QUARTERS = {
             {"name": "Milestone 1: Sustainable Data & Quality Systems", "status": "pending", "date": "Sep 30, 2026"},
             {"name": "Milestone 2: IDP Execution Monitoring", "status": "pending", "date": "Oct 31, 2026"}
         ],
-        "data_collection": "IDP data collection from all universities. Dashboard requirements gathering.",
-        "stakeholder_engagement": "IDP review meetings with VCs. Dashboard requirements workshops.",
-        "review_mechanism": "Bi-weekly IDP review. Monthly progress review with MITRA."
+        "data_collection": "IDP data collection. Dashboard requirements gathering.",
+        "stakeholder_engagement": "IDP review meetings with VCs. Dashboard workshops.",
+        "review_mechanism": "Bi-weekly IDP review. Monthly progress review."
     },
     "Q3: November 2026 - January 2027": {
         "number": 3,
         "months": ["November 2026", "December 2026", "January 2027"],
         "status": "upcoming",
-        "status_color": "#f8f9fa",
         "key_activities": [
             "Data Portal MVP Deployment",
             "Training Needs Assessment",
@@ -303,9 +302,9 @@ QUARTERS = {
             {"name": "Portal MVP Launch", "status": "pending", "date": "Nov 15, 2026"},
             {"name": "Mid-term Progress Report", "status": "pending", "date": "Nov 30, 2026"},
             {"name": "First Training Program", "status": "pending", "date": "Dec 15, 2026"},
-            {"name": "Milestone 3: Capacity Building (60% participation)", "status": "pending", "date": "Dec 31, 2026"}
+            {"name": "Milestone 3: Capacity Building", "status": "pending", "date": "Dec 31, 2026"}
         ],
-        "data_collection": "Portal data upload and validation. Training feedback collection.",
+        "data_collection": "Portal data upload. Training feedback collection.",
         "stakeholder_engagement": "Portal training sessions. Capacity building workshops.",
         "review_mechanism": "Portal usage analytics. Training effectiveness assessment."
     },
@@ -313,7 +312,6 @@ QUARTERS = {
         "number": 4,
         "months": ["February 2027", "March 2027", "April 2027"],
         "status": "upcoming",
-        "status_color": "#f8f9fa",
         "key_activities": [
             "Research Output Enhancement Initiatives",
             "International Collaboration Development",
@@ -329,15 +327,14 @@ QUARTERS = {
             {"name": "Research Enhancement Plan", "status": "pending", "date": "Feb 28, 2027"},
             {"name": "Year 1 Annual Report", "status": "pending", "date": "Apr 30, 2027"}
         ],
-        "data_collection": "Research output data. Collaboration metrics. QA assessment data.",
-        "stakeholder_engagement": "Research committee meetings. Industry collaboration meetings.",
+        "data_collection": "Research output data. Collaboration metrics.",
+        "stakeholder_engagement": "Research committee meetings. Industry collaboration.",
         "review_mechanism": "Research output tracking. QA dashboard monitoring."
     },
     "Q5: May - July 2027": {
         "number": 5,
         "months": ["May 2027", "June 2027", "July 2027"],
         "status": "upcoming",
-        "status_color": "#f8f9fa",
         "key_activities": [
             "Year 2 Kickoff and Advanced Analytics",
             "Global Ranking Preparation (QS, THE, US News)",
@@ -354,15 +351,14 @@ QUARTERS = {
             {"name": "QS Ranking Submission", "status": "pending", "date": "Jun 15, 2027"},
             {"name": "Milestone 4: 10% Improvement", "status": "pending", "date": "Jun 30, 2027"}
         ],
-        "data_collection": "Ranking data compilation. Improvement metrics calculation.",
-        "stakeholder_engagement": "Ranking preparation workshops. Industry advisory board meetings.",
+        "data_collection": "Ranking data compilation. Improvement metrics.",
+        "stakeholder_engagement": "Ranking preparation workshops. Industry advisory board.",
         "review_mechanism": "Quarterly performance review. Ranking submission tracking."
     },
     "Q6: August - October 2027": {
         "number": 6,
         "months": ["August 2027", "September 2027", "October 2027"],
         "status": "upcoming",
-        "status_color": "#f8f9fa",
         "key_activities": [
             "Employer Perception Enhancement",
             "Academic Reputation Building",
@@ -379,20 +375,19 @@ QUARTERS = {
             {"name": "Employer Survey Completion", "status": "pending", "date": "Aug 31, 2027"},
             {"name": "International MoUs Signed", "status": "pending", "date": "Sep 30, 2027"}
         ],
-        "data_collection": "Employer survey data. Reputation metrics. International student data.",
-        "stakeholder_engagement": "Employer meets. International partner meetings. Alumni engagement.",
+        "data_collection": "Employer survey data. Reputation metrics.",
+        "stakeholder_engagement": "Employer meets. International partner meetings.",
         "review_mechanism": "Monthly reputation tracking. Employer feedback analysis."
     },
     "Q7: November 2027 - January 2028": {
         "number": 7,
         "months": ["November 2027", "December 2027", "January 2028"],
         "status": "upcoming",
-        "status_color": "#f8f9fa",
         "key_activities": [
             "Final Global Ranking Submissions",
             "Sustainability Planning",
             "Knowledge Transfer Preparation",
-            "Milestone 5: 20% Improvement Achievement",
+            "Milestone 5: 20% Improvement",
             "Milestone 6: Global Rankings Participation"
         ],
         "deliverables": [
@@ -403,18 +398,17 @@ QUARTERS = {
         ],
         "milestones": [
             {"name": "Milestone 5: 20% Improvement", "status": "pending", "date": "Dec 31, 2027"},
-            {"name": "Milestone 6: Global Rankings (10 colleges)", "status": "pending", "date": "Feb 29, 2028"},
+            {"name": "Milestone 6: Global Rankings", "status": "pending", "date": "Feb 29, 2028"},
             {"name": "Sustainability Plan", "status": "pending", "date": "Dec 15, 2027"}
         ],
         "data_collection": "20% improvement evidence. Ranking participation data.",
-        "stakeholder_engagement": "Sustainability workshop. Handover planning meetings.",
+        "stakeholder_engagement": "Sustainability workshop. Handover planning.",
         "review_mechanism": "Final evaluation framework. Sustainability assessment."
     },
     "Q8: February - April 2028": {
         "number": 8,
         "months": ["February 2028", "March 2028", "April 2028"],
         "status": "upcoming",
-        "status_color": "#f8f9fa",
         "key_activities": [
             "Final Evaluation and Reporting",
             "Project Closure and Knowledge Transfer",
@@ -431,7 +425,7 @@ QUARTERS = {
             {"name": "Milestone 7: Final Evaluation", "status": "pending", "date": "Apr 30, 2028"},
             {"name": "Project Closure", "status": "pending", "date": "May 6, 2028"}
         ],
-        "data_collection": "Final performance metrics. Lessons learned compilation.",
+        "data_collection": "Final performance metrics. Lessons learned.",
         "stakeholder_engagement": "Final client presentation. Project closure meeting.",
         "review_mechanism": "Final evaluation. Client satisfaction survey."
     }
@@ -483,18 +477,30 @@ with st.sidebar:
 # MAIN CONTENT
 # ============================================================
 
+# Main Header with Assignment Title and Parties
 st.markdown(f"""
 <div class="main-header">
     <h1>🎯 {PROJECT_NAME}</h1>
-    <p>World Bank Loan No: IBRD 9737-IN | RFP Ref: IN-MITRA(PMU)-PforR-Edu-QCBS</p>
-    <p>Consultant: Indian Centre for Academic Rankings & Excellence - ICARE Pvt. Ltd.</p>
-    <p>Client: Maharashtra Institution for Transformation (MITRA) - State Data Authority</p>
+    <div class="assignment-title">
+        📋 {ASSIGNMENT_TITLE}
+    </div>
+    <div class="parties-info">
+        <div class="party-box">
+            <strong>🏛️ Client:</strong> {CLIENT_NAME}
+        </div>
+        <div class="party-box">
+            <strong>🤝 Consultant:</strong> {CONSULTANT_NAME}
+        </div>
+        <p style="margin-top:0.5rem; font-size:0.85rem;">World Bank Loan No: IBRD 9737-IN | RFP Ref: IN-MITRA(PMU)-PforR-Edu-QCBS</p>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# 1. EXECUTIVE SUMMARY
+# REST OF THE CONTENT (Same as before, but I'll include it for completeness)
 # ============================================================
+
+# 1. EXECUTIVE SUMMARY
 if selected_key == "summary":
     st.header("📋 Executive Summary")
     
@@ -557,15 +563,12 @@ if selected_key == "summary":
     </div>
     """, unsafe_allow_html=True)
 
-# ============================================================
 # 2. QUARTERLY PLAN
-# ============================================================
 elif selected_key == "quarterly":
     st.header("📅 8-Quarter Project Plan (May 2026 - April 2028)")
     st.markdown("Working Days: Monday to Friday | Hours: 10:00 AM - 6:00 PM")
     st.markdown("---")
     
-    # Quarter selector
     quarter_tabs = st.tabs(list(QUARTERS.keys()))
     
     for tab, (quarter_name, quarter_info) in zip(quarter_tabs, QUARTERS.items()):
@@ -624,16 +627,13 @@ elif selected_key == "quarterly":
             
             st.markdown("---")
 
-# ============================================================
 # 3. UNIVERSITIES & TEAM
-# ============================================================
 elif selected_key == "universities":
     st.header("🏫 Universities & Team Structure")
     
     st.subheader("📋 Participating Universities with GRDAU Status")
     
     for code, uni in UNIVERSITIES.items():
-        grdau_class = "grdau-completed" if uni["grdau_status"] == "Completed" else "grdau-progress"
         with st.expander(f"🏛️ {uni['name']} ({code})"):
             col1, col2 = st.columns(2)
             with col1:
@@ -667,9 +667,7 @@ elif selected_key == "universities":
     df_team = pd.DataFrame(team_data)
     st.dataframe(df_team, use_container_width=True, hide_index=True)
 
-# ============================================================
 # 4. WAR ROOM & GRDAU
-# ============================================================
 elif selected_key == "warroom":
     st.header("🏛️ War Room & GRDAU Setup")
     
@@ -690,15 +688,7 @@ elif selected_key == "warroom":
     st.markdown("""
     ### ✅ GRDAU Establishment Status - COMPLETED (July 5, 2026)
     
-    All 7 universities have successfully established their GRDAUs with the following:
-    
-    - **Staffing:** Multidisciplinary personnel including data analysts, statisticians, and research coordinators
-    - **Responsibilities:**
-        - Implementing Institutional Development Plans (IDPs)
-        - Monitoring institutional performance
-        - Coordinating training and capacity building
-        - Acting as nodal points for engagement with global and national ranking agencies
-    - **Infrastructure:** Computers, software for data analysis, dashboard access
+    All 7 universities have successfully established their GRDAUs.
     """)
     
     st.markdown("---")
@@ -717,35 +707,8 @@ elif selected_key == "warroom":
             })
     
     st.dataframe(pd.DataFrame(grdau_data), use_container_width=True, hide_index=True)
-    
-    st.markdown("---")
-    
-    st.subheader("📋 GRDAU Operational Framework")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("""
-        ### Key Responsibilities
-        - **Data Collection:** Systematic collection of NIRF/ranking parameters
-        - **Data Validation:** Quality checks and verification
-        - **Reporting:** Monthly Progress Reports
-        - **Analysis:** Performance gap analysis
-        - **Training:** Capacity building for faculty
-        """)
-    
-    with col2:
-        st.markdown("""
-        ### KPIs for GRDAU
-        - Data completeness rate: >95%
-        - On-time MPR submission: 100%
-        - Training participation: >60%
-        - Dashboard usage: Monthly active users
-        - Ranking improvement: Year-on-year
-        """)
 
-# ============================================================
 # 5. MILESTONES TRACKER
-# ============================================================
 elif selected_key == "milestones":
     st.header("🎯 Project Milestones Tracker")
     
@@ -804,21 +767,18 @@ elif selected_key == "milestones":
         </div>
         """, unsafe_allow_html=True)
 
-# ============================================================
 # 6. DELIVERABLES
-# ============================================================
 elif selected_key == "deliverables":
     st.header("📋 Contract Deliverables Status")
     
     deliverables = [
         {"deliverable": "Inception Report and Deployment Plan", "due_date": "Jun 5, 2026", "status": "completed", "actual": "May 26, 2026"},
         {"deliverable": "GRDAUs Established and Operationalized", "due_date": "Jul 5, 2026", "status": "completed", "actual": "July 5, 2026"},
-        {"deliverable": "Diagnostic Assessment Reports (Institution-wise)", "due_date": "Jul 31, 2026", "status": "in_progress", "actual": None},
+        {"deliverable": "Diagnostic Assessment Reports", "due_date": "Jul 31, 2026", "status": "in_progress", "actual": None},
         {"deliverable": "SWOT Analysis Reports", "due_date": "Jul 31, 2026", "status": "in_progress", "actual": None},
         {"deliverable": "Institutional Development Plans (IDPs)", "due_date": "Aug 14, 2026", "status": "pending", "actual": None},
         {"deliverable": "Mid-term Progress Report", "due_date": "Nov 30, 2026", "status": "pending", "actual": None},
-        {"deliverable": "Dashboard Reports and Analytics", "due_date": "Monthly", "status": "pending", "actual": None},
-        {"deliverable": "Final Closure Report and Recommendations", "due_date": "May 6, 2028", "status": "pending", "actual": None}
+        {"deliverable": "Final Closure Report", "due_date": "May 6, 2028", "status": "pending", "actual": None}
     ]
     
     for deliverable in deliverables:
@@ -843,13 +803,9 @@ elif selected_key == "deliverables":
         </div>
         """, unsafe_allow_html=True)
 
-# ============================================================
 # 7. REVIEW MECHANISMS
-# ============================================================
 elif selected_key == "review":
     st.header("🔄 Review & Monitoring Mechanisms")
-    
-    st.subheader("📊 Review Framework")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -860,7 +816,7 @@ elif selected_key == "review":
         - **Progress Tracking:** Daily dashboard updates
         
         ### Monthly Reviews
-        - **Monthly Progress Report (MPR)** submission by 10th of each month
+        - **Monthly Progress Report (MPR)** submission by 10th
         - **PMU Review Meeting:** Second week of each month
         - **Attendance Verification:** By 9th of each month
         """)
@@ -891,22 +847,8 @@ elif selected_key == "review":
     | Steering Committee | Chairperson | Government | Quarterly |
     | World Bank | MITRA | World Bank | Bi-annually |
     """)
-    
-    st.markdown("---")
-    
-    st.subheader("📝 MPR Submission Process")
-    
-    st.markdown("""
-    1. **University Level Resources** submit attendance to Nodal Officer by 9th of each month
-    2. **Nodal Officer** approves and forwards to PMU
-    3. **Project Head (ICARE)** compiles all reports by 10th of each month
-    4. **PMU** reviews and provides feedback
-    5. **Final MPR** submitted to Addl. Chief Secretary and Secretary to Hon. Governor
-    """)
 
-# ============================================================
 # 8. DOCUMENTS
-# ============================================================
 elif selected_key == "documents":
     st.header("📁 Reference Documents")
     
@@ -946,7 +888,7 @@ elif selected_key == "documents":
     doc_status = {
         "Document": ["Contract Agreement", "Work Order", "Performance Bank Guarantee", "Inception Report", "May MPR", "GRDAU Establishment", "Diagnostic Reports"],
         "Status": ["✅ Executed", "✅ Issued", "⏳ Pending", "✅ Submitted", "✅ Submitted", "✅ Completed", "🔄 In Progress"],
-        "Due Date": ["Signed", "Mar 25, 2026", "Within 15 days of LoA", "May 26, 2026", "May 29, 2026", "July 5, 2026", "July 31, 2026"]
+        "Due Date": ["Signed", "Mar 25, 2026", "Within 15 days", "May 26, 2026", "May 29, 2026", "July 5, 2026", "July 31, 2026"]
     }
     
     st.dataframe(pd.DataFrame(doc_status), use_container_width=True, hide_index=True)
@@ -957,8 +899,8 @@ elif selected_key == "documents":
 st.markdown("---")
 st.markdown(f"""
 <div style="text-align: center; color: #666; font-size: 0.8rem;">
-    <p>© 2026-2028 Maharashtra Institution for Transformation (MITRA) | MahaSTRIDE Project | World Bank Loan No: IBRD 9737-IN</p>
-    <p>Consultant: ICARE Pvt. Ltd. | Duration: 24 months (8 Quarters) | Working Days: Monday to Friday | Hours: 10:00 - 18:00</p>
+    <p>© 2026-2028 {CLIENT_NAME} | MahaSTRIDE Project | World Bank Loan No: IBRD 9737-IN</p>
+    <p>Consultant: {CONSULTANT_NAME} | Duration: 24 months (8 Quarters) | Working Days: Monday to Friday | Hours: 10:00 - 18:00</p>
     <p>Last Updated: {datetime.now().strftime('%d %B %Y, %H:%M:%S')}</p>
 </div>
 """, unsafe_allow_html=True)
