@@ -5,3 +5,4 @@ matplotlib
 PyGithub
 python-dotenv
 python-docx
+openpyxl
