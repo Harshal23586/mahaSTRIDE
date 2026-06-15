@@ -4,6 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import calendar
+import io
+import base64
 
 # Page configuration
 st.set_page_config(
@@ -13,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS (same as before - kept for brevity)
 st.markdown("""
 <style>
     .main-header {
@@ -100,15 +102,18 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
-    .grdau-completed {
-        background-color: #d4edda;
-        border-left: 4px solid #28a745;
-    }
     .party-box {
         background: rgba(255,255,255,0.15);
         border-radius: 8px;
         padding: 0.75rem;
         margin: 0.5rem 0;
+    }
+    .download-container {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -251,7 +256,9 @@ QUARTERS = {
         ],
         "data_collection": "NIRF baseline data collection completed. Diagnostic assessments in progress.",
         "stakeholder_engagement": "VC meetings conducted. IQAC coordination established.",
-        "review_mechanism": "Weekly GRDAU meetings. Monthly progress review with MITRA PMU."
+        "review_mechanism": "Weekly GRDAU meetings. Monthly progress review with MITRA PMU.",
+        "universities_involved": "All 7 universities",
+        "responsible_party": "ICARE Pvt. Ltd. with GRDAU teams"
     },
     "Q2: August - October 2026": {
         "number": 2,
@@ -279,7 +286,9 @@ QUARTERS = {
         ],
         "data_collection": "IDP data collection. Dashboard requirements gathering.",
         "stakeholder_engagement": "IDP review meetings with VCs. Dashboard workshops.",
-        "review_mechanism": "Bi-weekly IDP review. Monthly progress review."
+        "review_mechanism": "Bi-weekly IDP review. Monthly progress review.",
+        "universities_involved": "All 7 universities",
+        "responsible_party": "ICARE Pvt. Ltd. with GRDAU teams"
     },
     "Q3: November 2026 - January 2027": {
         "number": 3,
@@ -306,7 +315,9 @@ QUARTERS = {
         ],
         "data_collection": "Portal data upload. Training feedback collection.",
         "stakeholder_engagement": "Portal training sessions. Capacity building workshops.",
-        "review_mechanism": "Portal usage analytics. Training effectiveness assessment."
+        "review_mechanism": "Portal usage analytics. Training effectiveness assessment.",
+        "universities_involved": "All 7 universities",
+        "responsible_party": "ICARE Pvt. Ltd."
     },
     "Q4: February - April 2027": {
         "number": 4,
@@ -329,7 +340,9 @@ QUARTERS = {
         ],
         "data_collection": "Research output data. Collaboration metrics.",
         "stakeholder_engagement": "Research committee meetings. Industry collaboration.",
-        "review_mechanism": "Research output tracking. QA dashboard monitoring."
+        "review_mechanism": "Research output tracking. QA dashboard monitoring.",
+        "universities_involved": "All 7 universities",
+        "responsible_party": "ICARE Pvt. Ltd. with Research Cells"
     },
     "Q5: May - July 2027": {
         "number": 5,
@@ -353,7 +366,9 @@ QUARTERS = {
         ],
         "data_collection": "Ranking data compilation. Improvement metrics.",
         "stakeholder_engagement": "Ranking preparation workshops. Industry advisory board.",
-        "review_mechanism": "Quarterly performance review. Ranking submission tracking."
+        "review_mechanism": "Quarterly performance review. Ranking submission tracking.",
+        "universities_involved": "All 7 universities",
+        "responsible_party": "ICARE Pvt. Ltd. with GRDAU teams"
     },
     "Q6: August - October 2027": {
         "number": 6,
@@ -377,7 +392,9 @@ QUARTERS = {
         ],
         "data_collection": "Employer survey data. Reputation metrics.",
         "stakeholder_engagement": "Employer meets. International partner meetings.",
-        "review_mechanism": "Monthly reputation tracking. Employer feedback analysis."
+        "review_mechanism": "Monthly reputation tracking. Employer feedback analysis.",
+        "universities_involved": "All 7 universities",
+        "responsible_party": "ICARE Pvt. Ltd. with Placement Cells"
     },
     "Q7: November 2027 - January 2028": {
         "number": 7,
@@ -403,7 +420,9 @@ QUARTERS = {
         ],
         "data_collection": "20% improvement evidence. Ranking participation data.",
         "stakeholder_engagement": "Sustainability workshop. Handover planning.",
-        "review_mechanism": "Final evaluation framework. Sustainability assessment."
+        "review_mechanism": "Final evaluation framework. Sustainability assessment.",
+        "universities_involved": "All 7 universities",
+        "responsible_party": "ICARE Pvt. Ltd. with MITRA"
     },
     "Q8: February - April 2028": {
         "number": 8,
@@ -427,9 +446,131 @@ QUARTERS = {
         ],
         "data_collection": "Final performance metrics. Lessons learned.",
         "stakeholder_engagement": "Final client presentation. Project closure meeting.",
-        "review_mechanism": "Final evaluation. Client satisfaction survey."
+        "review_mechanism": "Final evaluation. Client satisfaction survey.",
+        "universities_involved": "All 7 universities",
+        "responsible_party": "ICARE Pvt. Ltd. with MITRA"
     }
 }
+
+# ============================================================
+# EXCEL EXPORT FUNCTION
+# ============================================================
+
+def export_quarter_to_excel(quarter_name, selected_sections):
+    """Export selected quarter data to Excel"""
+    quarter_info = QUARTERS[quarter_name]
+    
+    # Create a bytes buffer for the Excel file
+    output = io.BytesIO()
+    
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Sheet 1: Executive Summary
+        if "Executive Summary" in selected_sections:
+            summary_data = {
+                "Project Name": [PROJECT_NAME],
+                "Assignment Title": [ASSIGNMENT_TITLE],
+                "Client": [CLIENT_NAME],
+                "Consultant": [CONSULTANT_NAME],
+                "Quarter": [quarter_name],
+                "Months": [", ".join(quarter_info["months"])],
+                "Status": [quarter_info["status"].upper()],
+                "World Bank Loan No": ["IBRD 9737-IN"],
+                "RFP Reference": ["IN-MITRA(PMU)-PforR-Edu-QCBS"],
+                "Report Generated On": [datetime.now().strftime('%d %B %Y, %H:%M:%S')]
+            }
+            df_summary = pd.DataFrame(summary_data)
+            df_summary.to_excel(writer, sheet_name="Executive Summary", index=False)
+        
+        # Sheet 2: Key Activities
+        if "Key Activities" in selected_sections:
+            activities_data = []
+            for i, activity in enumerate(quarter_info["key_activities"], 1):
+                activities_data.append({
+                    "S.No": i,
+                    "Activity": activity,
+                    "Category": "Completed" if activity.startswith("✅") else "In Progress" if activity.startswith("🔄") else "Planned",
+                    "Quarter": quarter_name
+                })
+            df_activities = pd.DataFrame(activities_data)
+            df_activities.to_excel(writer, sheet_name="Key Activities", index=False)
+        
+        # Sheet 3: Deliverables
+        if "Deliverables" in selected_sections:
+            deliverables_data = []
+            for deliverable in quarter_info["deliverables"]:
+                status = "Completed" if "✅" in deliverable else "In Progress" if "🔄" in deliverable else "Pending"
+                deliverables_data.append({
+                    "Deliverable": deliverable.replace("✅", "").replace("🔄", "").strip(),
+                    "Status": status,
+                    "Quarter": quarter_name
+                })
+            df_deliverables = pd.DataFrame(deliverables_data)
+            df_deliverables.to_excel(writer, sheet_name="Deliverables", index=False)
+        
+        # Sheet 4: Milestones
+        if "Milestones" in selected_sections:
+            milestones_data = []
+            for milestone in quarter_info["milestones"]:
+                milestones_data.append({
+                    "Milestone Name": milestone["name"],
+                    "Target Date": milestone["date"],
+                    "Status": milestone["status"].upper(),
+                    "Quarter": quarter_name
+                })
+            df_milestones = pd.DataFrame(milestones_data)
+            df_milestones.to_excel(writer, sheet_name="Milestones", index=False)
+        
+        # Sheet 5: Data Collection & Stakeholder Engagement
+        if "Data Collection & Engagement" in selected_sections:
+            engagement_data = {
+                "Data Collection Process": [quarter_info["data_collection"]],
+                "Stakeholder Engagement": [quarter_info["stakeholder_engagement"]],
+                "Review Mechanism": [quarter_info["review_mechanism"]],
+                "Universities Involved": [quarter_info.get("universities_involved", "All 7 universities")],
+                "Responsible Party": [quarter_info.get("responsible_party", "ICARE Pvt. Ltd.")]
+            }
+            df_engagement = pd.DataFrame(engagement_data)
+            df_engagement.to_excel(writer, sheet_name="Data Collection & Engagement", index=False)
+        
+        # Sheet 6: Universities & GRDAU Status
+        if "Universities & GRDAU" in selected_sections:
+            uni_data = []
+            for code, uni in UNIVERSITIES.items():
+                if code != "MITRA":
+                    uni_data.append({
+                        "University": uni["name"],
+                        "Location": uni["location"],
+                        "Nodal Officer": uni.get("nodal_officer", "N/A"),
+                        "Contact": uni.get("contact", "N/A"),
+                        "GRDAU Status": uni["grdau_status"],
+                        "GRDAU Completion Date": uni["grdau_completion_date"],
+                        "Coordinators": ", ".join(uni["coordinators"])
+                    })
+            df_uni = pd.DataFrame(uni_data)
+            df_uni.to_excel(writer, sheet_name="Universities & GRDAU", index=False)
+        
+        # Sheet 7: Team Members
+        if "Team Members" in selected_sections:
+            team_data = {
+                "Name": ["Dr. Harshal Kotwal", "Shubham Singh", "Sagar Teli", "Sneha Kashitkar", "Nitish Kumbhar",
+                        "Anjali Singh", "Vaibhav Ambekar", "Atharav Paturkar", "Prathamesh Babhulkar", "Jagan Sridhar"],
+                "Role": ["Project Lead", "Data Analytics Specialist", "Statistician & Program Designer", 
+                        "Institutional Coordinator", "Institutional Coordinator", "Institutional Coordinator",
+                        "Institutional Coordinator", "Institutional Coordinator", "Institutional Coordinator", "Institutional Coordinator"],
+                "University": ["ICARE", "MITRA", "Mumbai University", "Mumbai University", "KBCNMU Jalgaon",
+                              "Nagpur University", "COEP Pune", "BAMU Aurangabad", "Amravati University", "SPPU Pune"]
+            }
+            df_team = pd.DataFrame(team_data)
+            df_team.to_excel(writer, sheet_name="Team Members", index=False)
+    
+    # Get the value and create download link
+    output.seek(0)
+    return output.getvalue()
+
+def get_excel_download_link(excel_data, filename):
+    b64 = base64.b64encode(excel_data).decode()
+    href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{filename}" style="background-color:#28a745;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;">📥 Download Excel Report</a>'
+    return href
 
 # ============================================================
 # SIDEBAR NAVIGATION
@@ -447,7 +588,8 @@ with st.sidebar:
         "🎯 Milestones Tracker": "milestones",
         "📋 Deliverables": "deliverables",
         "🔄 Review Mechanisms": "review",
-        "📁 Documents": "documents"
+        "📁 Documents": "documents",
+        "📥 Export Reports": "export"
     }
     
     selected_nav = st.radio("Navigation", list(nav_options.keys()), label_visibility="collapsed")
@@ -497,11 +639,115 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ============================================================
-# REST OF THE CONTENT (Same as before, but I'll include it for completeness)
+# EXPORT REPORTS PAGE
+# ============================================================
+if selected_key == "export":
+    st.header("📥 Export Quarterly Reports")
+    st.markdown("Generate and download quarterly progress reports in Excel format.")
+    
+    st.markdown("---")
+    
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.subheader("📋 Select Quarter")
+        selected_quarter = st.selectbox(
+            "Choose Quarter",
+            options=list(QUARTERS.keys()),
+            help="Select the quarter for which you want to generate the report"
+        )
+        
+        st.subheader("📎 Select Sections to Include")
+        
+        section_options = [
+            "Executive Summary",
+            "Key Activities",
+            "Deliverables",
+            "Milestones",
+            "Data Collection & Engagement",
+            "Universities & GRDAU",
+            "Team Members"
+        ]
+        
+        selected_sections = st.multiselect(
+            "Choose sections to include in the report",
+            options=section_options,
+            default=section_options,
+            help="Select which sections you want in your Excel report"
+        )
+    
+    with col2:
+        quarter_info = QUARTERS[selected_quarter]
+        st.subheader("📊 Report Preview")
+        st.markdown(f"""
+        **Quarter:** {selected_quarter}<br>
+        **Months:** {', '.join(quarter_info['months'])}<br>
+        **Status:** {quarter_info['status'].upper()}<br>
+        **Total Activities:** {len(quarter_info['key_activities'])}<br>
+        **Total Deliverables:** {len(quarter_info['deliverables'])}<br>
+        **Total Milestones:** {len(quarter_info['milestones'])}
+        """, unsafe_allow_html=True)
+        
+        if quarter_info['status'] == 'ongoing':
+            st.markdown('<span class="status-ongoing">🟡 ONGOING</span>', unsafe_allow_html=True)
+        else:
+            st.markdown('<span class="status-completed">⚪ UPCOMING</span>', unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Preview of selected sections
+    if selected_sections:
+        st.subheader("📄 Report Preview")
+        with st.expander("Click to preview selected sections"):
+            if "Executive Summary" in selected_sections:
+                st.markdown("**Executive Summary**")
+                st.markdown(f"- Project: {PROJECT_NAME[:80]}...")
+                st.markdown(f"- Quarter: {selected_quarter}")
+                st.markdown(f"- Status: {quarter_info['status'].upper()}")
+                st.markdown("---")
+            
+            if "Key Activities" in selected_sections:
+                st.markdown("**Key Activities**")
+                for activity in quarter_info["key_activities"][:5]:
+                    st.markdown(f"- {activity}")
+                if len(quarter_info["key_activities"]) > 5:
+                    st.markdown(f"... and {len(quarter_info['key_activities']) - 5} more")
+                st.markdown("---")
+            
+            if "Deliverables" in selected_sections:
+                st.markdown("**Deliverables**")
+                for deliverable in quarter_info["deliverables"]:
+                    st.markdown(f"- {deliverable}")
+                st.markdown("---")
+            
+            if "Milestones" in selected_sections:
+                st.markdown("**Milestones**")
+                for milestone in quarter_info["milestones"]:
+                    status_icon = "✅" if milestone["status"] == "achieved" else "🔄" if milestone["status"] == "in_progress" else "⏳"
+                    st.markdown(f"- {status_icon} {milestone['name']} (Target: {milestone['date']})")
+    
+    # Download button
+    st.markdown("---")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if selected_sections:
+            if st.button("📥 Generate & Download Excel Report", use_container_width=True, type="primary"):
+                with st.spinner("Generating Excel report..."):
+                    excel_data = export_quarter_to_excel(selected_quarter, selected_sections)
+                    filename = f"MahaSTRIDE_{selected_quarter.replace(' ', '_').replace(':', '')}_Report_{datetime.now().strftime('%Y%m%d')}.xlsx"
+                    b64 = base64.b64encode(excel_data).decode()
+                    href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{filename}" style="background-color:#28a745;color:white;padding:12px 24px;text-decoration:none;border-radius:5px;display:inline-block;font-weight:bold;">📥 Download Excel Report</a>'
+                    st.markdown(href, unsafe_allow_html=True)
+                    st.success(f"✅ Report for {selected_quarter} generated successfully!")
+        else:
+            st.warning("⚠️ Please select at least one section to include in the report")
+
+# ============================================================
+# EXISTING CONTENT PAGES (Summary, Quarterly, Universities, etc.)
 # ============================================================
 
 # 1. EXECUTIVE SUMMARY
-if selected_key == "summary":
+elif selected_key == "summary":
     st.header("📋 Executive Summary")
     
     col1, col2, col3, col4 = st.columns(4)
