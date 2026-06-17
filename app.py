@@ -9,7 +9,7 @@ import base64
 
 # Page configuration
 st.set_page_config(
-    page_title="MahaSTRIDE - Quarterly Project Plan Dashboard",
+    page_title="MahaSTRIDE - Project Plan Dashboard",
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -107,6 +107,30 @@ st.markdown("""
         border-radius: 8px;
         padding: 0.75rem;
         margin: 0.5rem 0;
+    }
+    .daily-task-card {
+        background: white;
+        border-left: 4px solid #2a5298;
+        padding: 0.75rem;
+        margin: 0.3rem 0;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .daily-task-completed {
+        border-left-color: #28a745;
+        background-color: #d4edda;
+    }
+    .daily-task-pending {
+        border-left-color: #ffc107;
+        background-color: #fff3cd;
+    }
+    .coordinator-tag {
+        display: inline-block;
+        background-color: #e9ecef;
+        padding: 0.1rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        margin: 0.1rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -213,6 +237,458 @@ UNIVERSITIES = {
         "grdau_completion_date": "July 5, 2026"
     }
 }
+
+# ============================================================
+# DAILY PLAN OF ACTION FOR COORDINATORS
+# ============================================================
+
+def get_daily_plan(year, month):
+    """Generate daily plan of action for coordinators based on month and year"""
+    
+    # Get all working days for the selected month
+    first_day = datetime(year, month, 1)
+    if month == 12:
+        last_day = datetime(year, month, 31)
+    else:
+        last_day = datetime(year, month + 1, 1) - timedelta(days=1)
+    
+    working_days = []
+    current = first_day
+    while current <= last_day:
+        if current.weekday() < 5:  # Monday to Friday
+            working_days.append(current)
+        current += timedelta(days=1)
+    
+    daily_plan = {}
+    
+    # ============================================================
+    # PHASE 1: FOUNDATION (May - July 2026)
+    # ============================================================
+    
+    if year == 2026 and month == 5:
+        tasks = {
+            "2026-05-04": {"task": "SANGAM Orientation Day 1 - Project Overview & MahaSTRIDE Introduction", "venue": "Trident Board Room, Mumbai", "coordinators": ["All"]},
+            "2026-05-05": {"task": "SANGAM Training Day 2 - NIRF Framework Deep Dive", "venue": "Trident Board Room, Mumbai", "coordinators": ["All"]},
+            "2026-05-06": {"task": "SANGAM Workshop Day 3 - GRDAU Concept & Data Templates", "venue": "Trident Board Room, Mumbai", "coordinators": ["All"]},
+            "2026-05-07": {"task": "University Reporting & Onboarding - Meet VC & Registrar", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-08": {"task": "NIRF Data Source Mapping - Map data sources across departments", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-11": {"task": "Create Data Gap Template and Request Letters", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-12": {"task": "Collect Student Enrollment & Faculty Data from all departments", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-13": {"task": "Collect Research Publications & Placement Data", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-14": {"task": "Collect Financial & Infrastructure Data", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-15": {"task": "Data Consolidation & Validation - First Pass", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-18": {"task": "Stakeholder Consultation Meeting with Department Heads", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-19": {"task": "Missing Data Follow-up and Verification", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-20": {"task": "NIRF Template Preparation and Draft Submission", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-21": {"task": "SWOT Analysis & Gap Report Preparation", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-22": {"task": "Inception Report Drafting", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-25": {"task": "GRDAU Team Identification and Nomination", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-26": {"task": "GRDAU Operational Framework Finalization", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-27": {"task": "Review Meeting with ICARE Leadership", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-05-29": {"task": "May MPR Finalization and Submission", "venue": "Respective University", "coordinators": ["All"]}
+        }
+        
+        for date in working_days:
+            date_str = date.strftime("%Y-%m-%d")
+            if date_str in tasks:
+                daily_plan[date_str] = tasks[date_str]
+            else:
+                daily_plan[date_str] = {"task": "Continue project activities", "venue": "Respective University", "coordinators": ["All"]}
+    
+    elif year == 2026 and month == 6:
+        tasks = {
+            "2026-06-01": {"task": "Complete Diagnostic Assessment Framework", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-02": {"task": "Begin University-wise Assessments", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-03": {"task": "Review Existing Data Quality Across Departments", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-04": {"task": "Identify Data Gaps per University", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-05": {"task": "Prepare Assessment Templates", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-08": {"task": "Conduct Faculty Interviews - Round 1", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-09": {"task": "Analyze Research Output Metrics", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-10": {"task": "Evaluate Infrastructure Readiness", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-11": {"task": "Assess International Collaboration", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-12": {"task": "Compile Assessment Findings", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-15": {"task": "GRDAU Training - Module 1: Data Management", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-16": {"task": "Data Validation Workshop", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-17": {"task": "NIRF Submission Preparation", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-18": {"task": "Review Progress with Vice Chancellor", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-19": {"task": "Update Central Data Repository", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-22": {"task": "Finalize Diagnostic Reports", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-23": {"task": "Submit Diagnostic Reports to PMU", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-24": {"task": "Prepare June MPR", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-25": {"task": "Plan July Activities", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-26": {"task": "Client Review Meeting", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-29": {"task": "Continue Data Analysis", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-06-30": {"task": "Finalize and Submit June MPR", "venue": "Respective University", "coordinators": ["All"]}
+        }
+        
+        for date in working_days:
+            date_str = date.strftime("%Y-%m-%d")
+            if date_str in tasks:
+                daily_plan[date_str] = tasks[date_str]
+            else:
+                daily_plan[date_str] = {"task": "Continue diagnostic assessments", "venue": "Respective University", "coordinators": ["All"]}
+    
+    elif year == 2026 and month == 7:
+        tasks = {
+            "2026-07-01": {"task": "Complete Gap Analysis Against NIRF", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-02": {"task": "Prepare SWOT Analysis - Mumbai University", "venue": "Mumbai University", "coordinators": ["Sneha", "Sagar"]},
+            "2026-07-03": {"task": "Prepare SWOT Analysis - Pune University", "venue": "SPPU Pune", "coordinators": ["Jagan"]},
+            "2026-07-06": {"task": "Prepare SWOT Analysis - Nagpur University", "venue": "Nagpur University", "coordinators": ["Anjali"]},
+            "2026-07-07": {"task": "Prepare SWOT Analysis - Amravati University", "venue": "Amravati University", "coordinators": ["Prathamesh"]},
+            "2026-07-08": {"task": "Prepare SWOT Analysis - COEP University", "venue": "COEP Pune", "coordinators": ["Vaibhav"]},
+            "2026-07-09": {"task": "Prepare SWOT Analysis - Jalgaon University", "venue": "KBCNMU Jalgaon", "coordinators": ["Nitish"]},
+            "2026-07-10": {"task": "Prepare SWOT Analysis - Aurangabad University", "venue": "BAMU Aurangabad", "coordinators": ["Atharav"]},
+            "2026-07-13": {"task": "Finalize GRDAU Establishment Plan", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-14": {"task": "Setup GRDAU Office Infrastructure", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-15": {"task": "Conduct Data Entry Training for GRDAU Staff", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-16": {"task": "Create Data Validation Protocols", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-17": {"task": "Develop Dashboard Requirements Document", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-20": {"task": "Design Baseline Report Template", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-21": {"task": "Compile Phase 1 Deliverables", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-22": {"task": "Present Phase 1 Findings to MITRA", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-23": {"task": "Document Lessons Learned - Phase 1", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-24": {"task": "Plan Phase 2 Activities", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-27": {"task": "Prepare July MPR", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-28": {"task": "Submit July MPR and Phase 1 Report", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-29": {"task": "Incorporate Client Feedback", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-30": {"task": "Finalize Phase 2 Work Plan", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-07-31": {"task": "Conduct Phase 2 Kickoff Meeting", "venue": "Respective University", "coordinators": ["All"]}
+        }
+        
+        for date in working_days:
+            date_str = date.strftime("%Y-%m-%d")
+            if date_str in tasks:
+                daily_plan[date_str] = tasks[date_str]
+            else:
+                daily_plan[date_str] = {"task": "Continue Phase 1 wrap-up", "venue": "Respective University", "coordinators": ["All"]}
+    
+    # ============================================================
+    # PHASE 2: PLANNING (August - October 2026)
+    # ============================================================
+    
+    elif year == 2026 and month == 8:
+        tasks = {
+            "2026-08-03": {"task": "Develop IDP Framework Template", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-08-04": {"task": "Collect Strategic Plans - Mumbai University", "venue": "Mumbai University", "coordinators": ["Sneha", "Sagar"]},
+            "2026-08-05": {"task": "Collect Strategic Plans - Pune University", "venue": "SPPU Pune", "coordinators": ["Jagan"]},
+            "2026-08-06": {"task": "Collect Strategic Plans - Nagpur University", "venue": "Nagpur University", "coordinators": ["Anjali"]},
+            "2026-08-07": {"task": "Collect Strategic Plans - Amravati University", "venue": "Amravati University", "coordinators": ["Prathamesh"]},
+            "2026-08-10": {"task": "Collect Strategic Plans - COEP University", "venue": "COEP Pune", "coordinators": ["Vaibhav"]},
+            "2026-08-11": {"task": "Collect Strategic Plans - Jalgaon University", "venue": "KBCNMU Jalgaon", "coordinators": ["Nitish"]},
+            "2026-08-12": {"task": "Collect Strategic Plans - Aurangabad University", "venue": "BAMU Aurangabad", "coordinators": ["Atharav"]},
+            "2026-08-13": {"task": "Analyze Collected Strategic Plans", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-08-14": {"task": "Draft IDP - Mumbai University", "venue": "Mumbai University", "coordinators": ["Sneha", "Sagar"]},
+            "2026-08-17": {"task": "Draft IDP - Pune University", "venue": "SPPU Pune", "coordinators": ["Jagan"]},
+            "2026-08-18": {"task": "Draft IDP - Nagpur University", "venue": "Nagpur University", "coordinators": ["Anjali"]},
+            "2026-08-19": {"task": "Draft IDP - Amravati University", "venue": "Amravati University", "coordinators": ["Prathamesh"]},
+            "2026-08-20": {"task": "Draft IDP - COEP University", "venue": "COEP Pune", "coordinators": ["Vaibhav"]},
+            "2026-08-21": {"task": "Draft IDP - Jalgaon University", "venue": "KBCNMU Jalgaon", "coordinators": ["Nitish"]},
+            "2026-08-24": {"task": "Draft IDP - Aurangabad University", "venue": "BAMU Aurangabad", "coordinators": ["Atharav"]},
+            "2026-08-25": {"task": "Present IDPs to VCs for Feedback", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-08-26": {"task": "Incorporate VC Feedback - Finalize IDPs", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-08-27": {"task": "Get Institutional Sign-off on IDPs", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-08-28": {"task": "Prepare August MPR", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-08-31": {"task": "Submit August MPR to PMU", "venue": "Respective University", "coordinators": ["All"]}
+        }
+        
+        for date in working_days:
+            date_str = date.strftime("%Y-%m-%d")
+            if date_str in tasks:
+                daily_plan[date_str] = tasks[date_str]
+            else:
+                daily_plan[date_str] = {"task": "Continue IDP development", "venue": "Respective University", "coordinators": ["All"]}
+    
+    elif year == 2026 and month == 9:
+        tasks = {
+            "2026-09-01": {"task": "Design Data Portal Architecture", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-02": {"task": "Create Dashboard Wireframes and Mockups", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-03": {"task": "Setup Development Environment", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-04": {"task": "Develop Backend APIs for Data Integration", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-07": {"task": "Implement User Authentication & RBAC", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-08": {"task": "Build KPI Dashboard with Metric Cards", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-09": {"task": "Integrate Research Output Charts", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-10": {"task": "Add Faculty-Student Ratio Analytics", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-11": {"task": "Implement Financial Resource Tracking", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-14": {"task": "Develop Placement Outcomes Dashboard", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-15": {"task": "Create International Collaboration Metrics", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-16": {"task": "Add Citation Analysis Charts", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-17": {"task": "Implement Infrastructure Dashboard", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-18": {"task": "Prepare Milestone 1 Report", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-21": {"task": "Submit Milestone 1 Report to PMU", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-22": {"task": "Present Milestone 1 to Client", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-23": {"task": "Incorporate Client Feedback into Dashboard", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-24": {"task": "Conduct User Acceptance Testing", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-25": {"task": "Fix Bugs and Optimize Performance", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-28": {"task": "Deploy Dashboard Beta to Staging", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-29": {"task": "Prepare September MPR", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-09-30": {"task": "Submit September MPR to PMU", "venue": "Respective University", "coordinators": ["All"]}
+        }
+        
+        for date in working_days:
+            date_str = date.strftime("%Y-%m-%d")
+            if date_str in tasks:
+                daily_plan[date_str] = tasks[date_str]
+            else:
+                daily_plan[date_str] = {"task": "Continue dashboard development", "venue": "Respective University", "coordinators": ["All"]}
+    
+    elif year == 2026 and month == 10:
+        tasks = {
+            "2026-10-01": {"task": "Complete Dashboard Beta Testing", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-02": {"task": "Finalize Dashboard Based on Feedback", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-05": {"task": "Prepare Milestone 2 Report", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-06": {"task": "Submit Milestone 2 Report to PMU", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-07": {"task": "Present IDP Monitoring Framework to Client", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-08": {"task": "Conduct Dashboard Training for Administrators", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-09": {"task": "Create User Manual and Video Tutorials", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-12": {"task": "Compile 6-Month Achievements", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-13": {"task": "Prepare Mid-Term Review Presentation", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-14": {"task": "Conduct Internal Review with ICARE", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-15": {"task": "Present Mid-Term Report to World Bank", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-16": {"task": "Incorporate Mid-Term Feedback", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-19": {"task": "Prepare October MPR", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-20": {"task": "Deploy Data Portal to Production", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-21": {"task": "Monitor Portal Performance", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-22": {"task": "Setup Analytics Tracking", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-23": {"task": "Create Backup and Recovery Procedures", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-26": {"task": "Plan Phase 3 Implementation Activities", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-27": {"task": "Develop Phase 3 Work Schedule", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-28": {"task": "Assign Phase 3 Responsibilities", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-29": {"task": "Conduct Phase 3 Coordination Meeting", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-10-30": {"task": "Submit October MPR to PMU", "venue": "Respective University", "coordinators": ["All"]}
+        }
+        
+        for date in working_days:
+            date_str = date.strftime("%Y-%m-%d")
+            if date_str in tasks:
+                daily_plan[date_str] = tasks[date_str]
+            else:
+                daily_plan[date_str] = {"task": "Continue Phase 2 completion", "venue": "Respective University", "coordinators": ["All"]}
+    
+    # ============================================================
+    # PHASE 3: IMPLEMENTATION (November 2026 - April 2027)
+    # ============================================================
+    
+    elif year == 2026 and month == 11:
+        tasks = {
+            "2026-11-02": {"task": "Deploy Data Portal MVP", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-03": {"task": "Conduct Portal Training for GRDAU", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-04": {"task": "Upload Baseline Data for All Universities", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-05": {"task": "Verify Data Accuracy in Portal", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-06": {"task": "Collect User Feedback on Portal", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-09": {"task": "Implement Priority Fixes Based on Feedback", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-10": {"task": "Add Data Export Functionality", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-11": {"task": "Setup Automated Data Validation", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-12": {"task": "Create Custom Reports Feature", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-13": {"task": "Train Staff on Report Generation", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-16": {"task": "Develop NIRF Data Submission Training", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-17": {"task": "Conduct Research Metrics Workshop", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-18": {"task": "Provide Citation Analysis Training", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-19": {"task": "Prepare Training Needs Assessment", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-20": {"task": "Schedule Capacity Building Programs", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-23": {"task": "Conduct Online Training for Remote Coordinators", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-24": {"task": "Prepare Training Materials and Handouts", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-25": {"task": "Assess Training Effectiveness", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-26": {"task": "Plan Advanced Training Modules", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-27": {"task": "Prepare November MPR", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-11-30": {"task": "Submit November MPR to PMU", "venue": "Respective University", "coordinators": ["All"]}
+        }
+        
+        for date in working_days:
+            date_str = date.strftime("%Y-%m-%d")
+            if date_str in tasks:
+                daily_plan[date_str] = tasks[date_str]
+            else:
+                daily_plan[date_str] = {"task": "Continue portal deployment", "venue": "Respective University", "coordinators": ["All"]}
+    
+    elif year == 2026 and month == 12:
+        tasks = {
+            "2026-12-01": {"task": "Complete First Round of Training Programs", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-02": {"task": "Analyze Training Feedback", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-03": {"task": "Prepare Training Completion Report", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-04": {"task": "Launch Performance Dashboards", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-07": {"task": "Develop Advanced Training Modules", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-08": {"task": "Conduct Hands-on Analytics Workshop", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-09": {"task": "Provide One-on-One Coaching", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-10": {"task": "Create GRDAU Certification Program", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-11": {"task": "Prepare Milestone 3 Report", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-14": {"task": "Submit Milestone 3 Report", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-15": {"task": "Present Capacity Building Achievements", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-16": {"task": "Compile Year-End Performance Data", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-17": {"task": "Prepare Annual Report 2026", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-18": {"task": "Review Progress Against Targets", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-21": {"task": "Plan 2027 Activities", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-22": {"task": "Conduct Team Performance Appraisal", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-23": {"task": "Document Success Stories", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-24": {"task": "Prepare December MPR", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-28": {"task": "Submit December MPR and Annual Report", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-29": {"task": "Conduct Client Year-End Review", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-30": {"task": "Plan Enhancement Activities", "venue": "Respective University", "coordinators": ["All"]},
+            "2026-12-31": {"task": "Celebrate Project Achievements", "venue": "Respective University", "coordinators": ["All"]}
+        }
+        
+        for date in working_days:
+            date_str = date.strftime("%Y-%m-%d")
+            if date_str in tasks:
+                daily_plan[date_str] = tasks[date_str]
+            else:
+                daily_plan[date_str] = {"task": "Continue year-end activities", "venue": "Respective University", "coordinators": ["All"]}
+    
+    # ============================================================
+    # PHASE 4 & 5: ENHANCEMENT & FINALIZATION (2027-2028)
+    # ============================================================
+    
+    elif year == 2027 or year == 2028:
+        # Generic tasks for 2027-2028 based on month
+        month_names = {
+            1: "Data Quality and Research Enhancement",
+            2: "International Collaboration and OBE",
+            3: "Accreditation and Quality Assurance",
+            4: "Milestone 4: 10% Improvement",
+            5: "Year 2 Kickoff and Advanced Analytics",
+            6: "Global Ranking Preparation (QS, THE, US News)",
+            7: "Advanced Training and Research Support",
+            8: "Employer Perception and Industry Connect",
+            9: "Milestone 5: 20% Improvement",
+            10: "Academic Reputation Building",
+            11: "Final Ranking Submissions",
+            12: "Sustainability and Knowledge Transfer"
+        }
+        
+        if year == 2028:
+            month_names.update({
+                1: "Final Evaluation Preparation",
+                2: "Final Client Presentation and Milestone 7",
+                3: "Project Closure and Knowledge Transfer",
+                4: "Contract Completion and Final Submission"
+            })
+        
+        day = 1
+        for date in working_days:
+            date_str = date.strftime("%Y-%m-%d")
+            day_num = date.day
+            month_focus = month_names.get(month, "Continue project activities")
+            
+            # Specific tasks for Q1 2028
+            if year == 2028 and month == 1:
+                tasks_jan = {
+                    3: "Prepare Final Evaluation Framework",
+                    4: "Compile All Project Achievements",
+                    5: "Collect 24-Month Performance Metrics",
+                    6: "Analyze Baseline vs Endline Data",
+                    7: "Calculate Overall Improvement",
+                    10: "Prepare Success Stories Document",
+                    11: "Create Case Studies Library",
+                    12: "Develop Lessons Learned Report",
+                    13: "Prepare Best Practices Guide",
+                    14: "Create Future Recommendations",
+                    17: "Prepare Final Evaluation Report Draft",
+                    18: "Review with ICARE Leadership",
+                    19: "Incorporate Feedback",
+                    20: "Prepare Final Presentation",
+                    21: "Conduct Internal Review",
+                    24: "Finalize Evaluation Report",
+                    25: "Prepare January MPR",
+                    26: "Submit January MPR",
+                    27: "Schedule Final Client Presentation",
+                    28: "Prepare Client Presentation Materials"
+                }
+                if day_num in tasks_jan:
+                    daily_plan[date_str] = {"task": tasks_jan[day_num], "venue": "Respective University", "coordinators": ["All"]}
+                else:
+                    daily_plan[date_str] = {"task": f"{month_focus} - Day {day_num}", "venue": "Respective University", "coordinators": ["All"]}
+            
+            elif year == 2028 and month == 2:
+                tasks_feb = {
+                    1: "Prepare Milestone 7 Report",
+                    2: "Compile Evidence for Milestone",
+                    3: "Submit Milestone 7 Report",
+                    4: "Prepare Final Client Presentation",
+                    7: "Conduct Final Client Presentation",
+                    8: "Incorporate Final Client Feedback",
+                    9: "Finalize All Project Deliverables",
+                    10: "Prepare Project Closure Report",
+                    11: "Complete Pending Documentation",
+                    14: "Prepare Handover Packages",
+                    15: "Conduct Handover Training",
+                    16: "Transfer All Credentials",
+                    17: "Archive Project Data",
+                    18: "Prepare Final Financial Report",
+                    21: "Complete Bank Guarantee Release",
+                    22: "Prepare Contract Closure Documents",
+                    23: "Conduct Final Team Meeting",
+                    24: "Prepare February MPR",
+                    25: "Submit February MPR",
+                    28: "Plan Project Celebration",
+                    29: "Final Milestone Review"
+                }
+                if day_num in tasks_feb:
+                    daily_plan[date_str] = {"task": tasks_feb[day_num], "venue": "Respective University", "coordinators": ["All"]}
+                else:
+                    daily_plan[date_str] = {"task": f"{month_focus} - Day {day_num}", "venue": "Respective University", "coordinators": ["All"]}
+            
+            elif year == 2028 and month == 3:
+                tasks_mar = {
+                    1: "Complete Knowledge Transfer",
+                    2: "Provide Final GRDAU Training",
+                    3: "Handover System Credentials",
+                    6: "Transfer Source Code",
+                    7: "Provide Database Backup Guide",
+                    8: "Conduct Final User Acceptance Test",
+                    9: "Get Client Sign-off",
+                    10: "Prepare Project Completion Certificate",
+                    13: "Conduct Final Project Review",
+                    14: "Present Overall Achievements",
+                    15: "Discuss Sustainability Support",
+                    16: "Get Formal Project Closure Letter",
+                    17: "Prepare Celebration Event",
+                    20: "Organize Project Completion Celebration",
+                    21: "Release Final Payments",
+                    22: "Prepare Team Appreciation Letters",
+                    23: "Document Impact Assessment",
+                    24: "Prepare March MPR",
+                    27: "Submit March MPR",
+                    28: "Finalize All Reports",
+                    29: "Archive Documentation",
+                    30: "Complete Financial Reconciliation",
+                    31: "Prepare for Contract Completion"
+                }
+                if day_num in tasks_mar:
+                    daily_plan[date_str] = {"task": tasks_mar[day_num], "venue": "Respective University", "coordinators": ["All"]}
+                else:
+                    daily_plan[date_str] = {"task": f"{month_focus} - Day {day_num}", "venue": "Respective University", "coordinators": ["All"]}
+            
+            elif year == 2028 and month == 4:
+                tasks_apr = {
+                    3: "Finalize Pending Deliverables",
+                    4: "Complete Final Project Report",
+                    5: "Prepare World Bank Executive Summary",
+                    6: "Compile Supporting Documents",
+                    7: "Review Deliverables Completeness",
+                    10: "Get Internal Approval on Final Package",
+                    11: "Submit Final Deliverables to PMU",
+                    12: "Present Final Outcomes to MITRA",
+                    13: "Get Final Acceptance Certificate",
+                    14: "Complete Contract Closure",
+                    17: "Release Bank Guarantee",
+                    18: "Submit Final Invoice",
+                    19: "Prepare Project Completion Report",
+                    20: "Conduct Final Team Debrief",
+                    21: "Prepare Lessons Learned for World Bank",
+                    24: "Complete Knowledge Repository Handover",
+                    25: "Submit Final Documentation to ICARE",
+                    26: "Prepare April MPR",
+                    27: "Submit April MPR",
+                    28: "CONTRACT COMPLETION - Project Success!"
+                }
+                if day_num in tasks_apr:
+                    daily_plan[date_str] = {"task": tasks_apr[day_num], "venue": "Respective University", "coordinators": ["All"]}
+                else:
+                    daily_plan[date_str] = {"task": f"{month_focus} - Day {day_num}", "venue": "Respective University", "coordinators": ["All"]}
+            
+            else:
+                daily_plan[date_str] = {"task": f"{month_focus} - Day {day_num}", "venue": "Respective University", "coordinators": ["All"]}
+    
+    return daily_plan
 
 # ============================================================
 # QUARTERLY PLAN
@@ -433,7 +909,6 @@ QUARTERS = {
 # SIDEBAR NAVIGATION
 # ============================================================
 
-# Initialize session state for navigation if not exists
 if 'nav_selection' not in st.session_state:
     st.session_state.nav_selection = "summary"
 
@@ -441,20 +916,18 @@ with st.sidebar:
     st.markdown("## 🎯 MahaSTRIDE")
     st.markdown("---")
     
-    # Navigation with callback to update session state
     nav_options = {
         "🏠 Executive Summary": "summary",
         "📊 Quarterly Plan": "quarterly",
+        "📋 Daily Plan of Action": "dailyplan",
         "🏫 Universities & Team": "universities",
         "🏛️ War Room & GRDAU": "warroom",
         "🎯 Milestones Tracker": "milestones",
         "📋 Deliverables": "deliverables",
         "🔄 Review Mechanisms": "review",
-        "📁 Documents": "documents",
-        "📥 Export Reports": "export"
+        "📁 Documents": "documents"
     }
     
-    # Create radio button and store selection
     selected_nav = st.radio(
         "Navigation", 
         list(nav_options.keys()), 
@@ -462,7 +935,6 @@ with st.sidebar:
         key="nav_radio"
     )
     
-    # Update session state based on selection
     st.session_state.nav_selection = nav_options[selected_nav]
     
     st.markdown("---")
@@ -486,10 +958,9 @@ with st.sidebar:
     st.markdown("📍 5th Floor, Nirmal Building, Nariman Point, Mumbai-400021")
 
 # ============================================================
-# MAIN CONTENT
+# MAIN HEADER
 # ============================================================
 
-# Main Header with Assignment Title and Parties
 st.markdown(f"""
 <div class="main-header">
     <h1>🎯 {PROJECT_NAME}</h1>
@@ -509,7 +980,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ============================================================
-# CONTENT RENDERING BASED ON NAVIGATION
+# CONTENT RENDERING
 # ============================================================
 
 selected_key = st.session_state.nav_selection
@@ -641,7 +1112,67 @@ elif selected_key == "quarterly":
             
             st.markdown("---")
 
-# 3. UNIVERSITIES & TEAM
+# 3. DAILY PLAN OF ACTION
+elif selected_key == "dailyplan":
+    st.header("📋 Daily Plan of Action - Coordinators")
+    st.markdown("Day-wise activities assigned to coordinators (Monday to Friday | 10:00 AM - 6:00 PM)")
+    st.markdown("---")
+    
+    # Year and Month Selector
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_year = st.selectbox("Select Year", [2026, 2027, 2028], index=0)
+    with col2:
+        month_names = ["January", "February", "March", "April", "May", "June", 
+                       "July", "August", "September", "October", "November", "December"]
+        selected_month = st.selectbox("Select Month", range(1, 13), format_func=lambda x: month_names[x-1], index=4)
+    
+    # Get daily plan for selected month
+    daily_plan = get_daily_plan(selected_year, selected_month)
+    
+    if daily_plan:
+        # Show summary statistics
+        total_days = len(daily_plan)
+        st.markdown(f"**Total Working Days in {month_names[selected_month-1]} {selected_year}: {total_days}**")
+        
+        # Coordinator filter
+        all_coordinators = ["All"] + sorted(list(set([coord for plan in daily_plan.values() for coord in plan.get("coordinators", ["All"])])))
+        filter_coordinator = st.selectbox("Filter by Coordinator", all_coordinators)
+        
+        # Display daily tasks
+        for date_str, plan in sorted(daily_plan.items()):
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+            day_name = date_obj.strftime("%A")
+            
+            # Filter by coordinator
+            if filter_coordinator != "All" and filter_coordinator not in plan.get("coordinators", []):
+                continue
+            
+            # Determine if this date is in the past (completed) or future (pending)
+            if date_str <= datetime.now().strftime("%Y-%m-%d"):
+                status_class = "daily-task-completed"
+                status_icon = "✅"
+                status_text = "COMPLETED"
+            else:
+                status_class = "daily-task-pending"
+                status_icon = "⏳"
+                status_text = "PENDING"
+            
+            coordinators = ", ".join(plan.get("coordinators", ["All"]))
+            
+            st.markdown(f"""
+            <div class="daily-task-card {status_class}">
+                <strong>{status_icon} {date_str} ({day_name})</strong><br>
+                <strong>Task:</strong> {plan.get('task', 'No task assigned')}<br>
+                <strong>Venue:</strong> {plan.get('venue', 'N/A')}<br>
+                <strong>Coordinators:</strong> <span class="coordinator-tag">{coordinators}</span><br>
+                <strong>Status:</strong> {status_text}
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info(f"No working days found for {month_names[selected_month-1]} {selected_year}")
+
+# 4. UNIVERSITIES & TEAM
 elif selected_key == "universities":
     st.header("🏫 Universities & Team Structure")
     
@@ -681,7 +1212,7 @@ elif selected_key == "universities":
     df_team = pd.DataFrame(team_data)
     st.dataframe(df_team, use_container_width=True, hide_index=True)
 
-# 4. WAR ROOM & GRDAU
+# 5. WAR ROOM & GRDAU
 elif selected_key == "warroom":
     st.header("🏛️ War Room & GRDAU Setup")
     
@@ -722,7 +1253,7 @@ elif selected_key == "warroom":
     
     st.dataframe(pd.DataFrame(grdau_data), use_container_width=True, hide_index=True)
 
-# 5. MILESTONES TRACKER
+# 6. MILESTONES TRACKER
 elif selected_key == "milestones":
     st.header("🎯 Project Milestones Tracker")
     
@@ -781,7 +1312,7 @@ elif selected_key == "milestones":
         </div>
         """, unsafe_allow_html=True)
 
-# 6. DELIVERABLES
+# 7. DELIVERABLES
 elif selected_key == "deliverables":
     st.header("📋 Contract Deliverables Status")
     
@@ -817,7 +1348,7 @@ elif selected_key == "deliverables":
         </div>
         """, unsafe_allow_html=True)
 
-# 7. REVIEW MECHANISMS
+# 8. REVIEW MECHANISMS
 elif selected_key == "review":
     st.header("🔄 Review & Monitoring Mechanisms")
     
@@ -862,7 +1393,7 @@ elif selected_key == "review":
     | World Bank | MITRA | World Bank | Bi-annually |
     """)
 
-# 8. DOCUMENTS
+# 9. DOCUMENTS
 elif selected_key == "documents":
     st.header("📁 Reference Documents")
     
@@ -906,12 +1437,6 @@ elif selected_key == "documents":
     }
     
     st.dataframe(pd.DataFrame(doc_status), use_container_width=True, hide_index=True)
-
-# 9. EXPORT REPORTS
-elif selected_key == "export":
-    st.header("📥 Export Reports")
-    st.markdown("Export quarterly reports in Excel format.")
-    st.info("ℹ️ This feature is coming soon. Please check back later.")
 
 # ============================================================
 # FOOTER
