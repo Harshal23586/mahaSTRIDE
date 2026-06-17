@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS (kept same as before)
+# Custom CSS
 st.markdown("""
 <style>
     .main-header {
@@ -112,7 +112,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================================
-# PROJECT DATA (Same as before)
+# PROJECT DATA
 # ============================================================
 
 PROJECT_NAME = "MahaSTRIDE - Maharashtra Strengthening Institutional Capabilities in Districts for Enabling Growth"
@@ -215,7 +215,7 @@ UNIVERSITIES = {
 }
 
 # ============================================================
-# QUARTERLY PLAN (Same as before)
+# QUARTERLY PLAN
 # ============================================================
 
 QUARTERS = {
@@ -249,9 +249,7 @@ QUARTERS = {
         ],
         "data_collection": "NIRF baseline data collection completed. Diagnostic assessments in progress.",
         "stakeholder_engagement": "VC meetings conducted. IQAC coordination established.",
-        "review_mechanism": "Weekly GRDAU meetings. Monthly progress review with MITRA PMU.",
-        "universities_involved": "All 7 universities",
-        "responsible_party": "ICARE Pvt. Ltd. with GRDAU teams"
+        "review_mechanism": "Weekly GRDAU meetings. Monthly progress review with MITRA PMU."
     },
     "Q2: August - October 2026": {
         "number": 2,
@@ -279,9 +277,7 @@ QUARTERS = {
         ],
         "data_collection": "IDP data collection. Dashboard requirements gathering.",
         "stakeholder_engagement": "IDP review meetings with VCs. Dashboard workshops.",
-        "review_mechanism": "Bi-weekly IDP review. Monthly progress review.",
-        "universities_involved": "All 7 universities",
-        "responsible_party": "ICARE Pvt. Ltd. with GRDAU teams"
+        "review_mechanism": "Bi-weekly IDP review. Monthly progress review."
     },
     "Q3: November 2026 - January 2027": {
         "number": 3,
@@ -308,9 +304,7 @@ QUARTERS = {
         ],
         "data_collection": "Portal data upload. Training feedback collection.",
         "stakeholder_engagement": "Portal training sessions. Capacity building workshops.",
-        "review_mechanism": "Portal usage analytics. Training effectiveness assessment.",
-        "universities_involved": "All 7 universities",
-        "responsible_party": "ICARE Pvt. Ltd."
+        "review_mechanism": "Portal usage analytics. Training effectiveness assessment."
     },
     "Q4: February - April 2027": {
         "number": 4,
@@ -333,9 +327,7 @@ QUARTERS = {
         ],
         "data_collection": "Research output data. Collaboration metrics.",
         "stakeholder_engagement": "Research committee meetings. Industry collaboration.",
-        "review_mechanism": "Research output tracking. QA dashboard monitoring.",
-        "universities_involved": "All 7 universities",
-        "responsible_party": "ICARE Pvt. Ltd. with Research Cells"
+        "review_mechanism": "Research output tracking. QA dashboard monitoring."
     },
     "Q5: May - July 2027": {
         "number": 5,
@@ -359,9 +351,7 @@ QUARTERS = {
         ],
         "data_collection": "Ranking data compilation. Improvement metrics.",
         "stakeholder_engagement": "Ranking preparation workshops. Industry advisory board.",
-        "review_mechanism": "Quarterly performance review. Ranking submission tracking.",
-        "universities_involved": "All 7 universities",
-        "responsible_party": "ICARE Pvt. Ltd. with GRDAU teams"
+        "review_mechanism": "Quarterly performance review. Ranking submission tracking."
     },
     "Q6: August - October 2027": {
         "number": 6,
@@ -385,9 +375,7 @@ QUARTERS = {
         ],
         "data_collection": "Employer survey data. Reputation metrics.",
         "stakeholder_engagement": "Employer meets. International partner meetings.",
-        "review_mechanism": "Monthly reputation tracking. Employer feedback analysis.",
-        "universities_involved": "All 7 universities",
-        "responsible_party": "ICARE Pvt. Ltd. with Placement Cells"
+        "review_mechanism": "Monthly reputation tracking. Employer feedback analysis."
     },
     "Q7: November 2027 - January 2028": {
         "number": 7,
@@ -413,9 +401,7 @@ QUARTERS = {
         ],
         "data_collection": "20% improvement evidence. Ranking participation data.",
         "stakeholder_engagement": "Sustainability workshop. Handover planning.",
-        "review_mechanism": "Final evaluation framework. Sustainability assessment.",
-        "universities_involved": "All 7 universities",
-        "responsible_party": "ICARE Pvt. Ltd. with MITRA"
+        "review_mechanism": "Final evaluation framework. Sustainability assessment."
     },
     "Q8: February - April 2028": {
         "number": 8,
@@ -439,468 +425,23 @@ QUARTERS = {
         ],
         "data_collection": "Final performance metrics. Lessons learned.",
         "stakeholder_engagement": "Final client presentation. Project closure meeting.",
-        "review_mechanism": "Final evaluation. Client satisfaction survey.",
-        "universities_involved": "All 7 universities",
-        "responsible_party": "ICARE Pvt. Ltd. with MITRA"
+        "review_mechanism": "Final evaluation. Client satisfaction survey."
     }
 }
 
 # ============================================================
-# IMPROVED EXCEL EXPORT FUNCTION - Professional Format
+# SIDEBAR NAVIGATION
 # ============================================================
 
-def export_quarter_to_professional_excel(quarter_name, selected_sections):
-    """Export selected quarter data to professionally formatted Excel"""
-    quarter_info = QUARTERS[quarter_name]
-    
-    output = io.BytesIO()
-    
-    try:
-        # Try using openpyxl for better formatting
-        from openpyxl import Workbook
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-        from openpyxl.utils import get_column_letter
-        
-        wb = Workbook()
-        
-        # Remove default sheet
-        default_sheet = wb.active
-        wb.remove(default_sheet)
-        
-        # Define styles
-        header_font = Font(name='Arial', size=12, bold=True, color='FFFFFF')
-        header_fill = PatternFill(start_color='1e3c72', end_color='1e3c72', fill_type='solid')
-        subheader_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
-        subheader_fill = PatternFill(start_color='2a5298', end_color='2a5298', fill_type='solid')
-        title_font = Font(name='Arial', size=14, bold=True, color='1e3c72')
-        center_alignment = Alignment(horizontal='center', vertical='center')
-        left_alignment = Alignment(horizontal='left', vertical='center')
-        thin_border = Border(
-            left=Side(style='thin'),
-            right=Side(style='thin'),
-            top=Side(style='thin'),
-            bottom=Side(style='thin')
-        )
-        
-        # 1. COVER SHEET
-        ws_cover = wb.create_sheet("COVER SHEET", 0)
-        ws_cover.merge_cells('A1:F1')
-        cell = ws_cover['A1']
-        cell.value = "MAHASTRIDE PROJECT"
-        cell.font = Font(name='Arial', size=18, bold=True, color='1e3c72')
-        cell.alignment = center_alignment
-        
-        ws_cover.merge_cells('A2:F2')
-        cell = ws_cover['A2']
-        cell.value = "Quarterly Progress Report"
-        cell.font = Font(name='Arial', size=14, bold=True)
-        cell.alignment = center_alignment
-        
-        ws_cover.merge_cells('A3:F3')
-        cell = ws_cover['A3']
-        cell.value = quarter_name
-        cell.font = Font(name='Arial', size=12, bold=True, color='2a5298')
-        cell.alignment = center_alignment
-        
-        # Cover sheet data
-        cover_data = [
-            ["", ""],
-            ["Project Name:", PROJECT_NAME],
-            ["Assignment Title:", ASSIGNMENT_TITLE],
-            ["", ""],
-            ["Client:", CLIENT_NAME],
-            ["Consultant:", CONSULTANT_NAME],
-            ["", ""],
-            ["Quarter:", quarter_name],
-            ["Reporting Period:", f"{quarter_info['months'][0]} - {quarter_info['months'][2]}"],
-            ["Status:", quarter_info['status'].upper()],
-            ["", ""],
-            ["World Bank Loan No:", "IBRD 9737-IN"],
-            ["RFP Reference:", "IN-MITRA(PMU)-PforR-Edu-QCBS"],
-            ["", ""],
-            ["Report Generated On:", datetime.now().strftime('%d %B %Y, %H:%M:%S')]
-        ]
-        
-        row = 6
-        for label, value in cover_data:
-            if label:
-                ws_cover.cell(row=row, column=1, value=label)
-                ws_cover.cell(row=row, column=2, value=value)
-                ws_cover.cell(row=row, column=1).font = Font(bold=True)
-            row += 1
-        
-        # 2. EXECUTIVE SUMMARY
-        if "Executive Summary" in selected_sections:
-            ws_es = wb.create_sheet("EXECUTIVE SUMMARY")
-            
-            # Title
-            ws_es.merge_cells('A1:D1')
-            cell = ws_es['A1']
-            cell.value = "EXECUTIVE SUMMARY"
-            cell.font = title_font
-            cell.alignment = center_alignment
-            
-            # Summary table
-            summary_data = [
-                ["Project Name", PROJECT_NAME],
-                ["Assignment Title", ASSIGNMENT_TITLE],
-                ["Client", CLIENT_NAME],
-                ["Consultant", CONSULTANT_NAME],
-                ["Quarter", quarter_name],
-                ["Months", ", ".join(quarter_info["months"])],
-                ["Status", quarter_info["status"].upper()],
-                ["World Bank Loan No", "IBRD 9737-IN"],
-                ["RFP Reference", "IN-MITRA(PMU)-PforR-Edu-QCBS"],
-                ["Report Generated On", datetime.now().strftime('%d %B %Y, %H:%M:%S')]
-            ]
-            
-            for i, (label, value) in enumerate(summary_data, start=3):
-                ws_es.cell(row=i, column=1, value=label).font = Font(bold=True)
-                ws_es.cell(row=i, column=2, value=value)
-                ws_es.column_dimensions['A'].width = 25
-                ws_es.column_dimensions['B'].width = 60
-        
-        # 3. KEY ACTIVITIES
-        if "Key Activities" in selected_sections:
-            ws_ka = wb.create_sheet("KEY ACTIVITIES")
-            
-            ws_ka.merge_cells('A1:D1')
-            cell = ws_ka['A1']
-            cell.value = "KEY ACTIVITIES"
-            cell.font = title_font
-            cell.alignment = center_alignment
-            
-            # Headers
-            headers = ["S.No", "Activity", "Category", "Status"]
-            for col, header in enumerate(headers, 1):
-                cell = ws_ka.cell(row=3, column=col, value=header)
-                cell.font = header_font
-                cell.fill = header_fill
-                cell.alignment = center_alignment
-            
-            # Data
-            for i, activity in enumerate(quarter_info["key_activities"], start=4):
-                ws_ka.cell(row=i, column=1, value=i-3).alignment = center_alignment
-                ws_ka.cell(row=i, column=2, value=activity.replace("✅", "").replace("🔄", "").strip())
-                
-                if activity.startswith("✅"):
-                    category = "Completed"
-                    status = "Completed"
-                elif activity.startswith("🔄"):
-                    category = "In Progress"
-                    status = "In Progress"
-                else:
-                    category = "Planned"
-                    status = "Planned"
-                
-                ws_ka.cell(row=i, column=3, value=category).alignment = center_alignment
-                ws_ka.cell(row=i, column=4, value=status).alignment = center_alignment
-            
-            ws_ka.column_dimensions['A'].width = 8
-            ws_ka.column_dimensions['B'].width = 70
-            ws_ka.column_dimensions['C'].width = 15
-            ws_ka.column_dimensions['D'].width = 15
-        
-        # 4. DELIVERABLES
-        if "Deliverables" in selected_sections:
-            ws_del = wb.create_sheet("DELIVERABLES")
-            
-            ws_del.merge_cells('A1:C1')
-            cell = ws_del['A1']
-            cell.value = "DELIVERABLES"
-            cell.font = title_font
-            cell.alignment = center_alignment
-            
-            headers = ["Deliverable", "Status", "Due Date"]
-            for col, header in enumerate(headers, 1):
-                cell = ws_del.cell(row=3, column=col, value=header)
-                cell.font = header_font
-                cell.fill = header_fill
-                cell.alignment = center_alignment
-            
-            for i, deliverable in enumerate(quarter_info["deliverables"], start=4):
-                ws_del.cell(row=i, column=1, value=deliverable.replace("✅", "").replace("🔄", "").strip())
-                
-                if "✅" in deliverable:
-                    status = "Completed"
-                elif "🔄" in deliverable:
-                    status = "In Progress"
-                else:
-                    status = "Pending"
-                
-                ws_del.cell(row=i, column=2, value=status).alignment = center_alignment
-                
-                # Extract due date
-                if "Due" in deliverable:
-                    due_date = deliverable.split("Due")[-1].strip()
-                else:
-                    due_date = quarter_info["milestones"][-1]["date"] if quarter_info["milestones"] else "TBD"
-                ws_del.cell(row=i, column=3, value=due_date).alignment = center_alignment
-            
-            ws_del.column_dimensions['A'].width = 60
-            ws_del.column_dimensions['B'].width = 15
-            ws_del.column_dimensions['C'].width = 15
-        
-        # 5. MILESTONES
-        if "Milestones" in selected_sections:
-            ws_mil = wb.create_sheet("MILESTONES")
-            
-            ws_mil.merge_cells('A1:E1')
-            cell = ws_mil['A1']
-            cell.value = "MILESTONES TRACKER"
-            cell.font = title_font
-            cell.alignment = center_alignment
-            
-            headers = ["Milestone Name", "Target Date", "Status", "Quarter", "Remarks"]
-            for col, header in enumerate(headers, 1):
-                cell = ws_mil.cell(row=3, column=col, value=header)
-                cell.font = header_font
-                cell.fill = header_fill
-                cell.alignment = center_alignment
-            
-            for i, milestone in enumerate(quarter_info["milestones"], start=4):
-                ws_mil.cell(row=i, column=1, value=milestone["name"])
-                ws_mil.cell(row=i, column=2, value=milestone["date"]).alignment = center_alignment
-                
-                status_text = milestone["status"].upper()
-                ws_mil.cell(row=i, column=3, value=status_text).alignment = center_alignment
-                
-                ws_mil.cell(row=i, column=4, value=quarter_name).alignment = center_alignment
-                
-                if milestone["status"] == "achieved":
-                    ws_mil.cell(row=i, column=5, value="Completed successfully")
-                elif milestone["status"] == "in_progress":
-                    ws_mil.cell(row=i, column=5, value="Work in progress")
-                else:
-                    ws_mil.cell(row=i, column=5, value="Not started")
-            
-            ws_mil.column_dimensions['A'].width = 35
-            ws_mil.column_dimensions['B'].width = 15
-            ws_mil.column_dimensions['C'].width = 12
-            ws_mil.column_dimensions['D'].width = 20
-            ws_mil.column_dimensions['E'].width = 20
-        
-        # 6. DATA COLLECTION & ENGAGEMENT
-        if "Data Collection & Engagement" in selected_sections:
-            ws_dce = wb.create_sheet("DATA & ENGAGEMENT")
-            
-            ws_dce.merge_cells('A1:B1')
-            cell = ws_dce['A1']
-            cell.value = "DATA COLLECTION & STAKEHOLDER ENGAGEMENT"
-            cell.font = title_font
-            cell.alignment = center_alignment
-            
-            sections = [
-                ("Data Collection Process", quarter_info["data_collection"]),
-                ("Stakeholder Engagement", quarter_info["stakeholder_engagement"]),
-                ("Review Mechanism", quarter_info["review_mechanism"]),
-                ("Universities Involved", quarter_info.get("universities_involved", "All 7 universities")),
-                ("Responsible Party", quarter_info.get("responsible_party", "ICARE Pvt. Ltd."))
-            ]
-            
-            row = 3
-            for label, value in sections:
-                ws_dce.cell(row=row, column=1, value=label).font = Font(bold=True)
-                ws_dce.cell(row=row, column=2, value=value)
-                row += 2
-            
-            ws_dce.column_dimensions['A'].width = 30
-            ws_dce.column_dimensions['B'].width = 60
-        
-        # 7. UNIVERSITIES & GRDAU
-        if "Universities & GRDAU" in selected_sections:
-            ws_uni = wb.create_sheet("UNIVERSITIES & GRDAU")
-            
-            ws_uni.merge_cells('A1:G1')
-            cell = ws_uni['A1']
-            cell.value = "UNIVERSITIES AND GRDAU STATUS"
-            cell.font = title_font
-            cell.alignment = center_alignment
-            
-            headers = ["University", "Location", "Nodal Officer", "Contact", "GRDAU Status", "Completion Date", "Coordinators"]
-            for col, header in enumerate(headers, 1):
-                cell = ws_uni.cell(row=3, column=col, value=header)
-                cell.font = header_font
-                cell.fill = header_fill
-                cell.alignment = center_alignment
-            
-            row = 4
-            for code, uni in UNIVERSITIES.items():
-                if code != "MITRA":
-                    ws_uni.cell(row=row, column=1, value=uni["name"])
-                    ws_uni.cell(row=row, column=2, value=uni["location"])
-                    ws_uni.cell(row=row, column=3, value=uni.get("nodal_officer", "N/A"))
-                    ws_uni.cell(row=row, column=4, value=uni.get("contact", "N/A"))
-                    ws_uni.cell(row=row, column=5, value=uni["grdau_status"]).alignment = center_alignment
-                    ws_uni.cell(row=row, column=6, value=uni["grdau_completion_date"]).alignment = center_alignment
-                    ws_uni.cell(row=row, column=7, value=", ".join(uni["coordinators"]))
-                    row += 1
-            
-            for col in range(1, 8):
-                ws_uni.column_dimensions[get_column_letter(col)].width = 18
-        
-        # 8. TEAM MEMBERS
-        if "Team Members" in selected_sections:
-            ws_team = wb.create_sheet("TEAM MEMBERS")
-            
-            ws_team.merge_cells('A1:C1')
-            cell = ws_team['A1']
-            cell.value = "PROJECT TEAM MEMBERS"
-            cell.font = title_font
-            cell.alignment = center_alignment
-            
-            headers = ["Name", "Role", "University"]
-            for col, header in enumerate(headers, 1):
-                cell = ws_team.cell(row=3, column=col, value=header)
-                cell.font = header_font
-                cell.fill = header_fill
-                cell.alignment = center_alignment
-            
-            team_data = [
-                ["Dr. Harshal Kotwal", "Project Lead", "ICARE"],
-                ["Shubham Singh", "Data Analytics Specialist", "MITRA"],
-                ["Sagar Teli", "Statistician & Program Designer", "Mumbai University"],
-                ["Sneha Kashitkar", "Institutional Coordinator", "Mumbai University"],
-                ["Nitish Kumbhar", "Institutional Coordinator", "KBCNMU Jalgaon"],
-                ["Anjali Singh", "Institutional Coordinator", "Nagpur University"],
-                ["Vaibhav Ambekar", "Institutional Coordinator", "COEP Pune"],
-                ["Atharav Paturkar", "Institutional Coordinator", "BAMU Aurangabad"],
-                ["Prathamesh Babhulkar", "Institutional Coordinator", "Amravati University"],
-                ["Jagan Sridhar", "Institutional Coordinator", "SPPU Pune"]
-            ]
-            
-            for i, (name, role, uni) in enumerate(team_data, start=4):
-                ws_team.cell(row=i, column=1, value=name)
-                ws_team.cell(row=i, column=2, value=role)
-                ws_team.cell(row=i, column=3, value=uni)
-            
-            ws_team.column_dimensions['A'].width = 25
-            ws_team.column_dimensions['B'].width = 30
-            ws_team.column_dimensions['C'].width = 30
-        
-        # Save workbook
-        wb.save(output)
-        output.seek(0)
-        return output.getvalue(), "excel"
-        
-    except ImportError:
-        # Fallback to CSV zip if openpyxl not available
-        st.warning("openpyxl not installed. Generating CSV files instead.")
-        return export_quarter_to_csv(quarter_name, selected_sections), "csv"
-
-def export_quarter_to_csv(quarter_name, selected_sections):
-    """Fallback: Export to CSV files in ZIP (when openpyxl not available)"""
-    quarter_info = QUARTERS[quarter_name]
-    
-    dataframes = {}
-    
-    if "Executive Summary" in selected_sections:
-        summary_data = {
-            "Project Name": [PROJECT_NAME],
-            "Assignment Title": [ASSIGNMENT_TITLE],
-            "Client": [CLIENT_NAME],
-            "Consultant": [CONSULTANT_NAME],
-            "Quarter": [quarter_name],
-            "Months": [", ".join(quarter_info["months"])],
-            "Status": [quarter_info["status"].upper()],
-            "World Bank Loan No": ["IBRD 9737-IN"],
-            "RFP Reference": ["IN-MITRA(PMU)-PforR-Edu-QCBS"],
-            "Report Generated On": [datetime.now().strftime('%d %B %Y, %H:%M:%S')]
-        }
-        dataframes["Executive_Summary"] = pd.DataFrame(summary_data)
-    
-    if "Key Activities" in selected_sections:
-        activities_data = []
-        for i, activity in enumerate(quarter_info["key_activities"], 1):
-            status = "Completed" if activity.startswith("✅") else "In Progress" if activity.startswith("🔄") else "Planned"
-            activities_data.append({
-                "S.No": i,
-                "Activity": activity.replace("✅", "").replace("🔄", "").strip(),
-                "Status": status,
-                "Quarter": quarter_name
-            })
-        dataframes["Key_Activities"] = pd.DataFrame(activities_data)
-    
-    if "Deliverables" in selected_sections:
-        deliverables_data = []
-        for deliverable in quarter_info["deliverables"]:
-            status = "Completed" if "✅" in deliverable else "In Progress" if "🔄" in deliverable else "Pending"
-            deliverables_data.append({
-                "Deliverable": deliverable.replace("✅", "").replace("🔄", "").strip(),
-                "Status": status,
-                "Quarter": quarter_name
-            })
-        dataframes["Deliverables"] = pd.DataFrame(deliverables_data)
-    
-    if "Milestones" in selected_sections:
-        milestones_data = []
-        for milestone in quarter_info["milestones"]:
-            milestones_data.append({
-                "Milestone Name": milestone["name"],
-                "Target Date": milestone["date"],
-                "Status": milestone["status"].upper(),
-                "Quarter": quarter_name
-            })
-        dataframes["Milestones"] = pd.DataFrame(milestones_data)
-    
-    if "Data Collection & Engagement" in selected_sections:
-        engagement_data = {
-            "Metric": ["Data Collection Process", "Stakeholder Engagement", "Review Mechanism", "Universities Involved", "Responsible Party"],
-            "Details": [
-                quarter_info["data_collection"],
-                quarter_info["stakeholder_engagement"],
-                quarter_info["review_mechanism"],
-                quarter_info.get("universities_involved", "All 7 universities"),
-                quarter_info.get("responsible_party", "ICARE Pvt. Ltd.")
-            ]
-        }
-        dataframes["Data_Collection_Engagement"] = pd.DataFrame(engagement_data)
-    
-    if "Universities & GRDAU" in selected_sections:
-        uni_data = []
-        for code, uni in UNIVERSITIES.items():
-            if code != "MITRA":
-                uni_data.append({
-                    "University": uni["name"],
-                    "Location": uni["location"],
-                    "Nodal Officer": uni.get("nodal_officer", "N/A"),
-                    "Contact": uni.get("contact", "N/A"),
-                    "GRDAU Status": uni["grdau_status"],
-                    "GRDAU Completion Date": uni["grdau_completion_date"],
-                    "Coordinators": ", ".join(uni["coordinators"])
-                })
-        dataframes["Universities_GRDAU"] = pd.DataFrame(uni_data)
-    
-    if "Team Members" in selected_sections:
-        team_data = {
-            "Name": ["Dr. Harshal Kotwal", "Shubham Singh", "Sagar Teli", "Sneha Kashitkar", "Nitish Kumbhar",
-                    "Anjali Singh", "Vaibhav Ambekar", "Atharav Paturkar", "Prathamesh Babhulkar", "Jagan Sridhar"],
-            "Role": ["Project Lead", "Data Analytics Specialist", "Statistician & Program Designer", 
-                    "Institutional Coordinator", "Institutional Coordinator", "Institutional Coordinator",
-                    "Institutional Coordinator", "Institutional Coordinator", "Institutional Coordinator", "Institutional Coordinator"],
-            "University": ["ICARE", "MITRA", "Mumbai University", "Mumbai University", "KBCNMU Jalgaon",
-                          "Nagpur University", "COEP Pune", "BAMU Aurangabad", "Amravati University", "SPPU Pune"]
-        }
-        dataframes["Team_Members"] = pd.DataFrame(team_data)
-    
-    import zipfile
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        for sheet_name, df in dataframes.items():
-            csv_data = df.to_csv(index=False).encode('utf-8')
-            zip_file.writestr(f"{sheet_name}.csv", csv_data)
-    
-    zip_buffer.seek(0)
-    return zip_buffer.getvalue()
-
-# ============================================================
-# SIDEBAR NAVIGATION (Same as before)
-# ============================================================
+# Initialize session state for navigation if not exists
+if 'nav_selection' not in st.session_state:
+    st.session_state.nav_selection = "summary"
 
 with st.sidebar:
     st.markdown("## 🎯 MahaSTRIDE")
     st.markdown("---")
     
+    # Navigation with callback to update session state
     nav_options = {
         "🏠 Executive Summary": "summary",
         "📊 Quarterly Plan": "quarterly",
@@ -913,8 +454,16 @@ with st.sidebar:
         "📥 Export Reports": "export"
     }
     
-    selected_nav = st.radio("Navigation", list(nav_options.keys()), label_visibility="collapsed")
-    selected_key = nav_options[selected_nav]
+    # Create radio button and store selection
+    selected_nav = st.radio(
+        "Navigation", 
+        list(nav_options.keys()), 
+        label_visibility="collapsed",
+        key="nav_radio"
+    )
+    
+    # Update session state based on selection
+    st.session_state.nav_selection = nav_options[selected_nav]
     
     st.markdown("---")
     st.markdown("### ℹ️ Project Info")
@@ -937,9 +486,10 @@ with st.sidebar:
     st.markdown("📍 5th Floor, Nirmal Building, Nariman Point, Mumbai-400021")
 
 # ============================================================
-# MAIN HEADER
+# MAIN CONTENT
 # ============================================================
 
+# Main Header with Assignment Title and Parties
 st.markdown(f"""
 <div class="main-header">
     <h1>🎯 {PROJECT_NAME}</h1>
@@ -959,92 +509,409 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ============================================================
-# EXPORT REPORTS PAGE
+# CONTENT RENDERING BASED ON NAVIGATION
 # ============================================================
-if selected_key == "export":
-    st.header("📥 Export Quarterly Reports")
-    st.markdown("Generate and download professionally formatted quarterly progress reports.")
+
+selected_key = st.session_state.nav_selection
+
+# 1. EXECUTIVE SUMMARY
+if selected_key == "summary":
+    st.header("📋 Executive Summary")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(f"""
+        <div class="stat-card">
+            <h2>Q1</h2>
+            <p>Phase 1 - Ongoing</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="stat-card">
+            <h2>2</h2>
+            <p>Milestones Achieved</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="stat-card">
+            <h2>7</h2>
+            <p>GRDAUs Established</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col4:
+        st.markdown(f"""
+        <div class="stat-card">
+            <h2>10</h2>
+            <p>Team Members</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     st.markdown("---")
     
-    col1, col2 = st.columns([1, 1])
+    st.subheader("🎯 Current Status")
+    st.markdown("""
+    <div class="status-ongoing">Q1: May - July 2026 - ONGOING</div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    st.subheader("✅ Achievements So Far")
+    
+    for achievement in ACHIEVED_MILESTONES:
+        st.markdown(f"""
+        <div class="milestone-achieved">
+            ✅ <strong>{achievement['milestone']}</strong><br>
+            📅 Completed: {achievement['date']}
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    st.subheader("🏆 GRDAU Establishment Status")
+    st.markdown("""
+    <div class="milestone-completed">
+        ✅ <strong>GRDAUs Established and Operationalized in all 7 universities</strong><br>
+        📅 Completed: July 5, 2026
+    </div>
+    """, unsafe_allow_html=True)
+
+# 2. QUARTERLY PLAN
+elif selected_key == "quarterly":
+    st.header("📅 8-Quarter Project Plan (May 2026 - April 2028)")
+    st.markdown("Working Days: Monday to Friday | Hours: 10:00 AM - 6:00 PM")
+    st.markdown("---")
+    
+    quarter_tabs = st.tabs(list(QUARTERS.keys()))
+    
+    for tab, (quarter_name, quarter_info) in zip(quarter_tabs, QUARTERS.items()):
+        with tab:
+            status_display = "🟡 ONGOING" if quarter_info["status"] == "ongoing" else "⚪ UPCOMING"
+            st.markdown(f"""
+            <div class="quarter-card">
+                <h2>{quarter_name}</h2>
+                <p><strong>Months:</strong> {', '.join(quarter_info['months'])}</p>
+                <p><strong>Status:</strong> {status_display}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("### 🎯 Key Activities")
+                for activity in quarter_info["key_activities"]:
+                    st.markdown(f"- {activity}")
+                
+                st.markdown("---")
+                st.markdown("### 📊 Data Collection Processes")
+                st.markdown(quarter_info["data_collection"])
+                
+                st.markdown("---")
+                st.markdown("### 🤝 Stakeholder Engagement")
+                st.markdown(quarter_info["stakeholder_engagement"])
+            
+            with col2:
+                st.markdown("### 📦 Deliverables")
+                for deliverable in quarter_info["deliverables"]:
+                    st.markdown(f"- {deliverable}")
+                
+                st.markdown("---")
+                st.markdown("### 🎯 Milestones")
+                for milestone in quarter_info["milestones"]:
+                    if milestone["status"] == "achieved":
+                        icon = "✅"
+                        color = "#d4edda"
+                    elif milestone["status"] == "in_progress":
+                        icon = "🔄"
+                        color = "#fff3cd"
+                    else:
+                        icon = "⏳"
+                        color = "#f8f9fa"
+                    st.markdown(f"""
+                    <div style="background-color:{color}; padding:0.5rem; margin:0.3rem 0; border-radius:5px;">
+                        {icon} <strong>{milestone['name']}</strong><br>
+                        📅 Target: {milestone['date']}
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("---")
+                st.markdown("### 🔄 Review Mechanism")
+                st.markdown(quarter_info["review_mechanism"])
+            
+            st.markdown("---")
+
+# 3. UNIVERSITIES & TEAM
+elif selected_key == "universities":
+    st.header("🏫 Universities & Team Structure")
+    
+    st.subheader("📋 Participating Universities with GRDAU Status")
+    
+    for code, uni in UNIVERSITIES.items():
+        with st.expander(f"🏛️ {uni['name']} ({code})"):
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"""
+                **📍 Location:** {uni['location']}<br>
+                **👨‍🎓 Vice Chancellor:** {uni.get('vice_chancellor', uni.get('ceo', 'N/A'))}<br>
+                **👤 Nodal Officer:** {uni.get('nodal_officer', 'N/A')}<br>
+                **📞 Contact:** {uni.get('contact', 'N/A')}
+                """, unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"""
+                **👥 Coordinators:** {', '.join(uni.get('coordinators', []))}<br>
+                **🏛️ GRDAU Status:** <span class="status-completed">✅ {uni['grdau_status']}</span><br>
+                **📅 Completion Date:** {uni.get('grdau_completion_date', 'N/A')}
+                """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    st.subheader("👥 Project Team (May 2026 Attendance)")
+    
+    team_data = {
+        "Name": ["Dr. Harshal Kotwal", "Shubham Singh", "Sagar Teli", "Sneha Kashitkar", "Nitish Kumbhar",
+                "Anjali Singh", "Vaibhav Ambekar", "Atharav Paturkar", "Prathamesh Babhulkar", "Jagan Sridhar"],
+        "Role": ["Project Lead", "Data Analytics Specialist", "Statistician & Program Designer", 
+                "Institutional Coordinator", "Institutional Coordinator", "Institutional Coordinator",
+                "Institutional Coordinator", "Institutional Coordinator", "Institutional Coordinator", "Institutional Coordinator"],
+        "University": ["ICARE", "MITRA", "Mumbai University", "Mumbai University", "KBCNMU Jalgaon",
+                      "Nagpur University", "COEP Pune", "BAMU Aurangabad", "Amravati University", "SPPU Pune"]
+    }
+    
+    df_team = pd.DataFrame(team_data)
+    st.dataframe(df_team, use_container_width=True, hide_index=True)
+
+# 4. WAR ROOM & GRDAU
+elif selected_key == "warroom":
+    st.header("🏛️ War Room & GRDAU Setup")
+    
+    st.markdown("""
+    <div class="war-room-card">
+        <h2>🎯 Project War Room - MITRA, Mumbai</h2>
+        <p><strong>Location:</strong> 5th Floor, Nirmal Building, Nariman Point, Mumbai-400021</p>
+        <p><strong>Purpose:</strong> Central command center for project monitoring, coordination, and decision-making</p>
+        <p><strong>Facilities:</strong> Real-time dashboards, video conferencing, data visualization tools</p>
+        <p><strong>Weekly Meetings:</strong> Every Monday at 11:00 AM</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    st.subheader("🏫 Global Ranking Data Analytics Units (GRDAUs)")
+    
+    st.markdown("""
+    ### ✅ GRDAU Establishment Status - COMPLETED (July 5, 2026)
+    
+    All 7 universities have successfully established their GRDAUs.
+    """)
+    
+    st.markdown("---")
+    
+    st.subheader("📍 GRDAU Establishment Status - ALL COMPLETED")
+    
+    grdau_data = []
+    for code, uni in UNIVERSITIES.items():
+        if code != "MITRA":
+            grdau_data.append({
+                "University": uni["name"],
+                "Location": uni["location"],
+                "Coordinator": ", ".join(uni["coordinators"]),
+                "Status": "✅ Completed",
+                "Completion Date": "July 5, 2026"
+            })
+    
+    st.dataframe(pd.DataFrame(grdau_data), use_container_width=True, hide_index=True)
+
+# 5. MILESTONES TRACKER
+elif selected_key == "milestones":
+    st.header("🎯 Project Milestones Tracker")
+    
+    st.subheader("✅ Achieved Milestones (2)")
+    for achievement in ACHIEVED_MILESTONES:
+        st.markdown(f"""
+        <div class="milestone-achieved">
+            ✅ <strong>{achievement['milestone']}</strong><br>
+            📅 Completed: {achievement['date']}
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    st.subheader("✅ GRDAU Establishment - COMPLETED")
+    st.markdown("""
+    <div class="milestone-completed">
+        ✅ <strong>GRDAUs Established and Operationalized in all 7 universities</strong><br>
+        📅 Completed: July 5, 2026
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    st.subheader("🔄 In Progress Milestones (Q1)")
+    
+    current_milestones = [
+        {"name": "Diagnostic Assessment Reports", "target": "July 31, 2026", "progress": 60},
+        {"name": "SWOT Analysis Reports", "target": "July 31, 2026", "progress": 50},
+        {"name": "Gap Analysis against NIRF/Global Rankings", "target": "July 31, 2026", "progress": 40}
+    ]
+    
+    for milestone in current_milestones:
+        st.markdown(f"**{milestone['name']}** - Target: {milestone['target']}")
+        st.progress(milestone['progress']/100)
+        st.caption(f"Progress: {milestone['progress']}%")
+        st.markdown("---")
+    
+    st.markdown("---")
+    
+    st.subheader("⏳ Upcoming Milestones")
+    
+    upcoming = [
+        {"milestone": "Institutional Development Plans (IDPs)", "date": "August 14, 2026", "quarter": "Q2"},
+        {"milestone": "Milestone 1: Sustainable Data & Quality Systems", "date": "September 30, 2026", "quarter": "Q2"},
+        {"milestone": "Milestone 2: IDP Execution Monitoring", "date": "October 31, 2026", "quarter": "Q2"},
+        {"milestone": "Data Portal MVP Deployment", "date": "November 15, 2026", "quarter": "Q3"},
+        {"milestone": "Milestone 3: Capacity Building (60% participation)", "date": "December 31, 2026", "quarter": "Q3"}
+    ]
+    
+    for milestone in upcoming:
+        st.markdown(f"""
+        <div class="milestone-upcoming">
+            ⏳ <strong>{milestone['milestone']}</strong><br>
+            📅 Target: {milestone['date']} | 📍 Quarter: {milestone['quarter']}
+        </div>
+        """, unsafe_allow_html=True)
+
+# 6. DELIVERABLES
+elif selected_key == "deliverables":
+    st.header("📋 Contract Deliverables Status")
+    
+    deliverables = [
+        {"deliverable": "Inception Report and Deployment Plan", "due_date": "Jun 5, 2026", "status": "completed", "actual": "May 26, 2026"},
+        {"deliverable": "GRDAUs Established and Operationalized", "due_date": "Jul 5, 2026", "status": "completed", "actual": "July 5, 2026"},
+        {"deliverable": "Diagnostic Assessment Reports", "due_date": "Jul 31, 2026", "status": "in_progress", "actual": None},
+        {"deliverable": "SWOT Analysis Reports", "due_date": "Jul 31, 2026", "status": "in_progress", "actual": None},
+        {"deliverable": "Institutional Development Plans (IDPs)", "due_date": "Aug 14, 2026", "status": "pending", "actual": None},
+        {"deliverable": "Mid-term Progress Report", "due_date": "Nov 30, 2026", "status": "pending", "actual": None},
+        {"deliverable": "Final Closure Report", "due_date": "May 6, 2028", "status": "pending", "actual": None}
+    ]
+    
+    for deliverable in deliverables:
+        if deliverable["status"] == "completed":
+            icon = "✅"
+            color = "#d4edda"
+        elif deliverable["status"] == "in_progress":
+            icon = "🔄"
+            color = "#fff3cd"
+        else:
+            icon = "⏳"
+            color = "#f8f9fa"
+        
+        actual_text = f"<br>✅ Actual Submission: {deliverable['actual']}" if deliverable.get('actual') else ""
+        
+        st.markdown(f"""
+        <div style="background-color:{color}; padding:1rem; margin:0.5rem 0; border-radius:8px;">
+            <strong>{icon} {deliverable['deliverable']}</strong><br>
+            📅 Due: {deliverable['due_date']}<br>
+            📊 Status: {deliverable['status'].upper()}
+            {actual_text}
+        </div>
+        """, unsafe_allow_html=True)
+
+# 7. REVIEW MECHANISMS
+elif selected_key == "review":
+    st.header("🔄 Review & Monitoring Mechanisms")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+        ### Weekly Reviews
+        - **GRDAU Weekly Meetings:** Every Monday, 11:00 AM
+        - **Data Validation Sessions:** Every Wednesday
+        - **Progress Tracking:** Daily dashboard updates
+        
+        ### Monthly Reviews
+        - **Monthly Progress Report (MPR)** submission by 10th
+        - **PMU Review Meeting:** Second week of each month
+        - **Attendance Verification:** By 9th of each month
+        """)
+    
+    with col2:
+        st.markdown("""
+        ### Quarterly Reviews
+        - **Quarterly Performance Assessment**
+        - **Steering Committee Meeting**
+        - **Milestone Achievement Evaluation**
+        
+        ### Annual Reviews
+        - **Annual Performance Report**
+        - **World Bank Progress Review**
+        - **Strategic Planning Session**
+        """)
+    
+    st.markdown("---")
+    
+    st.subheader("📋 Reporting Structure")
+    
+    st.markdown("""
+    | Level | Responsible | Reports To | Frequency |
+    |-------|-------------|------------|-----------|
+    | University Level | Institutional Coordinator | Nodal Officer | Daily |
+    | University Level | Nodal Officer | VC + PMU | Weekly |
+    | PMU Level | Project Director | MITRA CEO | Weekly |
+    | Steering Committee | Chairperson | Government | Quarterly |
+    | World Bank | MITRA | World Bank | Bi-annually |
+    """)
+
+# 8. DOCUMENTS
+elif selected_key == "documents":
+    st.header("📁 Reference Documents")
+    
+    col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("📋 Select Quarter")
-        selected_quarter = st.selectbox(
-            "Choose Quarter",
-            options=list(QUARTERS.keys()),
-            help="Select the quarter for which you want to generate the report"
-        )
+        st.markdown("""
+        ### 📄 Contract Documents
+        - Draft Contract with ICARE
+        - Terms & Conditions of Contract
+        - Terms of Reference (ToR)
+        - Consultant's Technical Proposal
         
-        st.subheader("📎 Select Sections to Include")
-        
-        section_options = [
-            "Executive Summary",
-            "Key Activities",
-            "Deliverables",
-            "Milestones",
-            "Data Collection & Engagement",
-            "Universities & GRDAU",
-            "Team Members"
-        ]
-        
-        selected_sections = st.multiselect(
-            "Choose sections to include in the report",
-            options=section_options,
-            default=section_options,
-            help="Select which sections you want in your report"
-        )
+        ### 📋 SOP Documents
+        - SOP for Payment Processing
+        - Attendance Tracking Guidelines
+        - MPR Submission Guidelines
+        """)
     
     with col2:
-        quarter_info = QUARTERS[selected_quarter]
-        st.subheader("📊 Report Preview")
-        st.markdown(f"""
-        **Quarter:** {selected_quarter}<br>
-        **Months:** {', '.join(quarter_info['months'])}<br>
-        **Status:** {quarter_info['status'].upper()}<br>
-        **Total Activities:** {len(quarter_info['key_activities'])}<br>
-        **Total Deliverables:** {len(quarter_info['deliverables'])}<br>
-        **Total Milestones:** {len(quarter_info['milestones'])}
-        """, unsafe_allow_html=True)
+        st.markdown("""
+        ### 📊 Submitted Reports
+        - ✅ Consolidated MPR - May 2026
+        - ✅ Inception Report
+        - ✅ Work Order (ICARE)
         
-        if quarter_info['status'] == 'ongoing':
-            st.markdown('<span class="status-ongoing">🟡 ONGOING</span>', unsafe_allow_html=True)
-        else:
-            st.markdown('<span class="status-completed">⚪ UPCOMING</span>', unsafe_allow_html=True)
-        
-        # Show openpyxl installation instruction if needed
-        st.info("ℹ️ For best formatting, install openpyxl: `pip install openpyxl`")
+        ### 🏛️ Government Orders
+        - Planning Department GRs
+        - State Steering Committee Minutes
+        - Administrative Approvals
+        """)
     
     st.markdown("---")
     
-    # Download button
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if selected_sections:
-            if st.button("📥 Generate & Download Report", use_container_width=True, type="primary"):
-                with st.spinner("Generating professional report..."):
-                    report_data, format_type = export_quarter_to_professional_excel(selected_quarter, selected_sections)
-                    
-                    if format_type == "excel":
-                        filename = f"MahaSTRIDE_{selected_quarter.replace(' ', '_').replace(':', '')}_Report_{datetime.now().strftime('%Y%m%d')}.xlsx"
-                        mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    else:
-                        filename = f"MahaSTRIDE_{selected_quarter.replace(' ', '_').replace(':', '')}_Report_{datetime.now().strftime('%Y%m%d')}.zip"
-                        mime_type = "application/zip"
-                    
-                    b64 = base64.b64encode(report_data).decode()
-                    href = f'<a href="data:{mime_type};base64,{b64}" download="{filename}" style="background-color:#28a745;color:white;padding:12px 24px;text-decoration:none;border-radius:5px;display:inline-block;font-weight:bold;">📥 Download Report</a>'
-                    st.markdown(href, unsafe_allow_html=True)
-                    st.success(f"✅ Report for {selected_quarter} generated successfully!")
-        else:
-            st.warning("⚠️ Please select at least one section to include in the report")
+    st.subheader("📎 Key Document Status")
+    
+    doc_status = {
+        "Document": ["Contract Agreement", "Work Order", "Performance Bank Guarantee", "Inception Report", "May MPR", "GRDAU Establishment", "Diagnostic Reports"],
+        "Status": ["✅ Executed", "✅ Issued", "⏳ Pending", "✅ Submitted", "✅ Submitted", "✅ Completed", "🔄 In Progress"],
+        "Due Date": ["Signed", "Mar 25, 2026", "Within 15 days", "May 26, 2026", "May 29, 2026", "July 5, 2026", "July 31, 2026"]
+    }
+    
+    st.dataframe(pd.DataFrame(doc_status), use_container_width=True, hide_index=True)
 
-# ============================================================
-# EXISTING CONTENT PAGES (Summary, Quarterly, etc.)
-# ============================================================
-# [All the other content pages remain exactly the same as before]
-# ... (keeping the existing summary, quarterly, universities, warroom, milestones, deliverables, review, documents sections)
+# 9. EXPORT REPORTS
+elif selected_key == "export":
+    st.header("📥 Export Reports")
+    st.markdown("Export quarterly reports in Excel format.")
+    st.info("ℹ️ This feature is coming soon. Please check back later.")
 
 # ============================================================
 # FOOTER
